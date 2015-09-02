@@ -1,4 +1,4 @@
-package org.rapla.gtwjsonrpc.jsonpatch;
+package org.rapla.gwtjsonrpc.jsonpatch;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;

@@ -17,7 +17,7 @@ package org.rapla.gwtjsonrpc.client.impl;
 import com.google.gwt.core.client.JavaScriptObject;
 
 /**
- * Base class for the {@link PrimitiveArrayResultDeserializer} and generated
+ * Base class for the {@link org.rapla.gwtjsonrpc.client.impl.ser.PrimitiveArrayResultDeserializers} and generated
  * object array result deserializers.
  */
 public abstract class ArrayResultDeserializer {

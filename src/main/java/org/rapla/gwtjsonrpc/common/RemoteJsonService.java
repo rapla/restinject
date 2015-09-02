@@ -26,11 +26,6 @@ package org.rapla.gwtjsonrpc.common;
  * and declare each method as returning void and accepting {@link org.rapla.gwtjsonrpc.common.AsyncCallback}
  * as the final parameter, with a concrete type specified as the result type:
  *
- * <pre>
- * public interface FooService extends RemoteJsonService {
- *   public void fooItUp(AsyncCallback&lt;ResultType&gt; callback);
- * }
- * </pre>
  * <p>
  * Instances of the interface can be obtained in the client and configured to
  * reference a particular JSON server:
@@ -46,7 +41,7 @@ package org.rapla.gwtjsonrpc.common;
  * Only positional parameters are supported.
  * <p>
  * JSON service callbacks may also be declared; see
- * {@link com.google.gwtjsonrpc.client.CallbackHandle}.
+ * {@link org.rapla.gwtjsonrpc.client.CallbackHandle}.
  */
 public interface RemoteJsonService {
 }

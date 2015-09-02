@@ -61,7 +61,7 @@ public abstract class JsonSerializer<T> {
    * <code>"\"b\\nb\""</code>.
    * <p>
    * Typically called by {@link #printJson(StringBuilder, Object)}, or through
-   * {@link JavaLangString_JsonSerializer}.
+   * {@link org.rapla.gwtjsonrpc.client.impl.ser.JavaLangString_JsonSerializer}.
    * 
    * @param val string text requiring escaping support. Must not be null.
    * @return a JSON literal text value, surrounded with double quotes.
