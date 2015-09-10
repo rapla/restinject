@@ -41,7 +41,11 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 
     @Override public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
     {
-        return processGwt(annotations, roundEnv);
+        if(!annotations.isEmpty())
+        {
+            return processGwt(annotations, roundEnv);
+        }
+        return true;
     }
     
     private static final int EMPTY_PER_INDENT = 4;
