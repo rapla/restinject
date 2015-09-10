@@ -43,11 +43,21 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     {
         return processGwt(annotations, roundEnv);
     }
+    
+    private static final int EMPTY_PER_INDENT = 4;
+    private static void createIndent(int indent, PrintWriter w)
+    {
+        for(int i = 0; i < indent * EMPTY_PER_INDENT; i++)
+        {
+            w.print(" ");
+        }
+    }
 
     private boolean processGwt(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
     {
         try
         {
+            int indent = 0;
             String packageName = "org.rapla.client.gwt";
             Writer writer = processingEnv.getFiler().createSourceFile(packageName + ".RaplaGwtModule").openWriter();
             PrintWriter w = new PrintWriter(writer);
@@ -57,8 +67,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             w.print("import com.google.gwt.inject.client.binder.GinBinder;\n");
             w.print("import com.google.gwt.inject.client.multibindings.GinMultibinder;\n");
             w.print("public class RaplaGwtModule implements GinModule { \n");
-            w.print("   public final void configure(GinBinder binder) {\n");
-
+            indent++;
+            createIndent(indent, w);
+            w.print("public final void configure(GinBinder binder) {\n");
+            indent++;
             List<InjectionContext> gwtContexts = Arrays.asList(new InjectionContext[] {InjectionContext.gwt,InjectionContext.client});
 
             for (Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementation.class)) {
@@ -73,6 +85,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                     continue;
                 }
                 Name qualifiedName = typeElement.getQualifiedName();
+                createIndent(indent, w);
                 w.print("binder.bind("+defaultImplementationOf+".class).to("+qualifiedName+".class).in(Singleton.class);\n");
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,
                         "Default Impl found in " + qualifiedName + " for  " + defaultImplementationOf + " contexts " + context);
@@ -91,9 +104,14 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 }
                 String extensionName = typeElement.getQualifiedName().toString();
                 supportedExtenstionPoints.add( extensionName);
-                w.print("   {\n");
-                w.print("        GinMultibinder<" + extensionName + "> setBinder = GinMultibinder.newSetBinder(binder, " + extensionName + ".class);\n");
-                w.print("   }\n");
+                createIndent(indent, w);
+                w.print("{\n");
+                indent++;
+                createIndent(indent, w);
+                w.print("GinMultibinder<" + extensionName + "> setBinder = GinMultibinder.newSetBinder(binder, " + extensionName + ".class);\n");
+                indent--;
+                createIndent(indent, w);
+                w.print("}\n");
             }
 
             for (Element elem : roundEnv.getElementsAnnotatedWith(Extension.class)) {
@@ -109,13 +127,21 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                         continue;
                     }
                     String extensionClassName = qualifiedName.toString();
-                    w.print("   {\n");
-                    w.print("        GinMultibinder<" + extensionName + "> setBinder = GinMultibinder.newSetBinder(binder, " + extensionName + ".class);\n");
-                    w.print("        setBinder.addBinding().to("+extensionClassName+ ".class).in(Singleton.class);\n" );
-                    w.print("   }\n");
+                    createIndent(indent, w);
+                    w.print("{\n");
+                    indent++;
+                    createIndent(indent, w);
+                    w.print("GinMultibinder<" + extensionName + "> setBinder = GinMultibinder.newSetBinder(binder, " + extensionName + ".class);\n");
+                    createIndent(indent, w);
+                    w.print("setBinder.addBinding().to("+extensionClassName+ ".class).in(Singleton.class);\n" );
+                    indent--;
+                    createIndent(indent, w);
+                    w.print("}\n");
                 }
             }
-            w.print("    }\n");
+            indent--;
+            createIndent(indent, w);
+            w.print("}\n");
             w.print("}");
             w.close();
         }
