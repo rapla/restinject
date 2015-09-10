@@ -27,7 +27,17 @@ import java.util.*;
  */
 public class AnnotationInjectionProcessor extends AbstractProcessor
 {
+    public static String getName( TypeElement typeElement, String suffix)
+    {
+        String qualifiedName = typeElement.getQualifiedName().toString();
+        String simpleName = typeElement.getSimpleName().toString();
+        String packageName = qualifiedName.substring(0, qualifiedName.length() - (simpleName.length() + 1));
+        String className = simpleName + suffix;
+        String fullName = packageName + "." + className;
+        return fullName;
+    }
 
+    /*
     private static class MyWriter
     {
         private final int EMPTY_PER_INDENT = 4;
@@ -98,6 +108,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             w.close();
         }
     }
+    */
 
     @Override public SourceVersion getSupportedSourceVersion()
     {
@@ -115,95 +126,104 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 
     @Override public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
     {
-        if (!annotations.isEmpty())
+        try
         {
-            return processGwt(annotations, roundEnv);
+            File f = getFile();
+            if (!annotations.isEmpty())
+            {
+                processGwt(f, roundEnv);
+            }
+            if(roundEnv.processingOver())
+            {
+                createJavaFile(f);
+            }
+        }
+        catch (IOException ioe)
+        {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, ioe.getMessage());
         }
         return true;
     }
 
-    private boolean processGwt(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
+    private boolean processGwt(File f, RoundEnvironment roundEnv) throws IOException
     {
-        try
+
+        List<InjectionContext> gwtContexts = Arrays.asList(new InjectionContext[] { InjectionContext.gwt, InjectionContext.client });
+
+        for (Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementation.class))
         {
-            final Filer filer = processingEnv.getFiler();
-            CharSequence relativeName = "META-INF/gwtModuleList";
-            CharSequence pkg = "";
-            JavaFileManager.Location location = StandardLocation.SOURCE_OUTPUT;
+            TypeElement typeElement = (TypeElement) elem;
+            TypeElement defaultImplementationOf = getDefaultImplementationOf(typeElement);
+            InjectionContext[] context = typeElement.getAnnotation(DefaultImplementation.class).context();
+            List<InjectionContext> contextList = new ArrayList<InjectionContext>();
 
-            File f;
-            try
+            boolean notContains = Collections.disjoint(Arrays.asList(context), gwtContexts);
+            if (context.length > 0 && notContains)
             {
-                FileObject resource = filer.getResource(location, pkg, relativeName);
-                f = new File(resource.toUri());
+                continue;
             }
-            catch (IOException ex)
-            {
-                FileObject resource = filer.createResource(location, pkg, relativeName);
-                f = new File(resource.toUri());
-            }
-            f.getParentFile().mkdirs();
-
-            List<InjectionContext> gwtContexts = Arrays.asList(new InjectionContext[] { InjectionContext.gwt, InjectionContext.client });
-
-            for (Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementation.class))
-            {
-                TypeElement typeElement = (TypeElement) elem;
-                TypeElement defaultImplementationOf = getDefaultImplementationOf(typeElement);
-                InjectionContext[] context = typeElement.getAnnotation(DefaultImplementation.class).context();
-                List<InjectionContext> contextList = new ArrayList<InjectionContext>();
-
-                boolean notContains = Collections.disjoint(Arrays.asList(context), gwtContexts);
-                if (context.length > 0 && notContains)
-                {
-                    continue;
-                }
-                Name qualifiedName = typeElement.getQualifiedName();
-                MyWriter w = new MyWriter(processingEnv, typeElement, "Impl"+defaultImplementationOf.getSimpleName());
-                w.println("binder.bind(" + defaultImplementationOf + ".class).to(" + qualifiedName + ".class).in(Singleton.class);");
-                w.close();
-                addMetaInf(f,w.getFullName());
-            }
-
-            for (Element elem : roundEnv.getElementsAnnotatedWith(ExtensionPoint.class))
-            {
-                TypeElement typeElement = (TypeElement) elem;
-                InjectionContext[] context = typeElement.getAnnotation(ExtensionPoint.class).context();
-                List<InjectionContext> contextList = new ArrayList<InjectionContext>();
-
-                boolean notContains = Collections.disjoint(Arrays.asList(context), gwtContexts);
-                if (context.length > 0 && notContains)
-                {
-                    continue;
-                }
-                String extensionName = typeElement.getQualifiedName().toString();
-                MyWriter w = new MyWriter(processingEnv, typeElement, "");
-                w.println("GinMultibinder<" + extensionName + "> setBinder = GinMultibinder.newSetBinder(binder, " + extensionName + ".class);");
-                w.close();
-                addMetaInf(f,w.getFullName());
-            }
-
-            for (Element elem : roundEnv.getElementsAnnotatedWith(Extension.class))
-            {
-                TypeElement typeElement = (TypeElement) elem;
-                TypeElement provider = getProvides(typeElement);
-                Name qualifiedName = typeElement.getQualifiedName();
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Provider found for " + qualifiedName);
-                String extensionName = provider.getQualifiedName().toString();
-                String extensionClassName = qualifiedName.toString();
-                MyWriter w = new MyWriter(processingEnv, typeElement, "Extension"+provider.getSimpleName());
-                w.println("GinMultibinder<" + extensionName + "> setBinder = GinMultibinder.newSetBinder(binder, " + extensionName + ".class);");
-                w.println("setBinder.addBinding().to(" + extensionClassName + ".class).in(Singleton.class);");
-                w.close();
-                addMetaInf(f,w.getFullName());
-            }
-            createJavaFile(f);
+            //                Name qualifiedName = typeElement.getQualifiedName();
+            //                MyWriter w = new MyWriter(processingEnv, typeElement, "Impl"+defaultImplementationOf.getSimpleName());
+            //                w.println("binder.bind(" + defaultImplementationOf + ".class).to(" + qualifiedName + ".class).in(Singleton.class);");
+            //                w.close();
+            addMetaInf(f, getName(typeElement, "_Impl_" + defaultImplementationOf.getQualifiedName()));
         }
-        catch (IOException ioe)
+
+        for (Element elem : roundEnv.getElementsAnnotatedWith(ExtensionPoint.class))
         {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, ioe.getMessage());
+            TypeElement typeElement = (TypeElement) elem;
+            InjectionContext[] context = typeElement.getAnnotation(ExtensionPoint.class).context();
+            List<InjectionContext> contextList = new ArrayList<InjectionContext>();
+
+            boolean notContains = Collections.disjoint(Arrays.asList(context), gwtContexts);
+            if (context.length > 0 && notContains)
+            {
+                continue;
+            }
+            //                String extensionName = typeElement.getQualifiedName().toString();
+            //                MyWriter w = new MyWriter(processingEnv, typeElement, "");
+            //                w.println("GinMultibinder<" + extensionName + "> setBinder = GinMultibinder.newSetBinder(binder, " + extensionName + ".class);");
+            //                w.close();
+            addMetaInf(f, getName(typeElement, ""));
+        }
+
+        for (Element elem : roundEnv.getElementsAnnotatedWith(Extension.class))
+        {
+            TypeElement typeElement = (TypeElement) elem;
+            TypeElement provider = getProvides(typeElement);
+            Name qualifiedName = typeElement.getQualifiedName();
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Provider found for " + qualifiedName);
+            String extensionName = provider.getQualifiedName().toString();
+            String extensionClassName = qualifiedName.toString();
+            //                MyWriter w = new MyWriter(processingEnv, typeElement, "Extension"+provider.getSimpleName());
+            //                w.println("GinMultibinder<" + extensionName + "> setBinder = GinMultibinder.newSetBinder(binder, " + extensionName + ".class);");
+            //                w.println("setBinder.addBinding().to(" + extensionClassName + ".class).in(Singleton.class);");
+            //                w.close();
+            addMetaInf(f, getName(typeElement, "_Extension_" + provider.getQualifiedName()));
         }
         return true;
+    }
+
+    private File getFile() throws IOException
+    {
+        final Filer filer = processingEnv.getFiler();
+        CharSequence relativeName = "META-INF/gwtModuleList";
+        CharSequence pkg = "";
+        JavaFileManager.Location location = StandardLocation.SOURCE_OUTPUT;
+
+        File f;
+        try
+        {
+            FileObject resource = filer.getResource(location, pkg, relativeName);
+            f = new File(resource.toUri());
+        }
+        catch (IOException ex)
+        {
+            FileObject resource = filer.createResource(location, pkg, relativeName);
+            f = new File(resource.toUri());
+        }
+        f.getParentFile().mkdirs();
+        return f;
     }
 
     private void createJavaFile(File f) throws IOException
@@ -214,6 +234,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         {
             writer = filer.createSourceFile("org.rapla.client.gwt.RaplaGwtModule").openWriter();
             writer.write("package org.rapla.client.gwt;\n");
+            writer.write("import javax.inject.Singleton;\n");
             writer.write("import com.google.gwt.inject.client.GinModule;\n");
             writer.write("import com.google.gwt.inject.client.binder.GinBinder;\n");
             writer.write("import com.google.gwt.inject.client.multibindings.GinMultibinder;\n");
@@ -224,7 +245,44 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             String line = null;
             while((line=bufferedReader.readLine())!=null)
             {
-                writer.write("new "+line+"().configure(binder);\n");
+
+                //writer.write("new "+line+"().configure(binder);\n");
+                String packageName;
+
+                if ( line.contains("_Impl_"))
+                {
+                    final String[] extension_s = line.split("_Impl_");
+                    String qualifiedName = extension_s[0];
+                    String interfaceName = extension_s[1];
+                    writer.write("   binder.bind(" + interfaceName + ".class).to(" + qualifiedName + ".class).in(Singleton.class);");
+                }
+                else if ( line.contains("_Extension_"))
+                {
+                    final String[] extension_s = line.split("_Extension_");
+                    String qualifiedName = extension_s[0];
+                    String interfaceName = extension_s[1];
+                    writer.write("   {\n");
+                    writer.write("      GinMultibinder<" + interfaceName + "> setBinder = GinMultibinder.newSetBinder(binder, " + interfaceName + ".class);");
+                    writer.write("\n");
+                    writer.write("      setBinder.addBinding().to(" + qualifiedName + ".class).in(Singleton.class);");
+                    writer.write("\n");
+                    writer.write("   }\n");
+                }
+                else {
+                    String interfaceName = line;
+                    final TypeElement typeElement = processingEnv.getElementUtils().getTypeElement(interfaceName);
+                    if(typeElement!=null)
+                    {
+                        final ExtensionPoint annotation = typeElement.getAnnotation(ExtensionPoint.class);
+                        if ( annotation != null)
+                        {
+                            writer.write("   GinMultibinder.newSetBinder(binder, " + interfaceName + ".class);");
+                            writer.write("\n");
+                        }
+                    }
+                }
+                writer.write("\n");
+
             }
             writer.write("}\n");
             writer.write("}\n");
