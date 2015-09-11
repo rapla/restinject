@@ -1,17 +1,26 @@
 package org.rapla.inject.generator;
 
-import org.rapla.inject.DefaultImplementation;
-import org.rapla.inject.Extension;
-import org.rapla.inject.ExtensionPoint;
-import org.rapla.inject.InjectionContext;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
-import javax.inject.Singleton;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.*;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.Name;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
@@ -19,14 +28,19 @@ import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
 import javax.tools.StandardLocation;
-import java.io.*;
-import java.util.*;
+
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.Extension;
+import org.rapla.inject.ExtensionPoint;
+import org.rapla.inject.InjectionContext;
 
 /**
  * Created by Christopher on 07.09.2015.
  */
 public class AnnotationInjectionProcessor extends AbstractProcessor
 {
+    public static final String GWT_MODULE_LIST = "META-INF/gwtModuleList";
+    
     public static String getName( TypeElement typeElement, String suffix)
     {
         String qualifiedName = typeElement.getQualifiedName().toString();
@@ -133,10 +147,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             {
                 processGwt(f, roundEnv);
             }
-            if(roundEnv.processingOver())
-            {
-                createJavaFile(f);
-            }
+//            if(roundEnv.processingOver())
+//            {
+//                createJavaFile(f);
+//            }
         }
         catch (IOException ioe)
         {
@@ -207,19 +221,18 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     private File getFile() throws IOException
     {
         final Filer filer = processingEnv.getFiler();
-        CharSequence relativeName = "META-INF/gwtModuleList";
         CharSequence pkg = "";
         JavaFileManager.Location location = StandardLocation.SOURCE_OUTPUT;
 
         File f;
         try
         {
-            FileObject resource = filer.getResource(location, pkg, relativeName);
+            FileObject resource = filer.getResource(location, pkg, GWT_MODULE_LIST);
             f = new File(resource.toUri());
         }
         catch (IOException ex)
         {
-            FileObject resource = filer.createResource(location, pkg, relativeName);
+            FileObject resource = filer.createResource(location, pkg, GWT_MODULE_LIST);
             f = new File(resource.toUri());
         }
         f.getParentFile().mkdirs();
