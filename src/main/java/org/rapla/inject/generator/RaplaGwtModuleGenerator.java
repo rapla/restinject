@@ -35,6 +35,7 @@ public class RaplaGwtModuleGenerator extends Generator
             src.println("public void configure(GinBinder binder) {");
             src.indent();
             String folder = AnnotationInjectionProcessor.GWT_MODULE_LIST;
+            Set<String> interfaces = new LinkedHashSet<String>();
             final Collection<URL> resources = find(folder);
             for (URL url : resources)
             {
@@ -43,13 +44,18 @@ public class RaplaGwtModuleGenerator extends Generator
                 String module = null;
                 while ((module = br.readLine()) != null)
                 {
-                    importModule(module, src, logger);
+                    interfaces.add(module);
                 }
                 br.close();
+            }
+            for ( String module :interfaces)
+            {
+                importModule(module, src, logger);
             }
             src.outdent();
             src.println("}");
             src.commit(logger);
+            logger.log(Type.INFO, "Generating for: " + typeName + " ");
             System.out.println("Generating for: " + typeName);
             return typeName + "Generated";
         }
@@ -135,6 +141,7 @@ public class RaplaGwtModuleGenerator extends Generator
         boolean foundExtension = false;
         boolean foundDefaultImpl = false;
         // load all implementations or extensions from service list file
+        Set<String> implemantations = new LinkedHashSet<String>();
         final Collection<URL> resources = find(folder + interfaceName);
         for (URL url : resources)
         {
@@ -147,6 +154,14 @@ public class RaplaGwtModuleGenerator extends Generator
             {
                 try
                 {
+                    if ( implemantations.contains( implementationClassName))
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        implemantations.add( implementationClassName );
+                    }
                     // load class for implementation or extension
                     final Class<?> clazz = Class.forName(implementationClassName);
                     final Extension[] extensions = clazz.getAnnotationsByType(Extension.class);
