@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.rapla</groupId>
 	<artifactId>gwtjsonrpc</artifactId>
-	<version>1.0-RC1</version>
+	<version>1.0-RC2</version>
 	<url>https://github.com/rapla/gwtjsonrpc</url>
 	<description>rapla </description>
 	<name>jsonrpc module for rapla forked from https://gerrit.googlesource.com/gwtjsonrpc/</name>
