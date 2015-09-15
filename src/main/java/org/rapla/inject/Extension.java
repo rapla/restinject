@@ -10,4 +10,7 @@ import java.lang.annotation.Target;
 public @interface Extension
 {
     Class provides();
+
+    String id();
+
 }

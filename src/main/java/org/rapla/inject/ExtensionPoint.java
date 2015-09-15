@@ -7,4 +7,5 @@ import java.lang.annotation.RetentionPolicy;
 public @interface ExtensionPoint
 {
     InjectionContext[] context() default {};
+    String id();
 }

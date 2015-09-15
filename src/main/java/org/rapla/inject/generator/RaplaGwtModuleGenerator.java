@@ -6,6 +6,7 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.inject.client.multibindings.GinMapBinder;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 import org.rapla.inject.DefaultImplementation;
@@ -48,9 +49,18 @@ public class RaplaGwtModuleGenerator extends Generator
                 }
                 br.close();
             }
-            for ( String module :interfaces)
+            for (String interfaceName : interfaces)
             {
-                importModule(module, src, logger);
+                Class<?> interaceClazz = null;
+                try
+                {
+                    interaceClazz = Class.forName(interfaceName);
+                    addImplementations(interaceClazz, src, logger);
+                }
+                catch (ClassNotFoundException e1)
+                {
+                    logger.log(Type.WARN, "Found interfaceName definition but no class for " + interfaceName);
+                }
             }
             src.outdent();
             src.println("}");
@@ -75,36 +85,22 @@ public class RaplaGwtModuleGenerator extends Generator
         {
             result.add(resources.nextElement());
         }
-        File parent = new File("target/generated-sources/apt");
         return result;
     }
 
-    private boolean isProviding( Extension[] clazzAnnot, Class interfaceClass)
-    {
-        for ( Extension ext:clazzAnnot)
-        {
-            final Class provides = ext.provides();
-            if (provides.equals( interfaceClass))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean isRelevant(InjectionContext[] context)
+    private boolean isRelevant(InjectionContext... context)
     {
         final List<InjectionContext> c2 = Arrays.asList(context);
         return !Collections.disjoint(c2, supportedContexts) || c2.size() == 0;
     }
 
-    private boolean isImplementing( DefaultImplementation[] clazzAnnot, Class interfaceClass)
+    private boolean isImplementing(Class interfaceClass, DefaultImplementation... clazzAnnot)
     {
-        for ( DefaultImplementation ext:clazzAnnot)
+        for (DefaultImplementation ext : clazzAnnot)
         {
             final Class provides = ext.of();
             final InjectionContext[] context = ext.context();
-            if (provides.equals( interfaceClass) && isRelevant(context))
+            if (provides.equals(interfaceClass) && isRelevant(context))
             {
                 return true;
             }
@@ -112,21 +108,25 @@ public class RaplaGwtModuleGenerator extends Generator
         return false;
     }
 
-
-    private void importModule(String interfaceName, SourceWriter src, TreeLogger logger) throws IOException
+    public static Collection<String> getImplementingIds(Class interfaceClass, Extension... clazzAnnot)
     {
+        Set<String> ids = new LinkedHashSet<>();
+        for (Extension ext : clazzAnnot)
+        {
+            final Class provides = ext.provides();
+            if (provides.equals(interfaceClass))
+            {
+                String id = ext.id();
+                ids.add(id);
+            }
+        }
+        return ids;
+    }
 
-        Class<?> moduleClazz = null;
-        try
-        {
-            moduleClazz = Class.forName(interfaceName);
-        }
-        catch (ClassNotFoundException e1)
-        {
-            logger.log(Type.WARN, "Found interfaceName definition but no class for " + interfaceName);
-            return;
-        }
-        final ExtensionPoint extensionPointAnnotation = moduleClazz.getAnnotation(ExtensionPoint.class);
+    private <T> void addImplementations(Class<T> interfaceClass, SourceWriter src, TreeLogger logger) throws IOException
+    {
+        String interfaceName = interfaceClass.getCanonicalName();
+        final ExtensionPoint extensionPointAnnotation = interfaceClass.getAnnotation(ExtensionPoint.class);
         final boolean isExtensionPoint = extensionPointAnnotation != null;
         if (isExtensionPoint)
         {
@@ -154,40 +154,47 @@ public class RaplaGwtModuleGenerator extends Generator
             {
                 try
                 {
-                    if ( implemantations.contains( implementationClassName))
+                    if (implemantations.contains(implementationClassName))
                     {
                         continue;
                     }
                     else
                     {
-                        implemantations.add( implementationClassName );
+                        implemantations.add(implementationClassName);
                     }
                     // load class for implementation or extension
                     final Class<?> clazz = Class.forName(implementationClassName);
                     final Extension[] extensions = clazz.getAnnotationsByType(Extension.class);
-                    final boolean providing = isProviding(extensions, moduleClazz);
-                    if (providing )
+                    Collection<String> idList = getImplementingIds(interfaceClass, extensions);
+
+                    if (idList.size() > 0)
                     {
                         foundExtension = true;
                         src.println("{");
                         src.indent();
-                        src.println("GinMultibinder<" + interfaceName + "> setBinder = GinMultibinder.newSetBinder(binder, "
-                                + interfaceName + ".class);");
+                        src.println("GinMultibinder<" + interfaceName + "> setBinder = GinMultibinder.newSetBinder(binder, " + interfaceName + ".class);");
                         src.println("setBinder.addBinding().to(" + implementationClassName + ".class).in(Singleton.class);");
+                        src.println("GinMapBinder<String," + interfaceName + "> mapBinder = GinMapbinder.newMapBinder(binder,String.class, " + interfaceName
+                                + ".class);");
+                        for (String id : idList)
+                        {
+                            src.println("setBinder.addBinding(" + id + ").to(" + implementationClassName + ".class).in(Singleton.class);");
+                        }
                         src.outdent();
                         src.println("}");
                     }
                     else
                     {
-                       if ( isExtensionPoint)
-                       {
-                           logger.log(Type.WARN, clazz + " provides no extension for " + interfaceName + " but is in the service list of " + interfaceName + ". You may need run a clean build.");
-                       }
+                        if (isExtensionPoint)
+                        {
+                            logger.log(Type.WARN, clazz + " provides no extension for " + interfaceName + " but is in the service list of " + interfaceName
+                                    + ". You may need run a clean build.");
+                        }
                     }
 
                     final DefaultImplementation[] defaultImplementations = clazz.getAnnotationsByType(DefaultImplementation.class);
-                    final boolean implementing = isImplementing(defaultImplementations, moduleClazz);
-                    if ( implementing)
+                    final boolean implementing = isImplementing(interfaceClass, defaultImplementations);
+                    if (implementing)
                     {
                         foundDefaultImpl = true;
                         src.println("binder.bind(" + interfaceName + ".class).to(" + implementationClassName + ".class).in(Singleton.class);");
@@ -196,7 +203,8 @@ public class RaplaGwtModuleGenerator extends Generator
                 }
                 catch (ClassNotFoundException e)
                 {
-                    logger.log(Type.WARN, "Error loading implementationClassName (" + implementationClassName + ") for " + interfaceName, e);
+                    logger.log(Type.WARN, "Error loading implementationClassName (" + implementationClassName + ") for " + interfaceName
+                            + " it maybe renamed/removed or the annotations have changed.");
                 }
 
             }
@@ -208,15 +216,19 @@ public class RaplaGwtModuleGenerator extends Generator
             if (!foundExtension)
             {
                 src.println("GinMultibinder.newSetBinder(binder, " + interfaceName + ".class);");
+                src.println("GinMultibinder.newMapBinder(binder, String.class," + interfaceName + ".class);");
             }
-        } else {
+        }
+        else
+        {
             if (!foundDefaultImpl)
             {
-                logger.log(Type.WARN, "No DefaultImplemenation found for " + interfaceName + " Interface will not be available in the supported Contexts " + supportedContexts + " ");
+                logger.log(Type.WARN,
+                        "No DefaultImplemenation found for " + interfaceName + " Interface will not be available in the supported Contexts " + supportedContexts
+                                + " ");
             }
         }
     }
-
 
     public SourceWriter getSourceWriter(JClassType classType, GeneratorContext context, TreeLogger logger)
     {
@@ -229,6 +241,7 @@ public class RaplaGwtModuleGenerator extends Generator
         composer.addImport("com.google.gwt.inject.client.GinModule");
         composer.addImport("com.google.gwt.inject.client.binder.GinBinder");
         composer.addImport("com.google.gwt.inject.client.multibindings.GinMultibinder");
+        composer.addImport("com.google.gwt.inject.client.multibindings.GinMapBinder");
         PrintWriter printWriter = context.tryCreate(logger, packageName, simpleName);
         if (printWriter == null)
         {
