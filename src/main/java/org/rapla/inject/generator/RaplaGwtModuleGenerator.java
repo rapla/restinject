@@ -174,11 +174,11 @@ public class RaplaGwtModuleGenerator extends Generator
                         src.indent();
                         src.println("GinMultibinder<" + interfaceName + "> setBinder = GinMultibinder.newSetBinder(binder, " + interfaceName + ".class);");
                         src.println("setBinder.addBinding().to(" + implementationClassName + ".class).in(Singleton.class);");
-                        src.println("GinMapBinder<String," + interfaceName + "> mapBinder = GinMapbinder.newMapBinder(binder,String.class, " + interfaceName
+                        src.println("GinMapBinder<String," + interfaceName + "> mapBinder = GinMapBinder.newMapBinder(binder,String.class, " + interfaceName
                                 + ".class);");
                         for (String id : idList)
                         {
-                            src.println("setBinder.addBinding(" + id + ").to(" + implementationClassName + ".class).in(Singleton.class);");
+                            src.println("mapBinder.addBinding(\"" + id + "\").to(" + implementationClassName + ".class).in(Singleton.class);");
                         }
                         src.outdent();
                         src.println("}");
