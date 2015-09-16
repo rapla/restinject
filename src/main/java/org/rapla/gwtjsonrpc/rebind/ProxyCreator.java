@@ -21,9 +21,9 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.*;
 import com.google.gwt.dev.generator.NameFactory;
-import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
+import org.rapla.gwtjsonrpc.RemoteJsonMethod;
 
 import java.io.PrintWriter;
 import java.util.HashSet;
@@ -162,13 +162,14 @@ class ProxyCreator implements SerializerClasses
 
     private void generateProxyConstructor(@SuppressWarnings("unused") final TreeLogger logger, final SourceWriter w)
     {
-        final RemoteServiceRelativePath relPath = svcInf.getAnnotation(RemoteServiceRelativePath.class);
+        final RemoteJsonMethod relPath = svcInf.getAnnotation(RemoteJsonMethod.class);
         if (relPath != null)
         {
             w.println();
             w.println("public " + getProxySimpleName() + "() {");
             w.indent();
-            w.println("setServiceEntryPoint(GWT.getModuleBaseURL() + \"" + relPath.value() + "\");");
+
+            w.println("setPath(\"" + relPath.path() + "\");");
             w.outdent();
             w.println("}");
         }

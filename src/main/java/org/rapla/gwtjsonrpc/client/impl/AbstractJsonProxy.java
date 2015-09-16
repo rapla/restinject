@@ -14,6 +14,7 @@
 
 package org.rapla.gwtjsonrpc.client.impl;
 
+import com.google.gwt.core.client.GWT;
 import org.rapla.gwtjsonrpc.client.ExceptionDeserializer;
 
 import com.google.gwt.core.client.JavaScriptObject;
@@ -27,90 +28,115 @@ import com.google.gwt.user.client.rpc.ServiceDefTarget;
  * At runtime <code>GWT.create(Foo.class)</code> returns a subclass of this
  * class, implementing the Foo and {@link ServiceDefTarget} interfaces.
  */
-public abstract class AbstractJsonProxy implements ServiceDefTarget {
-  /** URL of the service implementation. */
-  String url;
-  private static String token;
-  private static EntryPointFactory serviceEntryPointFactory; 
-  private static ExceptionDeserializer exceptionDeserializer;
-  
-  public static EntryPointFactory getServiceEntryPointFactory() {
-    return serviceEntryPointFactory;
-  }
+public abstract class AbstractJsonProxy implements ServiceDefTarget
+{
+    /** URL of the service implementation. */
+    String url;
+    private static String token;
+    private static EntryPointFactory serviceEntryPointFactory;
+    private static ExceptionDeserializer exceptionDeserializer;
+    private String path;
 
-  public static void setServiceEntryPointFactory(EntryPointFactory serviceEntryPointFactory) {
-      AbstractJsonProxy.serviceEntryPointFactory = serviceEntryPointFactory;
-  }
-  
-	public static void setExceptionDeserializer(ExceptionDeserializer exceptionDeserializer) {
-		AbstractJsonProxy.exceptionDeserializer = exceptionDeserializer;
-	}  
-	
-	public ExceptionDeserializer getExceptionDeserializer() {
-		return exceptionDeserializer;
-	}
-
-@Override
-  public String getServiceEntryPoint() {
-    return url;
-  }
-
-  @Override
-  public void setServiceEntryPoint(final String address) {
-    url = address;
-  }
-
-  @Override
-  public String getSerializationPolicyName() {
-    return "jsonrpc";
-  }
-
-  @Override
-  public void setRpcRequestBuilder(RpcRequestBuilder builder) {
-    if (builder != null)
-      throw new UnsupportedOperationException(
-          "A RemoteJsonService does not use the RpcRequestBuilder, so this method is unsupported.");
-    /**
-     * From the gwt docs:
-     * 
-     * Calling this method with a null value will reset any custom behavior to
-     * the default implementation.
-     * 
-     * If builder == null, we just ignore this invocation.
-     */
-  }
-
-  protected <T> void doInvoke(final String methodName, final String reqData,
-      final ResultDeserializer<T> ser, final FutureResultImpl<T> cb)
-      throws InvocationException {
-    if ( url == null &&serviceEntryPointFactory != null)
+    public static EntryPointFactory getServiceEntryPointFactory()
     {
-        url = serviceEntryPointFactory.getEntryPoint( getClass());
+        return serviceEntryPointFactory;
     }
 
-    if (url == null) {
-        throw new NoServiceEntryPointSpecifiedException();
-        
+    public static void setServiceEntryPointFactory(EntryPointFactory serviceEntryPointFactory)
+    {
+        AbstractJsonProxy.serviceEntryPointFactory = serviceEntryPointFactory;
     }
-    JsonCall<T> newJsonCall = newJsonCall(this, methodName, reqData, ser);
-	cb.setCall( newJsonCall);
-	if ( token != null )
-	{
-	    newJsonCall.setToken( token );
-	}
-  }
 
-  protected abstract <T> JsonCall<T> newJsonCall(AbstractJsonProxy proxy,
-      final String methodName, final String reqData,
-      final ResultDeserializer<T> ser);
+    public static void setExceptionDeserializer(ExceptionDeserializer exceptionDeserializer)
+    {
+        AbstractJsonProxy.exceptionDeserializer = exceptionDeserializer;
+    }
 
-  protected static native JavaScriptObject hostPageCacheGetOnce(String name)
-  /*-{ var r = $wnd[name];$wnd[name] = null;return r ? {result: r} : null; }-*/;
+    public ExceptionDeserializer getExceptionDeserializer()
+    {
+        return exceptionDeserializer;
+    }
 
-  protected static native JavaScriptObject hostPageCacheGetMany(String name)
-  /*-{ return $wnd[name] ? {result : $wnd[name]} : null; }-*/;
+    @Override public String getServiceEntryPoint()
+    {
+        return url;
+    }
 
-  public static void setAuthThoken(String token) {
-      AbstractJsonProxy.token = token;
-  }
+    @Override public void setServiceEntryPoint(final String address)
+    {
+        url = address;
+    }
+
+    @Override public String getSerializationPolicyName()
+    {
+        return "jsonrpc";
+    }
+
+    @Override public void setRpcRequestBuilder(RpcRequestBuilder builder)
+    {
+        if (builder != null)
+            throw new UnsupportedOperationException("A RemoteJsonService does not use the RpcRequestBuilder, so this method is unsupported.");
+        /**
+         * From the gwt docs:
+         *
+         * Calling this method with a null value will reset any custom behavior to
+         * the default implementation.
+         *
+         * If builder == null, we just ignore this invocation.
+         */
+    }
+
+    private void setPath(String path)
+    {
+        this.path = path;
+    }
+    protected String getPath()
+    {
+        return path;
+    }
+
+    protected <T> void doInvoke(final String methodName, final String reqData, final ResultDeserializer<T> ser, final FutureResultImpl<T> cb)
+            throws InvocationException
+    {
+        if (serviceEntryPointFactory != null)
+        {
+            Class serviceClass = getClass();
+            String className = serviceClass.getName().replaceAll("_JsonProxy", "");
+            url = serviceEntryPointFactory.getEntryPoint(className, getPath());
+        }
+        else {
+            url = GWT.getModuleBaseURL() + getPath();
+        }
+
+        if (url == null)
+        {
+            throw new NoServiceEntryPointSpecifiedException();
+
+        }
+        JsonCall<T> newJsonCall = newJsonCall(this, methodName, reqData, ser);
+        cb.setCall(newJsonCall);
+        if (token != null)
+        {
+            newJsonCall.setToken(token);
+        }
+    }
+
+    protected abstract <T> JsonCall<T> newJsonCall(AbstractJsonProxy proxy, final String methodName, final String reqData, final ResultDeserializer<T> ser);
+
+    protected static native JavaScriptObject hostPageCacheGetOnce(String name)
+  /*-{
+      var r = $wnd[name];
+      $wnd[name] = null;
+      return r ? {result: r} : null;
+  }-*/;
+
+    protected static native JavaScriptObject hostPageCacheGetMany(String name)
+  /*-{
+      return $wnd[name] ? {result: $wnd[name]} : null;
+  }-*/;
+
+    public static void setAuthThoken(String token)
+    {
+        AbstractJsonProxy.token = token;
+    }
 }

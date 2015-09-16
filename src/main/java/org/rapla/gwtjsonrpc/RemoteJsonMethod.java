@@ -1,11 +1,10 @@
-package org.rapla.inject;
+package org.rapla.gwtjsonrpc;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ExtensionPoint
+public @interface RemoteJsonMethod
 {
-    InjectionContext[] context();
-    String id();
+    String path() default "";
 }

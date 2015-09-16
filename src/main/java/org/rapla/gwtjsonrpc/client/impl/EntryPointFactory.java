@@ -1,5 +1,5 @@
 package org.rapla.gwtjsonrpc.client.impl;
 
 public interface EntryPointFactory {
-    public String getEntryPoint(Class serviceClass);
+    public String getEntryPoint(String classname, String path);
 }

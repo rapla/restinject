@@ -16,6 +16,7 @@ package org.rapla.gwtjsonrpc.server;
 
 import com.google.gson.*;
 import org.apache.commons.codec.binary.Base64;
+import org.rapla.gwtjsonrpc.RemoteJsonMethod;
 import org.rapla.gwtjsonrpc.common.FutureResult;
 import org.rapla.gwtjsonrpc.common.JSONParserWrapper;
 import org.rapla.gwtjsonrpc.common.JsonConstants;
@@ -644,7 +645,7 @@ public class JsonServlet {
 
     private static Class findInterface(Class<?> c) {
         while (c != null) {
-            if ( c.getAnnotation(WebService.class) != null) {
+            if ( c.getAnnotation(WebService.class) != null || c.getAnnotation(RemoteJsonMethod.class) != null) {
                 return c;
             }
             for (final Class<?> i : c.getInterfaces()) {

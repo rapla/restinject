@@ -91,7 +91,7 @@ public class RaplaGwtModuleGenerator extends Generator
     private boolean isRelevant(InjectionContext... context)
     {
         final List<InjectionContext> c2 = Arrays.asList(context);
-        return !Collections.disjoint(c2, supportedContexts) || c2.size() == 0;
+        return !Collections.disjoint(c2, supportedContexts) || c2.contains(InjectionContext.all);
     }
 
     private boolean isImplementing(Class interfaceClass, DefaultImplementation... clazzAnnot)

@@ -10,5 +10,6 @@ public enum InjectionContext
     swing,
     gwt,
     android,
-    ios
+    ios,
+    all
 }
