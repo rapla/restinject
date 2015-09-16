@@ -169,7 +169,12 @@ class ProxyCreator implements SerializerClasses
             w.println("public " + getProxySimpleName() + "() {");
             w.indent();
 
-            w.println("setPath(\"" + relPath.path() + "\");");
+            String path = relPath.path();
+            if(path == null || path.isEmpty())
+            {
+                path = svcInf.getErasedType().getQualifiedSourceName();
+            }
+            w.println("setPath(\"" + path + "\");");
             w.outdent();
             w.println("}");
         }
