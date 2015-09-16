@@ -86,7 +86,7 @@ public abstract class AbstractJsonProxy implements ServiceDefTarget
          */
     }
 
-    private void setPath(String path)
+    protected void setPath(String path)
     {
         this.path = path;
     }
