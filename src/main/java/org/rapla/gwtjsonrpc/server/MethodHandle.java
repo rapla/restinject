@@ -20,6 +20,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
 import javax.jws.WebParam;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.QueryParam;
 
 /**
  * Pairing of a specific implementation and method.
@@ -55,6 +57,14 @@ public class MethodHandle {
     		{
     			paramterName = ((WebParam)a).name();
     		}
+			else if (annotationType.equals(PathParam.class))
+			{
+			    paramterName = ((PathParam)a).value();
+			}
+			else if (annotationType.equals(QueryParam.class))
+			{
+			    paramterName = ((QueryParam)a).value();
+			}
     	}
     	if ( paramterName != null)
     	{
