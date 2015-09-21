@@ -317,7 +317,7 @@ public class JsonServlet {
             }
             {
                 // First search in the request attributes
-                Object attribute = req.getAttribute(name);
+                Object attribute = name != null ? req.getAttribute(name) : null;
                 Object paramValue;
                 if ( attribute != null)
                 {
@@ -345,7 +345,7 @@ public class JsonServlet {
                 else 
                 {
                     String v = null;
-                    v = req.getParameter(name);
+                    v = name != null ? req.getParameter(name) : null;
                     // if not found in request use body
                     if ( v == null && body != null && !body.isEmpty())
                     {
