@@ -14,6 +14,7 @@ import org.rapla.inject.Extension;
 import org.rapla.inject.ExtensionPoint;
 import org.rapla.inject.InjectionContext;
 
+import javax.inject.Singleton;
 import java.io.*;
 import java.net.URL;
 import java.util.*;
@@ -197,7 +198,14 @@ public class RaplaGwtModuleGenerator extends Generator
                     if (implementing)
                     {
                         foundDefaultImpl = true;
-                        src.println("binder.bind(" + interfaceName + ".class).to(" + implementationClassName + ".class).in(Singleton.class);");
+                        Singleton singletonAnnotation = interfaceClass.getAnnotation(Singleton.class);
+                        String sourceLine = "binder.bind(" + interfaceName + ".class).to(" + implementationClassName + ".class)";
+                        if(singletonAnnotation != null)
+                        {
+                            sourceLine += ".in(Singleton.class)";
+                        }
+                        sourceLine+=";";
+                        src.println(sourceLine);
                     }
 
                 }
