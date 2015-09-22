@@ -21,7 +21,7 @@ import java.util.*;
 
 public class RaplaGwtModuleGenerator extends Generator
 {
-    private static final Collection<InjectionContext> supportedContexts = new ArrayList<InjectionContext>();
+    private static final Collection<InjectionContext> supportedContexts = new LinkedHashSet<InjectionContext>();
     ClassLoader classLoader;
 
     @Override public String generate(TreeLogger logger, GeneratorContext context, String typeName) throws UnableToCompleteException
@@ -35,9 +35,10 @@ public class RaplaGwtModuleGenerator extends Generator
             classLoader = Class.forName(typeName).getClassLoader();
             SourceWriter src = getSourceWriter(classType, context, logger);
             // if we already created getSourceWriter returns null so we can abort
+            String nameOfGeneratedClass = typeName + "Generated";
             if ( src == null)
             {
-                return null;
+                return  nameOfGeneratedClass;
             }
             src.println("public void configure(GinBinder binder) {");
             src.indent();
@@ -73,7 +74,7 @@ public class RaplaGwtModuleGenerator extends Generator
             src.commit(logger);
             logger.log(Type.INFO, "Generating for: " + typeName + " ");
             System.out.println("Generating for: " + typeName);
-            return typeName + "Generated";
+            return  nameOfGeneratedClass;
         }
         catch (Exception e)
         {
