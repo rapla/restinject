@@ -1,23 +1,35 @@
 package org.rapla.inject.generator;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.inject.Singleton;
+
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.Extension;
+import org.rapla.inject.ExtensionPoint;
+import org.rapla.inject.InjectionContext;
+
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.inject.client.multibindings.GinMapBinder;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
-import org.rapla.inject.DefaultImplementation;
-import org.rapla.inject.Extension;
-import org.rapla.inject.ExtensionPoint;
-import org.rapla.inject.InjectionContext;
-
-import javax.inject.Singleton;
-import java.io.*;
-import java.net.URL;
-import java.util.*;
 
 public class RaplaGwtModuleGenerator extends Generator
 {
@@ -101,11 +113,11 @@ public class RaplaGwtModuleGenerator extends Generator
         return !Collections.disjoint(c2, supportedContexts) || c2.contains(InjectionContext.all);
     }
 
-    private boolean isImplementing(Class interfaceClass, DefaultImplementation... clazzAnnot)
+    private boolean isImplementing(Class<?> interfaceClass, DefaultImplementation... clazzAnnot)
     {
         for (DefaultImplementation ext : clazzAnnot)
         {
-            final Class provides = ext.of();
+            final Class<?> provides = ext.of();
             final InjectionContext[] context = ext.context();
             if (provides.equals(interfaceClass) && isRelevant(context))
             {
@@ -115,12 +127,12 @@ public class RaplaGwtModuleGenerator extends Generator
         return false;
     }
 
-    public static Collection<String> getImplementingIds(Class interfaceClass, Extension... clazzAnnot)
+    public static Collection<String> getImplementingIds(Class<?> interfaceClass, Extension... clazzAnnot)
     {
         Set<String> ids = new LinkedHashSet<>();
         for (Extension ext : clazzAnnot)
         {
-            final Class provides = ext.provides();
+            final Class<?> provides = ext.provides();
             if (provides.equals(interfaceClass))
             {
                 String id = ext.id();
