@@ -34,6 +34,11 @@ public class RaplaGwtModuleGenerator extends Generator
             classType = context.getTypeOracle().getType(typeName);
             classLoader = Class.forName(typeName).getClassLoader();
             SourceWriter src = getSourceWriter(classType, context, logger);
+            // if we already created getSourceWriter returns null so we can abort
+            if ( src == null)
+            {
+                return null;
+            }
             src.println("public void configure(GinBinder binder) {");
             src.indent();
             String folder = AnnotationInjectionProcessor.GWT_MODULE_LIST;
