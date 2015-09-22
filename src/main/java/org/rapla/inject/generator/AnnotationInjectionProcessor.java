@@ -6,12 +6,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -19,7 +14,6 @@ import javax.annotation.processing.Filer;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
@@ -30,9 +24,10 @@ import javax.tools.JavaFileManager;
 import javax.tools.StandardLocation;
 
 import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.DefaultImplementationRepeatable;
 import org.rapla.inject.Extension;
 import org.rapla.inject.ExtensionPoint;
-import org.rapla.inject.InjectionContext;
+import org.rapla.inject.ExtensionRepeatable;
 
 /**
  * Created by Christopher on 07.09.2015.
@@ -41,24 +36,29 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 {
     public static final String GWT_MODULE_LIST = "META-INF/org.rapla.servicelist";
 
-    @Override public SourceVersion getSupportedSourceVersion()
+    @Override
+    public SourceVersion getSupportedSourceVersion()
     {
         return SourceVersion.latestSupported();
     }
 
-    Class[] supportedAnnotations = new Class[] { Extension.class, ExtensionPoint.class, DefaultImplementation.class};
+    Class<?>[] supportedAnnotations = new Class[] { Extension.class, ExtensionRepeatable.class, ExtensionPoint.class, DefaultImplementation.class,
+            DefaultImplementationRepeatable.class };
 
-    @Override public Set<String> getSupportedAnnotationTypes()
+    @Override
+    public Set<String> getSupportedAnnotationTypes()
     {
         Set<String> supported = new HashSet<String>();
-        for ( Class annotationClass:supportedAnnotations){
+        for (Class<?> annotationClass : supportedAnnotations)
+        {
             final String canonicalName = annotationClass.getCanonicalName();
             supported.add(canonicalName);
         }
         return supported;
     }
 
-    @Override public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
     {
         try
         {
@@ -67,10 +67,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             {
                 processGwt(f, roundEnv);
             }
-//            if(roundEnv.processingOver())
-//            {
-//                createJavaFile(f);
-//            }
+            //            if(roundEnv.processingOver())
+            //            {
+            //                createJavaFile(f);
+            //            }
         }
         catch (IOException ioe)
         {
@@ -82,14 +82,27 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     private boolean processGwt(File f, RoundEnvironment roundEnv) throws IOException
     {
 
-//        List<InjectionContext> gwtContexts = Arrays.asList(new InjectionContext[] { InjectionContext.gwt, InjectionContext.client });
+        //        List<InjectionContext> gwtContexts = Arrays.asList(new InjectionContext[] { InjectionContext.gwt, InjectionContext.client });
         for (Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementation.class))
         {
             TypeElement implementationElement = (TypeElement) elem;
-            TypeElement interfaceElement = getDefaultImplementationOf(implementationElement);
+            DefaultImplementation annotation = elem.getAnnotation(DefaultImplementation.class);
+            TypeElement interfaceElement = getDefaultImplementationOf(annotation);
             final String qualifiedName = interfaceElement.getQualifiedName().toString();
             appendToServiceList(f, qualifiedName);
             addServiceFile(interfaceElement, implementationElement, f);
+        }
+        for (Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementationRepeatable.class))
+        {
+            TypeElement implementationElement = (TypeElement) elem;
+            DefaultImplementationRepeatable annotation = elem.getAnnotation(DefaultImplementationRepeatable.class);
+            for (DefaultImplementation defaultImplementation : annotation.value())
+            {
+                TypeElement interfaceElement = getDefaultImplementationOf(defaultImplementation);
+                final String qualifiedName = interfaceElement.getQualifiedName().toString();
+                appendToServiceList(f, qualifiedName);
+                addServiceFile(interfaceElement, implementationElement, f);
+            }
         }
 
         for (Element elem : roundEnv.getElementsAnnotatedWith(ExtensionPoint.class))
@@ -103,8 +116,19 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         for (Element elem : roundEnv.getElementsAnnotatedWith(Extension.class))
         {
             TypeElement typeElement = (TypeElement) elem;
-            TypeElement provider = getProvides(typeElement);
+            final Extension annotation = typeElement.getAnnotation(Extension.class);
+            TypeElement provider = getProvides(annotation);
             addServiceFile(provider, typeElement, f);
+        }
+        for (Element elem : roundEnv.getElementsAnnotatedWith(ExtensionRepeatable.class))
+        {
+            TypeElement typeElement = (TypeElement) elem;
+            final ExtensionRepeatable annotation = typeElement.getAnnotation(ExtensionRepeatable.class);
+            for (Extension extension : annotation.value())
+            {
+                TypeElement provider = getProvides(extension);
+                addServiceFile(provider, typeElement, f);
+            }
         }
         return true;
     }
@@ -113,6 +137,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     {
         appendToFile(serviceListFile, interfaceName);
     }
+
     private void addServiceFile(TypeElement interfaceElement, TypeElement implementationElement, File allserviceList) throws IOException
     {
         final File folder = allserviceList.getParentFile();
@@ -121,7 +146,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         String implementationName = implementationElement != null ? implementationElement.getQualifiedName().toString() : null;
         final File serviceFile = new File(folder, "services/" + serviceFileName);
         serviceFile.getParentFile().mkdirs();
-        if ( implementationElement == null)
+        if (implementationElement == null)
         {
             appendToFile(serviceFile, null);
         }
@@ -131,9 +156,9 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         }
     }
 
-    private void appendToFile(File file,String className) throws IOException
+    private void appendToFile(File file, String className) throws IOException
     {
-        if ( className != null && file.exists())
+        if (className != null && file.exists())
         {
             BufferedReader reader = new BufferedReader(new FileReader(file));
             try
@@ -154,7 +179,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             }
         }
         PrintWriter w = new PrintWriter(new FileOutputStream(file, true));
-        if ( className != null)
+        if (className != null)
         {
             w.write(className + "\n");
         }
@@ -182,9 +207,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return f;
     }
 
-    private TypeElement getProvides(TypeElement elem)
+    private TypeElement getProvides(Extension annotation)
     {
-        Extension annotation = elem.getAnnotation(Extension.class);
         try
         {
             annotation.provides(); // this should throw
@@ -196,37 +220,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return null; // can this ever happen ??
     }
 
-    private TypeElement getExtensionPointContext(TypeElement elem)
+    private TypeElement getDefaultImplementationOf(DefaultImplementation annotation)
     {
-        ExtensionPoint annotation = elem.getAnnotation(ExtensionPoint.class);
-        try
-        {
-            annotation.context(); // this should throw
-        }
-        catch (MirroredTypeException mte)
-        {
-            return asTypeElement(mte.getTypeMirror());
-        }
-        return null; // can this ever happen ??
-    }
-
-    private TypeElement getDefaultImplementationContext(TypeElement elem)
-    {
-        DefaultImplementation annotation = elem.getAnnotation(DefaultImplementation.class);
-        try
-        {
-            annotation.context(); // this should throw
-        }
-        catch (MirroredTypeException mte)
-        {
-            return asTypeElement(mte.getTypeMirror());
-        }
-        return null; // can this ever happen ??
-    }
-
-    private TypeElement getDefaultImplementationOf(TypeElement elem)
-    {
-        DefaultImplementation annotation = elem.getAnnotation(DefaultImplementation.class);
         try
         {
             annotation.of(); // this should throw
