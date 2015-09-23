@@ -7,9 +7,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -33,15 +31,12 @@ import com.google.gwt.user.rebind.SourceWriter;
 
 public class RaplaGwtModuleGenerator extends Generator
 {
-    private static final Collection<InjectionContext> supportedContexts = new LinkedHashSet<InjectionContext>();
     ClassLoader classLoader;
 
     @Override public String generate(TreeLogger logger, GeneratorContext context, String typeName) throws UnableToCompleteException
     {
         try
         {
-            supportedContexts.add(InjectionContext.gwt);
-            supportedContexts.add(InjectionContext.client);
             JClassType classType;
             classType = context.getTypeOracle().getType(typeName);
             classLoader = Class.forName(typeName).getClassLoader();
@@ -107,10 +102,9 @@ public class RaplaGwtModuleGenerator extends Generator
         return result;
     }
 
-    private boolean isRelevant(InjectionContext... context)
+    protected boolean isRelevant(InjectionContext... context)
     {
-        final List<InjectionContext> c2 = Arrays.asList(context);
-        return !Collections.disjoint(c2, supportedContexts) || c2.contains(InjectionContext.all);
+        return InjectionContext.isInjectableOnGwt(context);
     }
 
     private boolean isImplementing(Class<?> interfaceClass, DefaultImplementation... clazzAnnot)
@@ -118,8 +112,8 @@ public class RaplaGwtModuleGenerator extends Generator
         for (DefaultImplementation ext : clazzAnnot)
         {
             final Class<?> provides = ext.of();
-            final InjectionContext[] context = ext.context();
-            if (provides.equals(interfaceClass) && isRelevant(context))
+            final InjectionContext[] contexts = ext.context();
+            if (provides.equals(interfaceClass) && isRelevant(contexts))
             {
                 return true;
             }
@@ -250,8 +244,7 @@ public class RaplaGwtModuleGenerator extends Generator
             if (!foundDefaultImpl)
             {
                 logger.log(Type.WARN,
-                        "No DefaultImplemenation found for " + interfaceName + " Interface will not be available in the supported Contexts " + supportedContexts
-                                + " ");
+                        "No DefaultImplemenation found for " + interfaceName + " Interface will not be available in the supported context gwt ");
             }
         }
     }

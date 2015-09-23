@@ -21,5 +21,82 @@ public enum InjectionContext
     gwt,
     android,
     ios,
-    all
+    all;
+
+    public static boolean isInjectableOnSwing(InjectionContext... contexts)
+    {
+        for ( InjectionContext context:contexts)
+        {
+            if (context == swing || context == all || context == client)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isInjectableOnGwt(InjectionContext... contexts)
+    {
+        for ( InjectionContext context:contexts)
+        {
+            if (context == gwt || context == all || context == client)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isInjectableOnAndroid(InjectionContext... contexts)
+    {
+        for ( InjectionContext context:contexts)
+        {
+            if (context == android || context == all || context == client)
+            {
+                return true;
+            }
+        }
+        return false;
+
+    }
+
+    public static boolean isInjectableOnIos(InjectionContext... contexts)
+    {
+        for ( InjectionContext context:contexts)
+        {
+            if (context == ios || context == all || context == client)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    public static boolean isInjectableOnServer(InjectionContext... contexts)
+    {
+        for ( InjectionContext context:contexts)
+        {
+            if (context == all || context == server)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isInjectableOnClient(InjectionContext... contexts)
+    {
+        for ( InjectionContext context:contexts)
+        {
+            if (context == all || context == server)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+
 }
