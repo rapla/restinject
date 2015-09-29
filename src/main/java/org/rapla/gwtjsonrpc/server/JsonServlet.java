@@ -14,19 +14,9 @@
 
 package org.rapla.gwtjsonrpc.server;
 
-import com.google.gson.*;
-import org.apache.commons.codec.binary.Base64;
-import org.rapla.gwtjsonrpc.RemoteJsonMethod;
-import org.rapla.gwtjsonrpc.common.FutureResult;
-import org.rapla.gwtjsonrpc.common.JSONParserWrapper;
-import org.rapla.gwtjsonrpc.common.JsonConstants;
-import org.rapla.gwtjsonrpc.common.isodate.ISODateTimeFormat;
-import org.rapla.gwtjsonrpc.jsonpatch.JsonMergePatch;
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
-import javax.jws.WebService;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -45,8 +35,30 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import javax.jws.WebService;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.codec.binary.Base64;
+import org.rapla.gwtjsonrpc.RemoteJsonMethod;
+import org.rapla.gwtjsonrpc.common.FutureResult;
+import org.rapla.gwtjsonrpc.common.JSONParserWrapper;
+import org.rapla.gwtjsonrpc.common.JsonConstants;
+import org.rapla.gwtjsonrpc.common.isodate.ISODateTimeFormat;
+import org.rapla.gwtjsonrpc.jsonpatch.JsonMergePatch;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+import com.google.gson.JsonSyntaxException;
 
 /**
  * Forward JSON based RPC requests onto services.
@@ -151,6 +163,11 @@ public class JsonServlet {
             debug( childLoggerName, out);
 
         }
+        writeResponse(servletContext, call, out);
+    }
+
+    protected void writeResponse(ServletContext servletContext, ActiveCall call, final String out) throws IOException
+    {
         RPCServletUtils.writeResponse(servletContext, call.httpResponse, out, out.length() > 256 && RPCServletUtils.acceptsGzipEncoding(call.httpRequest));
     }
 
@@ -172,7 +189,7 @@ public class JsonServlet {
         call.noCache();
         call.onInternalFailure(ex);
         final String out = formatResult(call);
-        RPCServletUtils.writeResponse(servletContext, call.httpResponse, out, out.length() > 256 && RPCServletUtils.acceptsGzipEncoding(call.httpRequest));
+        writeResponse(servletContext, call, out);
     }
 
     // private boolean acceptJSON(final CallType call) {
@@ -352,7 +369,18 @@ public class JsonServlet {
                         v = body;
                     }
                     if (v == null) {
-                        paramValue = null;
+                        if(type.equals(HttpServletResponse.class))
+                        {
+                            paramValue = call.httpResponse;
+                        }
+                        else if (type.equals(HttpServletRequest.class))
+                        {
+                            paramValue = call.httpRequest;
+                        }
+                        else
+                        {
+                            paramValue = null;
+                        }
                     } else if (type == String.class) {
                         paramValue = v;
                     } else if (type == Date.class) {
@@ -404,7 +432,7 @@ public class JsonServlet {
         return enc.toLowerCase().contains(JsonConstants.JSON_ENC.toLowerCase());
     }
 
-    private String readBody(final ActiveCall call) throws IOException {
+    protected String readBody(final ActiveCall call) throws IOException {
         if (!isBodyJson(call)) {
             throw new JsonParseException("Invalid Request Content-Type");
         }

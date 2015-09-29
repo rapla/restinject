@@ -22,6 +22,7 @@ import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
 import javax.tools.StandardLocation;
+import javax.ws.rs.Path;
 
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.DefaultImplementationRepeatable;
@@ -43,7 +44,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     }
 
     Class<?>[] supportedAnnotations = new Class[] { Extension.class, ExtensionRepeatable.class, ExtensionPoint.class, DefaultImplementation.class,
-            DefaultImplementationRepeatable.class };
+            DefaultImplementationRepeatable.class, Path.class };
 
     @Override
     public Set<String> getSupportedAnnotationTypes()
@@ -130,6 +131,16 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 addServiceFile(provider, typeElement, f);
             }
         }
+        // Path
+        appendToServiceList(f, Path.class.getCanonicalName());
+        for (Element elem : roundEnv.getElementsAnnotatedWith(Path.class))
+        {
+            if(elem instanceof TypeElement)
+            {
+                TypeElement typeElement = (TypeElement) elem;
+                addServiceFile(Path.class.getCanonicalName(), typeElement, f);
+            }
+        }
         return true;
     }
 
@@ -140,9 +151,13 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 
     private void addServiceFile(TypeElement interfaceElement, TypeElement implementationElement, File allserviceList) throws IOException
     {
+        final String serviceFileName = interfaceElement.getQualifiedName().toString();
+        addServiceFile(serviceFileName, implementationElement, allserviceList);
+        
+    }
+    private void addServiceFile(String serviceFileName, TypeElement implementationElement, File allserviceList) throws IOException
+    {
         final File folder = allserviceList.getParentFile();
-        final String interfaceName = interfaceElement.getQualifiedName().toString();
-        String serviceFileName = interfaceName;
         String implementationName = implementationElement != null ? implementationElement.getQualifiedName().toString() : null;
         final File serviceFile = new File(folder, "services/" + serviceFileName);
         serviceFile.getParentFile().mkdirs();

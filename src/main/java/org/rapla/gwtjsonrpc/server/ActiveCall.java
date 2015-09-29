@@ -85,5 +85,13 @@ public class ActiveCall implements AsyncCallback<Object> {
 
   public boolean hasFailed() {
       return externalFailure != null || internalFailure != null; 
-  }   
+  }
+  
+  public HttpServletRequest getHttpRequest() {
+    return httpRequest;
+  }
+  
+  public HttpServletResponse getHttpResponse() {
+    return httpResponse;
+  }
 }
