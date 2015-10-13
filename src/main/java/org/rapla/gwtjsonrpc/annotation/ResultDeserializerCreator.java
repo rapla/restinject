@@ -21,16 +21,12 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
-import javax.lang.model.type.TypeMirror;
 
 import org.rapla.gwtjsonrpc.rebind.SerializerClasses;
 
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.ext.TreeLogger;
 
 /**
  * Creator of ResultDeserializers. Actually, only object arrays have created
@@ -70,7 +66,7 @@ class ResultDeserializerCreator
 
         if (SerializerCreator.isPrimitive(componentType) || SerializerCreator.isBoxedPrimitive(componentType))
         {
-            logger.log(TreeLogger.DEBUG, "No need to create array deserializer for primitive array " + targetType);
+            logger.error("No need to create array deserializer for primitive array " + targetType);
             return;
         }
 
@@ -79,7 +75,7 @@ class ResultDeserializerCreator
             return;
         }
 
-        logger.log(TreeLogger.DEBUG, "Creating result deserializer for " + targetType.getSimpleName());
+        logger.error("Creating result deserializer for " + targetType.getSimpleName());
         final PrintWriter srcWriter = getSourceWriter(logger);
         if (srcWriter == null)
         {
