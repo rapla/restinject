@@ -14,14 +14,30 @@
 
 package org.rapla.gwtjsonrpc.annotation;
 
-
+import org.eclipse.jdt.internal.compiler.ast.ParameterizedQualifiedTypeReference;
 import org.rapla.gwtjsonrpc.RemoteJsonMethod;
 import org.rapla.gwtjsonrpc.annotation.SerializerClasses;
 
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.JavaScriptObject;
+
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 class ProxyCreator implements SerializerClasses
@@ -32,18 +48,23 @@ class ProxyCreator implements SerializerClasses
     private SerializerCreator serializerCreator;
     private org.rapla.gwtjsonrpc.annotation.ResultDeserializerCreator deserializerCreator;
     private int instanceField;
+    private final ProcessingEnvironment processingEnvironment;
+    private final NameFactory nameFactory = new NameFactory();
 
-    ProxyCreator(final TypeElement remoteService)
+    ProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment)
     {
         svcInf = remoteService;
+        this.processingEnvironment = processingEnvironment;
     }
 
     String create(final TreeLogger logger) throws UnableToCompleteException
     {
         serializerCreator = new SerializerCreator();
-        deserializerCreator = new org.rapla.gwtjsonrpc.annotation.ResultDeserializerCreator( serializerCreator);
+        deserializerCreator = new org.rapla.gwtjsonrpc.annotation.ResultDeserializerCreator(serializerCreator);
         futureResultClassName = FutureResultImpl;
-        checkMethods(logger);
+        final List<? extends Element> allMembers = processingEnvironment.getElementUtils().getAllMembers(svcInf);
+        final List<VariableElement> methods = ElementFilter.fieldsIn(allMembers);
+        checkMethods(logger, processingEnvironment);
 
         final PrintWriter srcWriter = getSourceWriter(logger);
         if (srcWriter == null)
@@ -54,105 +75,119 @@ class ProxyCreator implements SerializerClasses
         generateProxyConstructor(logger, srcWriter);
         generateProxyCallCreator(logger, srcWriter);
         generateProxyMethods(logger, srcWriter);
-        srcWriter.commit(logger);
+        //        srcWriter.commit(logger);
+        srcWriter.close();
 
         return getProxyQualifiedName();
     }
 
-    private void checkMethods(final TreeLogger logger, @SuppressWarnings("unused")) throws UnableToCompleteException
+    private void checkMethods(final TreeLogger logger, final ProcessingEnvironment processingEnvironment) throws UnableToCompleteException
     {
         final Set<String> declaredNames = new HashSet<String>();
-        final JMethod[] methodList = svcInf.getOverridableMethods();
-        for (final JMethod m : methodList)
+        final List<? extends Element> allMembers = processingEnvironment.getElementUtils().getAllMembers(svcInf);
+        final List<ExecutableElement> methods = ElementFilter.methodsIn(allMembers);
+        for (final ExecutableElement m : methods)
         {
-            if (!declaredNames.add(m.getName()))
+            final String methodName = m.getSimpleName().toString();
+            if (!declaredNames.add(methodName))
             {
-                invalid(logger, "Overloading method " + m.getName() + " not supported");
+                invalid(logger, "Overloading method " + methodName + " not supported");
             }
+            final List<? extends VariableElement> params = m.getParameters();
 
-            final JParameter[] params = m.getParameters();
+            final TypeMirror callback = m.getReturnType();
 
-            final JType callback = m.getReturnType();
+            final Element ele = processingEnvironment.getTypeUtils().asElement(callback);
 
-            final JClassType resultType = callback.isParameterized().getTypeArgs()[0];
-
-            for (int i = 0; i < params.length /*- 1*/; i++)
+            for (VariableElement p : params)
             {
-                final JParameter p = params[i];
-                final TreeLogger branch = logger.branch(TreeLogger.DEBUG, m.getName() + ", parameter " + p.getName());
-                serializerCreator.checkCanSerialize(branch, p.getType());
-                if (p.getType().isPrimitive() == null && !SerializerCreator.isBoxedPrimitive(p.getType()))
+                final TreeLogger branch = logger;//logger.branch(TreeLogger.DEBUG, m.getName() + ", parameter " + p.getName());
+                final TypeElement typeP = (TypeElement) processingEnvironment.getTypeUtils().asElement(p.asType());
+                serializerCreator.checkCanSerialize(branch, typeP);
+                if (SerializerCreator.isPrimitive(typeP) && !SerializerCreator.isBoxedPrimitive(typeP))
                 {
-                    serializerCreator.create((JClassType) p.getType(), branch);
+                    serializerCreator.create(typeP, branch);
                 }
             }
 
+            final TypeElement resultType;
+
             {
-                JClassType p = resultType;
-                final TreeLogger branch = logger.branch(TreeLogger.DEBUG, m.getName() + ", result " + p.getName());
-                if (p.isPrimitive() == null && !SerializerCreator.isBoxedPrimitive(p))
+                final TreeLogger branch = logger;//.branch(TreeLogger.DEBUG, m.getName() + ", result " + p.getName());
+                if (SerializerCreator.isPrimitive(resultType) && !SerializerCreator.isBoxedPrimitive(resultType))
                 {
-                    serializerCreator.create((JClassType) p, branch);
+                    serializerCreator.create(resultType, branch);
                 }
             }
 
-            final TreeLogger branch = logger.branch(TreeLogger.DEBUG, m.getName() + ", result " + resultType.getQualifiedSourceName());
-            if (resultType.getQualifiedSourceName().startsWith(FutureResult))
+            final TreeLogger branch = logger;//.branch(TreeLogger.DEBUG, m.getName() + ", result " + resultType.getQualifiedSourceName());
+            if (((TypeElement) svcInf).getQualifiedName().toString().startsWith(FutureResult))
             {
-                JParameterizedType parameterized = resultType.isParameterized();
-                JClassType jClassType = parameterized.getTypeArgs()[0];
-                serializerCreator.checkCanSerialize(branch, jClassType);
+                final List<? extends TypeParameterElement> typeParameters = resultType.getTypeParameters();
+                if (typeParameters != null && !typeParameters.isEmpty())
+                {
+                    final TypeParameterElement typeParameterElement = typeParameters.get(0);
+                    final TypeElement te = (TypeElement) processingEnvironment.getTypeUtils().asElement(typeParameterElement.asType());
+                    serializerCreator.checkCanSerialize(branch, te);
+                }
             }
             else
             {
                 serializerCreator.checkCanSerialize(branch, resultType);
             }
-            if (resultType.isArray() != null)
+            if (SerializerCreator.isAbstract(resultType))
             {
+                TypeElement array = resultType;
                 // Arrays need a special deserializer
-                deserializerCreator.create(branch, resultType.isArray());
+                deserializerCreator.create(logger, array);
             }
-            else if (resultType.isPrimitive() == null && !SerializerCreator.isBoxedPrimitive(resultType))
+            else if (SerializerCreator.isPrimitive(resultType) && !SerializerCreator.isBoxedPrimitive(resultType))
                 // Non primitives get deserialized by their normal serializer
-                serializerCreator.create((JClassType) resultType, branch);
+                serializerCreator.create(resultType, branch);
             // (Boxed)Primitives are left, they are handled specially
         }
     }
 
-    private boolean returnsCallbackHandle(final JMethod m)
+    private boolean returnsCallbackHandle(final ExecutableElement m)
     {
-        return m.getReturnType().getErasedType().getQualifiedSourceName().equals(CallbackHandle);
+        final Element element = processingEnvironment.getTypeUtils().asElement(m.getReturnType());
+        final String superName = element.getEnclosingElement().getSimpleName().toString();
+        return superName.equals(CallbackHandle);
     }
 
     private void invalid(final TreeLogger logger, final String what) throws UnableToCompleteException
     {
-        logger.log(TreeLogger.ERROR, what, null);
+        logger.error(what);
         throw new UnableToCompleteException();
     }
 
-    private PrintWriter getSourceWriter(final TreeLogger logger)
+    private PrintWriter getSourceWriter(final TreeLogger logger) throws UnableToCompleteException
     {
-        final JPackage servicePkg = svcInf.getPackage();
-        final String pkgName = servicePkg == null ? "" : servicePkg.getName();
-        final PrintWriter pw;
-        final ClassSourceFileComposerFactory cf;
+        final String pkgName = processingEnvironment.getElementUtils().getPackageOf(svcInf).toString();
+        PrintWriter pw = null;
 
-        pw = ctx.tryCreate(logger, pkgName, getProxySimpleName());
-        if (pw == null)
+        final String className = svcInf.getSimpleName().toString();
+        try
         {
-            return null;
+            pw = new PrintWriter(new FileOutputStream(new File(pkgName.replaceAll("\\.", "/") + "/" + className)));
         }
-
-        cf = new ClassSourceFileComposerFactory(pkgName, getProxySimpleName());
-        cf.addImport(AbstractJsonProxy);
-        cf.addImport(JsonSerializer);
-        cf.addImport(JavaScriptObject.class.getCanonicalName());
-        cf.addImport(ResultDeserializer);
-        cf.addImport(FutureResultImpl);
-        cf.addImport(GWT.class.getCanonicalName());
-        cf.setSuperclass(AbstractJsonProxy_simple);
-        cf.addImplementedInterface(svcInf.getErasedType().getQualifiedSourceName());
-        return cf.createSourceWriter(ctx, pw);
+        catch (FileNotFoundException e)
+        {
+            e.printStackTrace();
+            throw new UnableToCompleteException();
+        }
+        pw.println("package " + pkgName + ";");
+        pw.println("import " + AbstractJsonProxy);
+        pw.println("import " + JsonSerializer);
+        pw.println("import " + JavaScriptObject.class.getCanonicalName());
+        pw.println("import " + ResultDeserializer);
+        pw.println("import " + FutureResultImpl);
+        pw.println("import " + GWT.class.getCanonicalName());
+        pw.println();
+        pw.println("public class " + className + " extends " + AbstractJsonProxy_simple + " implements "
+                + ((TypeElement) svcInf.getEnclosingElement()).getQualifiedName().toString());
+        pw.println("{");
+        return pw;
     }
 
     private void generateProxyConstructor(@SuppressWarnings("unused") final TreeLogger logger, final PrintWriter w)
@@ -165,9 +200,9 @@ class ProxyCreator implements SerializerClasses
             //w.indent();
 
             String path = relPath.path();
-            if(path == null || path.isEmpty())
+            if (path == null || path.isEmpty())
             {
-                path = svcInf.getErasedType().getQualifiedSourceName();
+                path = ((TypeElement) svcInf.getEnclosingElement()).getQualifiedName().toString();
             }
             w.println("setPath(\"" + path + "\");");
             //w.outdent();
@@ -202,32 +237,33 @@ class ProxyCreator implements SerializerClasses
 
     private void generateProxyMethods(final TreeLogger logger, final PrintWriter srcWriter)
     {
-        final JMethod[] methodList = svcInf.getOverridableMethods();
-        for (final JMethod m : methodList)
+        final List<? extends Element> allMembers = processingEnvironment.getElementUtils().getAllMembers(svcInf);
+        final List<ExecutableElement> methods = ElementFilter.methodsIn(allMembers);
+        for (final ExecutableElement m : methods)
         {
             generateProxyMethod(logger, m, srcWriter);
         }
     }
 
-    private void generateProxyMethod(@SuppressWarnings("unused") final TreeLogger logger, final JMethod method, final PrintWriter w)
+    private void generateProxyMethod(@SuppressWarnings("unused") final TreeLogger logger, final ExecutableElement method, final PrintWriter w)
     {
-        final TypeElement[] params = method.getParameters();
-        final TypeElement callback = method.getReturnType();// params[params.length - 1];
+        final List<? extends VariableElement> params = method.getParameters();
+        final TypeElement callback = (TypeElement) processingEnvironment.getTypeUtils().asElement(method.getReturnType());// params[params.length - 1];
         TypeElement resultType = callback;
         //    final JClassType resultType =
         //        callback.isParameterized().getTypeArgs()[0];
-        final String[] serializerFields = new String[params.length];
+        final String[] serializerFields = new String[params.size()];
         String resultField = "";
 
         w.println();
-        for (int i = 0; i < params.length /*- 1*/; i++)
+        for (int i = 0; i < params.size() /*- 1*/; i++)
         {
-            final TypeElement pType = params[i].getType();
+            final TypeElement pType = (TypeElement) processingEnvironment.getTypeUtils().asElement(params.get(i).asType());
             if (SerializerCreator.needsTypeParameter(pType))
             {
                 serializerFields[i] = "serializer_" + instanceField++;
                 w.print("private static final ");
-                if (SerializerCreator.isArray(pType) != null)
+                if (SerializerCreator.isArray(pType))
                     w.print(serializerCreator.serializerFor(pType));
                 else
                     w.print(JsonSerializer);
@@ -239,8 +275,8 @@ class ProxyCreator implements SerializerClasses
             }
         }
         TypeParameterElement parameterizedResult = null;
-        TypeParameterElement[] parameterized = SerializerCreator.isParameterized(resultType);
-        if (parameterized != null)
+        final List<? extends TypeParameterElement> typeParameters = resultType.getTypeParameters();
+        if (typeParameters != null && !typeParameters.isEmpty())
         {
             resultField = "serializer_" + instanceField++;
             w.print("private static final ");
@@ -248,22 +284,23 @@ class ProxyCreator implements SerializerClasses
             w.print(" ");
             w.print(resultField);
             w.print(" = ");
-            parameterizedResult = parameterized[0];
-            serializerCreator.generateSerializerReference(parameterizedResult, w, false);
+            parameterizedResult = typeParameters.get(0);
+            TypeElement te = (TypeElement) processingEnvironment.getTypeUtils().asElement(parameterizedResult.asType());
+            serializerCreator.generateSerializerReference(te, w, false);
             w.println(";");
         }
 
         w.print("public ");
-        w.print(method.getReturnType().getQualifiedSourceName());
+
+        w.print(processingEnvironment.getTypeUtils().asElement(method.getReturnType()).getSimpleName().toString());
         w.print(" ");
-        w.print(method.getName());
+        w.print(method.getSimpleName().toString());
         w.print("(");
         boolean needsComma = false;
-        final NameFactory nameFactory = new NameFactory();
-        for (int i = 0; i < params.length; i++)
+        for (int i = 0; i < params.size(); i++)
         {
-            final JParameter param = params[i];
-            String pname = param.getName();
+            final VariableElement param = params.get(i);
+            String pname = param.getSimpleName().toString();
             if (needsComma)
             {
                 w.print(", ");
@@ -273,7 +310,7 @@ class ProxyCreator implements SerializerClasses
                 needsComma = true;
             }
 
-            final TypeElement paramType = param.getType().getErasedType();
+            final TypeElement paramType = (TypeElement) processingEnvironment.getTypeUtils().asElement(param.asType());
             w.print(paramType.getQualifiedName().toString());
             w.print(" ");
 
@@ -306,7 +343,7 @@ class ProxyCreator implements SerializerClasses
         }
 
         final String reqDataStr;
-        if (params.length == 0)
+        if (params.isEmpty())
         {
             reqDataStr = "\"[]\"";
         }
@@ -316,7 +353,7 @@ class ProxyCreator implements SerializerClasses
             w.println("final StringBuilder " + reqData + " = new StringBuilder();");
             needsComma = false;
             w.println(reqData + ".append('[');");
-            for (int i = 0; i < params.length; i++)
+            for (int i = 0; i < params.size(); i++)
             {
                 if (needsComma)
                 {
@@ -327,9 +364,10 @@ class ProxyCreator implements SerializerClasses
                     needsComma = true;
                 }
 
-                final TypeElement pType = params[i].getType();
-                final String pName = params[i].getName();
-                if (pType == JPrimitiveType.CHAR || SerializerCreator.isBoxedCharacter(pType))
+                final TypeElement pType = (TypeElement) processingEnvironment.getTypeUtils().asElement(params.get(i).asType());
+                final String pName = pType.getSimpleName().toString();
+                //                pType == JPrimitiveType.CHAR || 
+                if (SerializerCreator.isBoxedCharacter(pType))
                 {
                     w.println(reqData + ".append(\"\\\"\");");
                     w.println(reqData + ".append(" + JsonSerializer_simple + ".escapeChar(" + pName + "));");
@@ -371,10 +409,11 @@ class ProxyCreator implements SerializerClasses
         }
         w.println(resultClass + " result = new " + resultClass + "();");
         w.print("doInvoke(");
-        w.print("\"" + method.getName() + "\"");
+        w.print("\"" + method.getSimpleName().toString() + "\"");
         w.print(", " + reqDataStr);
         w.print(", ");
-        if (resultType.isParameterized() != null)
+        final List<? extends TypeParameterElement> resultTypeParameters = resultType.getTypeParameters();
+        if (resultTypeParameters != null && !resultTypeParameters.isEmpty())
         {
             w.print(resultField);
         }
@@ -394,16 +433,16 @@ class ProxyCreator implements SerializerClasses
 
     private String getProxyQualifiedName()
     {
-        final String[] name = synthesizeTopLevelClassName(svcInf, PROXY_SUFFIX);
+        final String[] name = synthesizeTopLevelClassName(svcInf, PROXY_SUFFIX, nameFactory, processingEnvironment);
         return name[0].length() == 0 ? name[1] : name[0] + "." + name[1];
     }
 
     private String getProxySimpleName()
     {
-        return synthesizeTopLevelClassName(svcInf, PROXY_SUFFIX)[1];
+        return synthesizeTopLevelClassName(svcInf, PROXY_SUFFIX, nameFactory, processingEnvironment)[1];
     }
 
-    static String[] synthesizeTopLevelClassName(TypeElement type, String suffix)
+    static String[] synthesizeTopLevelClassName(TypeElement type, String suffix, NameFactory nameFactory, ProcessingEnvironment processingEnvironment)
     {
         // Gets the basic name of the type. If it's a nested type, the type name
         // will contains dots.
@@ -411,7 +450,7 @@ class ProxyCreator implements SerializerClasses
         String className;
         String packageName;
 
-        TypeElement leafType = type.getLeafType();
+        TypeElement leafType = type;
         if (SerializerCreator.isPrimitive(leafType))
         {
             className = leafType.getSimpleName().toString();
@@ -419,26 +458,27 @@ class ProxyCreator implements SerializerClasses
         }
         else
         {
-            TypeElement classOrInterface = leafType.isClassOrInterface();
-            assert (classOrInterface != null);
-            className = classOrInterface.getName();
-            packageName = classOrInterface.getPackage().getName();
+            assert(SerializerCreator.isClass(leafType) || SerializerCreator.isInterface(leafType));
+            className = leafType.getSimpleName().toString();
+            packageName = leafType.getQualifiedName().subSequence(0, leafType.getQualifiedName().toString().lastIndexOf(".")).toString();
         }
 
-        JParameterizedType isGeneric = SerializerCreator.isParameterized(type);
-        if (isGeneric != null)
+        boolean isGeneric = SerializerCreator.isParameterized(type);
+        if (isGeneric)
         {
-            for (TypeElement param : isGeneric.getTypeArgs())
+            final List<? extends TypeParameterElement> typeParameters = type.getTypeParameters();
+            for (TypeParameterElement param : typeParameters)
             {
                 className += "_";
-                className += param.getQualifiedSourceName().replace('.', '_');
+                className += ((TypeElement) processingEnvironment.getTypeUtils().asElement(param.asType())).getQualifiedName().toString().replace('.', '_');
             }
         }
 
-        JArrayType isArray = type.isArray();
-        if (isArray != null)
+        boolean isArray = SerializerCreator.isArray(type);
+        if (isArray)
         {
-            className += "_Array_Rank_" + isArray.getRank();
+            className += "_Array_Rank_";
+
         }
 
         // Add the meaningful suffix.

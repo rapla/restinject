@@ -14,22 +14,16 @@
 
 package org.rapla.gwtjsonrpc.annotation;
 
-import com.google.gwt.core.ext.Generator;
-import com.google.gwt.core.ext.GeneratorContext;
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.TypeOracle;
-import org.rapla.gwtjsonrpc.RemoteJsonMethod;
-import org.rapla.gwtjsonrpc.rebind.ProxyCreator;
+import java.util.Collections;
+import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import java.util.Collections;
-import java.util.Set;
+
+import org.rapla.gwtjsonrpc.RemoteJsonMethod;
 
 /**
  * Generates proxy implementations of RemoteJsonService.
@@ -58,10 +52,10 @@ public class RemoteJsonServiceProxyGenerator extends AbstractProcessor
         org.rapla.gwtjsonrpc.annotation.TreeLogger proxyLogger = new org.rapla.gwtjsonrpc.annotation.TreeLogger();
         for ( Element element :elementsAnnotatedWith)
         {
-            ProxyCreator proxyCreator = new ProxyCreator((TypeElement)element);
+            ProxyCreator proxyCreator = new ProxyCreator((TypeElement)element, processingEnv);
             try
             {
-                return proxyCreator.create(proxyLogger);
+                return proxyCreator.create(proxyLogger) != null;
             }
             catch (org.rapla.gwtjsonrpc.annotation.UnableToCompleteException e)
             {
