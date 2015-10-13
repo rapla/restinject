@@ -130,7 +130,7 @@ class ResultDeserializerCreator {
     return pkgName.length() == 0 ? className : pkgName + "." + className;
   }
 
-  private String getDeserializerPackageName(TypeElement targetType) {
+  public String getDeserializerPackageName(TypeElement targetType) {
     // Place array deserializer in same package as the component deserializer
     final String compSerializer =
         serializerCreator.serializerFor(targetType.getComponentType());

@@ -1,13 +1,6 @@
 package org.rapla.inject.generator;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.HashSet;
-import java.util.Set;
+import org.rapla.inject.*;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
@@ -23,12 +16,9 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
 import javax.tools.StandardLocation;
 import javax.ws.rs.Path;
-
-import org.rapla.inject.DefaultImplementation;
-import org.rapla.inject.DefaultImplementationRepeatable;
-import org.rapla.inject.Extension;
-import org.rapla.inject.ExtensionPoint;
-import org.rapla.inject.ExtensionRepeatable;
+import java.io.*;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created by Christopher on 07.09.2015.
@@ -61,12 +51,15 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
     {
+        if (roundEnv.processingOver())
+        {
+            return false;
+        }
         try
         {
-            File f = getFile();
             if (!annotations.isEmpty())
             {
-                processGwt(f, roundEnv);
+                processGwt(roundEnv);
             }
             //            if(roundEnv.processingOver())
             //            {
@@ -80,8 +73,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return true;
     }
 
-    private boolean processGwt(File f, RoundEnvironment roundEnv) throws IOException
+    private boolean processGwt( RoundEnvironment roundEnv) throws IOException
     {
+
+        File f = getFile(processingEnv.getFiler());
 
         //        List<InjectionContext> gwtContexts = Arrays.asList(new InjectionContext[] { InjectionContext.gwt, InjectionContext.client });
         for (Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementation.class))
@@ -141,6 +136,9 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 addServiceFile(Path.class.getCanonicalName(), typeElement, f);
             }
         }
+        //String className = "RaplaGinModulesGenerated";
+        //String packageName = "org.rapla.inject.client";
+        //new RaplaGwtModuleProcessor(processingEnv).process(  packageName, className);
         return true;
     }
 
@@ -157,10 +155,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     }
     private void addServiceFile(String serviceFileName, TypeElement implementationElement, File allserviceList) throws IOException
     {
-        final File folder = allserviceList.getParentFile();
+        final File serviceFile = getFile(serviceFileName, allserviceList);
         String implementationName = implementationElement != null ? implementationElement.getQualifiedName().toString() : null;
-        final File serviceFile = new File(folder, "services/" + serviceFileName);
-        serviceFile.getParentFile().mkdirs();
         if (implementationElement == null)
         {
             appendToFile(serviceFile, null);
@@ -169,6 +165,14 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         {
             appendToFile(serviceFile, implementationName);
         }
+    }
+
+    static public File getFile(String serviceFileName, File allserviceList)
+    {
+        final File folder = allserviceList.getParentFile();
+        final File serviceFile = new File(folder, "services/" + serviceFileName);
+        serviceFile.getParentFile().mkdirs();
+        return serviceFile;
     }
 
     private void appendToFile(File file, String className) throws IOException
@@ -201,7 +205,27 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         w.close();
     }
 
-    private File getFile() throws IOException
+    public static File getFile(Filer filer) throws IOException
+    {
+        CharSequence pkg = "";
+        JavaFileManager.Location location = StandardLocation.SOURCE_OUTPUT;
+
+        File f;
+        try
+        {
+            FileObject resource = filer.getResource(location, pkg, GWT_MODULE_LIST);
+            f = new File(resource.toUri());
+        }
+        catch (IOException ex)
+        {
+            FileObject resource = filer.createResource(location, pkg, GWT_MODULE_LIST);
+            f = new File(resource.toUri());
+        }
+        f.getParentFile().mkdirs();
+        return f;
+    }
+
+    private File getModuleFile() throws IOException
     {
         final Filer filer = processingEnv.getFiler();
         CharSequence pkg = "";

@@ -364,6 +364,8 @@ class SerializerCreator implements SerializerClasses
 
     void generateSerializerReference(final JType type, final SourceWriter w, boolean useProviders)
     {
+        Collections.sort(Collections.emptyList(), (o1, o2) -> o1.hashCode() - o2.hashCode());
+        Collections.emptyList().stream().filter((o) -> o.hashCode() > 1);
         String serializerFor = serializerFor(type);
         if (type.isArray() != null)
         {
