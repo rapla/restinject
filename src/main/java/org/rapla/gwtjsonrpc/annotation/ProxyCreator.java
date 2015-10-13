@@ -110,7 +110,7 @@ class ProxyCreator implements SerializerClasses
                 }
             }
 
-            final TypeElement resultType;
+            final TypeElement resultType = (TypeElement) processingEnvironment.getTypeUtils().asElement(m.getReturnType());
 
             {
                 final TreeLogger branch = logger;//.branch(TreeLogger.DEBUG, m.getName() + ", result " + p.getName());
@@ -405,7 +405,8 @@ class ProxyCreator implements SerializerClasses
         String resultClass = futureResultClassName;
         if (parameterizedResult != null)
         {
-            resultClass += "<" + parameterizedResult.getQualifiedName().toString() + ">";
+            TypeElement te = ((TypeElement)processingEnvironment.getTypeUtils().asElement(parameterizedResult.asType()));
+            resultClass += "<" + te.getQualifiedName().toString() + ">";
         }
         w.println(resultClass + " result = new " + resultClass + "();");
         w.print("doInvoke(");
