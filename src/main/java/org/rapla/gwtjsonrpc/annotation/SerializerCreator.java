@@ -762,6 +762,12 @@ class SerializerCreator implements SerializerClasses
         return b;
     }
 
+    public static boolean isClass(final Element t)
+    {
+        boolean b = t.getKind() == ElementKind.CLASS;
+        return b;
+    }
+
     public static boolean isEnum(final Element t)
     {
         return t.getKind() == ElementKind.ENUM;
