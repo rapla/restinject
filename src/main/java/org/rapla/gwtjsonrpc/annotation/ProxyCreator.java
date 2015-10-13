@@ -60,7 +60,7 @@ class ProxyCreator implements SerializerClasses
     String create(final TreeLogger logger) throws UnableToCompleteException
     {
         serializerCreator = new SerializerCreator();
-        deserializerCreator = new org.rapla.gwtjsonrpc.annotation.ResultDeserializerCreator(serializerCreator);
+        deserializerCreator = new org.rapla.gwtjsonrpc.annotation.ResultDeserializerCreator(serializerCreator, processingEnvironment);
         futureResultClassName = FutureResultImpl;
         final List<? extends Element> allMembers = processingEnvironment.getElementUtils().getAllMembers(svcInf);
         final List<VariableElement> methods = ElementFilter.fieldsIn(allMembers);
