@@ -15,18 +15,26 @@
 package org.rapla.gwtjsonrpc.annotation;
 
 import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.ext.typeinfo.JType;
 
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Type;
 import java.util.*;
 
 class SerializerCreator implements SerializerClasses
 {
+
+    private final ProcessingEnvironment processingEnvironment;
+    private final NameFactory nameFactory;
     private static final String SER_SUFFIX = "_JsonSerializer";
     private static final Comparator<Element> FIELD_COMP = new Comparator<Element>()
     {
@@ -58,55 +66,64 @@ class SerializerCreator implements SerializerClasses
     private final HashMap<String, String> generatedSerializers;
     private TypeElement targetType;
 
-    SerializerCreator()
+
+    SerializerCreator(ProcessingEnvironment processingEnvironment, NameFactory nameFactory)
     {
+        this.processingEnvironment = processingEnvironment;
+        this.nameFactory = nameFactory;
         generatedSerializers = new HashMap<String, String>();
     }
 
-    String create(final TypeElement targetType, final TreeLogger logger) throws UnableToCompleteException, IOException
+    String create(final TypeElement targetType, final TreeLogger logger) throws UnableToCompleteException
     {
-        if (isParameterized(targetType) || isArray(targetType))
+        try
         {
-            ensureSerializersForTypeParameters(logger, targetType);
-        }
-        String sClassName = serializerFor(targetType);
-        if (sClassName != null)
-        {
-            return sClassName;
-        }
+            if (isParameterized(targetType) || isArray(targetType))
+            {
+                ensureSerializersForTypeParameters(logger, targetType);
+            }
+            String sClassName = serializerFor(targetType);
+            if (sClassName != null)
+            {
+                return sClassName;
+            }
 
-        checkCanSerialize(logger, targetType, true);
-        recursivelyCreateSerializers(logger, targetType);
+            checkCanSerialize(logger, targetType, true);
+            recursivelyCreateSerializers(logger, targetType);
 
-        this.targetType = targetType;
-        final PrintWriter srcWriter = getSourceWriter(logger);
-        final String sn = getSerializerQualifiedName(targetType);
-        if (!generatedSerializers.containsKey(targetType.getQualifiedName().toString()))
-        {
-            generatedSerializers.put(targetType.getQualifiedName().toString(), sn);
-        }
-        if (srcWriter == null)
-        {
+            this.targetType = targetType;
+            final PrintWriter srcWriter = getSourceWriter(logger);
+            final String sn = getSerializerQualifiedName(targetType);
+            if (!generatedSerializers.containsKey(targetType.getQualifiedName().toString()))
+            {
+                generatedSerializers.put(targetType.getQualifiedName().toString(), sn);
+            }
+            if (srcWriter == null)
+            {
+                return sn;
+            }
+
+            if (!isAbstract(targetType))
+            {
+                generateSingleton(srcWriter);
+            }
+            if (isEnum(targetType))
+            {
+                generateEnumFromJson(srcWriter);
+            }
+            else
+            {
+                generateInstanceMembers(srcWriter);
+                generatePrintJson(srcWriter);
+                generateFromJson(srcWriter);
+                generateGetSets(srcWriter);
+            }
             return sn;
         }
-
-
-        if (!isAbstract(targetType))
+        catch (IOException ex)
         {
-            generateSingleton(srcWriter);
+            throw new UnableToCompleteException(ex);
         }
-        if (isEnum(targetType))
-        {
-            generateEnumFromJson(srcWriter);
-        }
-        else
-        {
-            generateInstanceMembers(srcWriter);
-            generatePrintJson(srcWriter);
-            generateFromJson(srcWriter);
-            generateGetSets(srcWriter);
-        }
-        return sn;
     }
 
     private void recursivelyCreateSerializers(final TreeLogger logger, final TypeElement targetType) throws UnableToCompleteException, IOException
@@ -122,11 +139,12 @@ class SerializerCreator implements SerializerClasses
             create(getSuperclass(targetClass), logger);
         }
 
-        for (final TypeElement f : sortFields(targetClass))
+        for (final VariableElement f : sortFields(targetClass))
         {
-            ensureSerializer(logger, f.getType());
+            ensureSerializer(logger, getFieldType(f));
         }
     }
+
 
     Set<TypeElement> createdType = new HashSet<TypeElement>();
 
@@ -161,7 +179,7 @@ class SerializerCreator implements SerializerClasses
 
         if (isArray(type) )
         {
-            ensureSerializer(logger, type.isArray().getComponentType());
+            ensureSerializer(logger, getArrayType(type));
             return true;
         }
 
@@ -178,7 +196,11 @@ class SerializerCreator implements SerializerClasses
 
     void checkCanSerialize(final TreeLogger logger, final Element type) throws UnableToCompleteException
     {
-        checkCanSerialize(logger, type, false);
+        if (!(type instanceof TypeElement))
+        {
+            throw new UnableToCompleteException("typ not TypeElement" + type);
+        }
+        checkCanSerialize(logger, (TypeElement)type, false);
     }
 
     Set<TypeElement> checkedType = new HashSet<TypeElement>();
@@ -188,7 +210,7 @@ class SerializerCreator implements SerializerClasses
         if (isPrimitiveLong(type))
         {
             logger.error("Type 'long' not supported in JSON encoding");
-            throw new UnableToCompleteException();
+            throw new UnableToCompleteException("Type 'long' not supported in JSON encoding");
         }
 
         //    if (type.isPrimitive() == JPrimitiveType.VOID) {
@@ -210,21 +232,23 @@ class SerializerCreator implements SerializerClasses
 
         if (isArray(type) )
         {
-            final TypeElement leafType = type.isArray().getLeafType();
+            // FIXME need to check the leaf
+            final TypeElement leafType = getArrayType(type);
             if (isPrimitive(leafType) || isBoxedPrimitive(leafType))
             {
-                if (type.isArray().getRank() != 1)
-                {
-                    logger.error("gwtjsonrpc does not support " + "(de)serializing of multi-dimensional arrays of primitves");
-                    // To work around this, we would need to generate serializers for
-                    // them, this can be considered a todo
-                    throw new UnableToCompleteException();
-                }
-                else
+                // FIXME need to check the ranks
+//                if (type.isArray().getRank() != 1)
+//                {
+//                    logger.error("gwtjsonrpc does not support " + "(de)serializing of multi-dimensional arrays of primitves");
+//                    // To work around this, we would need to generate serializers for
+//                    // them, this can be considered a todo
+//                    throw new UnableToCompleteException();
+//                }
+//                else
                     // Rank 1 arrays work fine.
                     return;
             }
-            checkCanSerialize(logger, type.isArray().getComponentType());
+            checkCanSerialize(logger, getArrayType(type));
             return;
         }
 
@@ -248,19 +272,19 @@ class SerializerCreator implements SerializerClasses
         else if (parameterizedSerializers.containsKey(qsn))
         {
             logger.error("Type " + qsn + " requires type paramter(s)");
-            throw new UnableToCompleteException();
+            throw new UnableToCompleteException("Type " + qsn + " requires type paramter(s)");
         }
 
         if (qsn.startsWith("java.") || qsn.startsWith("javax."))
         {
             logger.error("Standard type " + qsn + " not supported in JSON encoding");
-            throw new UnableToCompleteException();
+            throw new UnableToCompleteException("Standard type " + qsn + " not supported in JSON encoding");
         }
 
         if (isInterface(type))
         {
             logger.error("Interface " + qsn + " not supported in JSON encoding");
-            throw new UnableToCompleteException();
+            throw new UnableToCompleteException("Interface " + qsn + " not supported in JSON encoding");
         }
 
         final TypeElement ct = (TypeElement) type;
@@ -272,13 +296,12 @@ class SerializerCreator implements SerializerClasses
         if (isAbstract(ct) && !allowAbstractType)
         {
             logger.error("Abstract type " + qsn + " not supported here");
-            throw new UnableToCompleteException();
+            throw new UnableToCompleteException("Abstract type " + qsn + " not supported here");
         }
         for (final VariableElement f : sortFields(ct))
         {
-            TypeMirror typeMirror = f.asType();
             //    final TreeLogger branch = logger.branch(TreeLogger.DEBUG, "In type " + qsn + ", field " + f.getName());
-            checkCanSerialize(logger, f.getType());
+            checkCanSerialize(logger, getFieldType( f));
         }
     }
 
@@ -286,7 +309,7 @@ class SerializerCreator implements SerializerClasses
     {
         if (isArray(t) )
         {
-            final TypeElement componentType = t.isArray().getComponentType();
+            final TypeElement componentType = getArrayType(t);
             if (isPrimitive(componentType) || isBoxedPrimitive(componentType))
                 return PrimitiveArraySerializer;
             else
@@ -312,15 +335,34 @@ class SerializerCreator implements SerializerClasses
         return generatedSerializers.get(qsn);
     }
 
+    public static TypeElement getErasedType(TypeElement typeElement, ProcessingEnvironment env) {
+        return (TypeElement) env.getTypeUtils().asElement(env.getTypeUtils().erasure(typeElement.asType()));
+    }
+
     private boolean isStringMap(final TypeElement t)
     {
         if (!isParameterized(t))
         {
             return false;
         }
-        return  t.getErasedType().isClassOrInterface() != null && t.isParameterized().getTypeArgs().length > 0 && t
-                .isParameterized().getTypeArgs()[0].getQualifiedSourceName().equals(String.class.getName()) && t.getErasedType().isClassOrInterface()
-                .isAssignableTo(context.getTypeOracle().findType(Map.class.getName()));
+        TypeElement erasedTyped = getErasedType(t,processingEnvironment);
+        if (!isClass(erasedTyped) && !isInterface(erasedTyped))
+        {
+            return false;
+        }
+        List<? extends TypeParameterElement> typeParameters = t.getTypeParameters();
+        if (typeParameters.size() > 0 &&
+                ((TypeElement)typeParameters.get(0)).getQualifiedName().toString().equals(String.class.getName()))
+        {
+            TypeMirror t1 = erasedTyped.asType();
+            TypeMirror t2 =processingEnvironment.getElementUtils().getTypeElement(Map.class.getName()).asType();
+            if (processingEnvironment.getTypeUtils().isAssignable(t1, t1))
+            {
+                return true;
+            }
+
+        }
+        return false;
     }
 
     private void generateSingleton(final PrintWriter w)
@@ -345,16 +387,16 @@ class SerializerCreator implements SerializerClasses
 
     private void generateInstanceMembers(final PrintWriter w)
     {
-        for (final TypeElement f : sortFields(targetType))
+        for (final VariableElement f : sortFields(targetType))
         {
-            TypeMirror ft = f.asType();
+            TypeElement ft = getFieldType(f);
             if (needsTypeParameter(ft))
             {
                 final String serType = serializerFor(ft);
                 w.print("private final ");
                 w.print(serType);
                 w.print(" ");
-                w.print("ser_" + f.getName());
+                w.print("ser_" + f.getSimpleName());
                 w.print(" = ");
                 boolean useProviders = true;
                 generateSerializerReference(ft, w, useProviders);
@@ -371,7 +413,7 @@ class SerializerCreator implements SerializerClasses
         String serializerFor = serializerFor(type);
         if (isArray(type))
         {
-            final TypeElement componentType = type.isArray().getComponentType();
+            final TypeElement componentType = getArrayType(type);
             if (isPrimitive(componentType) || isBoxedPrimitive(componentType))
             {
                 w.print(PrimitiveArraySerializer);
@@ -405,7 +447,8 @@ class SerializerCreator implements SerializerClasses
                 {
                     w.print(", ");
                 }
-                generateSerializerReference(typeArgs.get(n), w, useProviders);
+                TypeParameterElement typeParameterElement = typeArgs.get(n);
+                generateSerializerReference((TypeElement)typeParameterElement, w, useProviders);
             }
             w.print(")");
 
@@ -422,8 +465,8 @@ class SerializerCreator implements SerializerClasses
     {
         for (final VariableElement f : sortFields(targetType))
         {
-            String fname = f.getName();
-            TypeElement type= f.getType;
+            String fname = getFieldName(f);
+            TypeElement type= getFieldType(f);
             if (isPrivate(f))
             {
                 w.print("private static final native ");
@@ -529,7 +572,7 @@ class SerializerCreator implements SerializerClasses
 
     private void generatePrintJson(final PrintWriter w)
     {
-        final List<Element> fieldList = sortFields(targetType);
+        final List<VariableElement> fieldList = sortFields(targetType);
         w.print("protected int printJsonImpl(int fieldCount, StringBuilder sb, ");
         w.println("Object instance) {");
 
@@ -548,11 +591,11 @@ class SerializerCreator implements SerializerClasses
         }
 
         final String docomma = "if (fieldCount++ > 0) sb.append(\",\");";
-        for (final TypeElement f : fieldList)
+        for (final VariableElement f : fieldList)
         {
             final String doget;
-            TypeElement ft = f.getType();
-            String fname = f.getName();
+            TypeElement ft = getFieldType(f);
+            String fname = getFieldName(f);
             if (isPrivate(f))
             {
                 doget = "objectGet_" + fname + "(src)";
@@ -620,9 +663,6 @@ class SerializerCreator implements SerializerClasses
         w.println();
     }
 
-    static private TypeElement getSuperclass(TypeElement targetType)
-    {
-    }
 
     public static PackageElement getPackage(Element type) {
         while (type.getKind() != ElementKind.PACKAGE) {
@@ -666,9 +706,9 @@ class SerializerCreator implements SerializerClasses
             w.println(")dst);");
         }
 
-        for (final TypeElement f : sortFields(targetType))
+        for (final VariableElement f : sortFields(targetType))
         {
-            String fname = f.getName();
+            String fname = getFieldName(f);
             final String doget = "jsonGet_" + fname + "(jso)";
             final String doset0, doset1;
 
@@ -683,10 +723,10 @@ class SerializerCreator implements SerializerClasses
                 doset1 = "";
             }
 
-            TypeElement type = f.getType();
+            TypeElement type = getFieldType(f);
             if (isArray(type) )
             {
-                final TypeElement ct = isArray(type).getComponentType();
+                final TypeElement ct = getArrayType(type);
                 w.println("if (" + doget + " != null) {");
 
                 w.print("final ");
@@ -785,8 +825,37 @@ class SerializerCreator implements SerializerClasses
     }
 
 
-    static boolean isJsonPrimitive(final Element t)
+    static boolean isJsonPrimitive(final TypeElement t)
     {
+        return isPrimitive(t) || isJsonString(t);
+    }
+
+
+    private TypeElement getSuperclass(TypeElement targetType)
+    {
+        TypeMirror superclass = targetType.getSuperclass();
+        final TypeElement ele = (TypeElement) processingEnvironment.getTypeUtils().asElement(superclass);
+        return ele;
+    }
+
+
+    private TypeElement getArrayType(TypeElement targetType)
+    {
+        final ArrayType arrayType = processingEnvironment.getTypeUtils().getArrayType(targetType.asType());
+        final TypeElement ele = (TypeElement) processingEnvironment.getTypeUtils().asElement(arrayType.getComponentType());
+        return ele;
+    }
+
+    private String getFieldName(VariableElement f)
+    {
+        return f.getSimpleName().toString();
+    }
+
+    private TypeElement getFieldType(VariableElement f)
+    {
+        TypeMirror typeMirror = f.asType();
+        Element element = processingEnvironment.getTypeUtils().asElement(typeMirror);
+        return (TypeElement) element;
     }
 
 
@@ -825,10 +894,16 @@ class SerializerCreator implements SerializerClasses
         }
     }
 
+
     static boolean isPrimitive(final Element t)
     {
         TypeMirror typeMirror = t.asType();
-        if ( typeMirror instanceof  PrimitiveType)
+        return isPrimitive(typeMirror);
+    }
+
+    public static boolean isPrimitive(TypeMirror typeMirror)
+    {
+        if ( typeMirror instanceof PrimitiveType)
         {
             return true;
         }
@@ -880,8 +955,8 @@ class SerializerCreator implements SerializerClasses
     private PrintWriter getSourceWriter(final TreeLogger logger) throws IOException
     {
         String serializerSimpleName = getSerializerSimpleName();
-        final String pkgName = getSerializerPackageName();
-        JavaFileObject sourceFile = logger.getFiler().createSourceFile(pkgName + "." + serializerSimpleName);
+        final String pkgName = getPackage( targetType).getQualifiedName().toString();
+        JavaFileObject sourceFile = processingEnvironment.getFiler().createSourceFile(pkgName + "." + serializerSimpleName);
         final PrintWriter pw = new PrintWriter(sourceFile.openWriter());
 
         pw.println( "package " + pkgName + ";");
@@ -913,7 +988,7 @@ class SerializerCreator implements SerializerClasses
         pw.println("import "+ canonicalName + ";");
     }
 
-    private static boolean needsSuperSerializer(TypeElement type)
+    private  boolean needsSuperSerializer(TypeElement type)
     {
         type = getSuperclass(type);
         while (!Object.class.getName().equals(type.getQualifiedName().toString()))
@@ -930,13 +1005,14 @@ class SerializerCreator implements SerializerClasses
     private String getSerializerQualifiedName(final TypeElement targetType)
     {
         final String[] name;
-        name = org.rapla.gwtjsonrpc.annotation.ProxyCreator.synthesizeTopLevelClassName(targetType, SER_SUFFIX);
+        name = org.rapla.gwtjsonrpc.annotation.ProxyCreator.synthesizeTopLevelClassName(targetType, SER_SUFFIX,nameFactory,processingEnvironment);
         return name[0].length() == 0 ? name[1] : name[0] + "." + name[1];
     }
 
     private String getSerializerSimpleName()
     {
-        return org.rapla.gwtjsonrpc.annotation.ProxyCreator.synthesizeTopLevelClassName(targetType, SER_SUFFIX)[1];
+
+        return org.rapla.gwtjsonrpc.annotation.ProxyCreator.synthesizeTopLevelClassName(targetType, SER_SUFFIX,nameFactory,processingEnvironment )[1];
     }
 
     static boolean needsTypeParameter(final TypeElement ft)

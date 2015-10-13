@@ -70,7 +70,7 @@ public class RaplaGwtModuleProcessor
                 {
                     interaceClazz = Class.forName(interfaceName);
 
-                    addImplementations(interaceClazz, src, logger);
+//                    addImplementations(interaceClazz, src, logger);
                 }
                 catch (ClassNotFoundException e1)
                 {
@@ -160,6 +160,7 @@ public class RaplaGwtModuleProcessor
         return (TypeElement) TypeUtils.asElement(typeMirror);
     }
 
+    /*
     private <T> void addImplementations(TypeElement interfaceClass, PrintWriter src,MyLogger logger ) throws IOException
     {
 
@@ -279,6 +280,7 @@ public class RaplaGwtModuleProcessor
             }
         }
     }
+    */
 
     public PrintWriter getSourceWriter(String packageName, String simpleName) throws IOException
     {

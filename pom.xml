@@ -68,6 +68,26 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<groupId>org.bsc.maven</groupId>
+				<artifactId>maven-processor-plugin</artifactId>
+				<version>2.2.4</version>
+				<executions>
+					<execution>
+						<id>process1</id>
+						<goals>
+							<goal>process-test</goal>
+						</goals>
+						<phase>generate-test-sources</phase>
+						<configuration>
+							<processors>
+								<processor>org.rapla.inject.generator.AnnotationInjectionProcessor</processor>
+								<processor>org.rapla.gwtjsonrpc.annotation.RemoteJsonServiceProxyGenerator</processor>
+							</processors>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
 				<version>1.6.3</version>

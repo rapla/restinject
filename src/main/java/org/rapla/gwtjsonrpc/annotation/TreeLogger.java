@@ -11,8 +11,4 @@ public class TreeLogger
     {
 
     }
-    Filer getFiler()
-    {
-
-    }
 }

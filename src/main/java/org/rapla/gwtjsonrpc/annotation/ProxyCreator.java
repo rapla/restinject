@@ -14,21 +14,14 @@
 
 package org.rapla.gwtjsonrpc.annotation;
 
-import org.eclipse.jdt.internal.compiler.ast.ParameterizedQualifiedTypeReference;
 import org.rapla.gwtjsonrpc.RemoteJsonMethod;
-import org.rapla.gwtjsonrpc.annotation.SerializerClasses;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Name;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.TypeParameterElement;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.*;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 
@@ -59,11 +52,11 @@ class ProxyCreator implements SerializerClasses
 
     String create(final TreeLogger logger) throws UnableToCompleteException
     {
-        serializerCreator = new SerializerCreator();
+        serializerCreator = new SerializerCreator(processingEnvironment, nameFactory);
         deserializerCreator = new org.rapla.gwtjsonrpc.annotation.ResultDeserializerCreator(serializerCreator, processingEnvironment);
         futureResultClassName = FutureResultImpl;
         final List<? extends Element> allMembers = processingEnvironment.getElementUtils().getAllMembers(svcInf);
-        final List<VariableElement> methods = ElementFilter.fieldsIn(allMembers);
+        final List<ExecutableElement> methods = ElementFilter.methodsIn(allMembers);
         checkMethods(logger, processingEnvironment);
 
         final PrintWriter srcWriter = getSourceWriter(logger);
@@ -88,6 +81,11 @@ class ProxyCreator implements SerializerClasses
         final List<ExecutableElement> methods = ElementFilter.methodsIn(allMembers);
         for (final ExecutableElement m : methods)
         {
+            Set<Modifier> modifiers = m.getModifiers();
+            if (modifiers.contains(Modifier.FINAL) || modifiers.contains(Modifier.PRIVATE) )
+            {
+                continue;
+            }
             final String methodName = m.getSimpleName().toString();
             if (!declaredNames.add(methodName))
             {
@@ -110,7 +108,9 @@ class ProxyCreator implements SerializerClasses
                 }
             }
 
-            final TypeElement resultType = (TypeElement) processingEnvironment.getTypeUtils().asElement(m.getReturnType());
+            TypeMirror returnType = m.getReturnType();
+
+            final TypeElement resultType = (TypeElement) processingEnvironment.getTypeUtils().asElement(returnType);
 
             {
                 final TreeLogger branch = logger;//.branch(TreeLogger.DEBUG, m.getName() + ", result " + p.getName());
@@ -158,7 +158,7 @@ class ProxyCreator implements SerializerClasses
     private void invalid(final TreeLogger logger, final String what) throws UnableToCompleteException
     {
         logger.error(what);
-        throw new UnableToCompleteException();
+        throw new UnableToCompleteException(what);
     }
 
     private PrintWriter getSourceWriter(final TreeLogger logger) throws UnableToCompleteException
@@ -173,8 +173,7 @@ class ProxyCreator implements SerializerClasses
         }
         catch (FileNotFoundException e)
         {
-            e.printStackTrace();
-            throw new UnableToCompleteException();
+            throw new UnableToCompleteException(e.getMessage());
         }
         pw.println("package " + pkgName + ";");
         pw.println("import " + AbstractJsonProxy);
@@ -184,8 +183,8 @@ class ProxyCreator implements SerializerClasses
         pw.println("import " + FutureResultImpl);
         pw.println("import " + GWT.class.getCanonicalName());
         pw.println();
-        pw.println("public class " + className + " extends " + AbstractJsonProxy_simple + " implements "
-                + ((TypeElement) svcInf.getEnclosingElement()).getQualifiedName().toString());
+        pw.println("public class " + className + " extends " + AbstractJsonProxy_simple + " implements " + ((TypeElement) svcInf.getEnclosingElement())
+                .getQualifiedName().toString());
         pw.println("{");
         return pw;
     }
