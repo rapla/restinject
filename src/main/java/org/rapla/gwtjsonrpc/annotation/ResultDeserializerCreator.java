@@ -46,7 +46,8 @@ class ResultDeserializerCreator
 {
     private static final String DSER_SUFFIX = "_ResultDeserializer";
 
-    private HashMap<String, String> generatedDeserializers;
+    private static final HashMap<String, String> generatedDeserializers = new HashMap<String, String>();
+
     private SerializerCreator serializerCreator;
     private final NameFactory nameFactory = new NameFactory();
     private final ProcessingEnvironment processingEnvironment;
@@ -57,7 +58,6 @@ class ResultDeserializerCreator
     ResultDeserializerCreator(SerializerCreator sc, ProcessingEnvironment processingEnvironment)
     {
         this.processingEnvironment = processingEnvironment;
-        generatedDeserializers = new HashMap<String, String>();
         serializerCreator = sc;
     }
 

@@ -19,6 +19,7 @@ public interface SerializerClasses
     String JsonSerializer_simple = org.rapla.gwtjsonrpc.client.impl.JsonSerializer.class.getSimpleName();
 
     String JavaLangString_JsonSerializer= org.rapla.gwtjsonrpc.client.impl.ser.JavaLangString_JsonSerializer.class.getCanonicalName();
+    String JavaLangInteger_JsonSerializer= org.rapla.gwtjsonrpc.client.impl.ser.JavaLangInteger_JsonSerializer.class.getCanonicalName();
     String PrimitiveArraySerializer = org.rapla.gwtjsonrpc.client.impl.ser.PrimitiveArraySerializer.class.getCanonicalName();
     String StringMapSerializer = org.rapla.gwtjsonrpc.client.impl.ser.StringMapSerializer.class.getCanonicalName();
     String EnumSerializer = org.rapla.gwtjsonrpc.client.impl.ser.EnumSerializer.class.getCanonicalName();

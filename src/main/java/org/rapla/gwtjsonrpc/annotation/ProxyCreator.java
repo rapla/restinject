@@ -45,13 +45,13 @@ class ProxyCreator implements SerializerClasses
     {
         svcInf = remoteService;
         this.processingEnvironment = processingEnvironment;
+        serializerCreator = new SerializerCreator(processingEnvironment, nameFactory);
+        deserializerCreator = new org.rapla.gwtjsonrpc.annotation.ResultDeserializerCreator(serializerCreator, processingEnvironment);
+        futureResultClassName = FutureResultImpl;
     }
 
     String create(final TreeLogger logger) throws UnableToCompleteException
     {
-        serializerCreator = new SerializerCreator(processingEnvironment, nameFactory);
-        deserializerCreator = new org.rapla.gwtjsonrpc.annotation.ResultDeserializerCreator(serializerCreator, processingEnvironment);
-        futureResultClassName = FutureResultImpl;
         final List<ExecutableElement> methods = getMethods(processingEnvironment);
         checkMethods(logger, processingEnvironment);
 
@@ -526,6 +526,11 @@ class ProxyCreator implements SerializerClasses
     public static int getRank(ArrayType typeMirror)
     {
         final TypeMirror componentType = typeMirror.getComponentType();
+        if(typeMirror
+                 == componentType)
+        {
+            return 1;
+        }
         if(componentType instanceof  ArrayType)
         {
             return getRank( (ArrayType) componentType) + 1;
