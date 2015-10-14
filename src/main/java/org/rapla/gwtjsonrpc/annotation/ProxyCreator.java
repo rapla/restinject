@@ -92,7 +92,8 @@ class ProxyCreator implements SerializerClasses
             for (VariableElement p : params)
             {
                 final TreeLogger branch = logger;//logger.branch(TreeLogger.DEBUG, m.getName() + ", parameter " + p.getName());
-                final TypeElement typeP = (TypeElement) processingEnvironment.getTypeUtils().asElement(p.asType());
+                //final TypeElement typeP = (TypeElement) processingEnvironment.getTypeUtils().asElement(p.asType());
+                TypeMirror typeP = p.asType();
                 serializerCreator.checkCanSerialize(branch, typeP);
                 if (SerializerCreator.isPrimitive(typeP) && !SerializerCreator.isBoxedPrimitive(typeP))
                 {
@@ -118,20 +119,14 @@ class ProxyCreator implements SerializerClasses
             }
 */
             final TreeLogger branch = logger;//.branch(TreeLogger.DEBUG, m.getName() + ", result " + resultType.getQualifiedSourceName());
-            final Element resultType =  processingEnvironment.getTypeUtils().asElement(returnType);
-            if (returnType.toString().startsWith(FutureResult) && resultType instanceof  Parameterizable)
+            if (returnType.toString().startsWith(FutureResult) && SerializerCreator.isParameterized( returnType))
             {
-                final List<? extends TypeParameterElement> typeParameters = ((Parameterizable)resultType).getTypeParameters();
-                if (typeParameters != null && !typeParameters.isEmpty())
-                {
-                    final TypeMirror typeMirror = ((DeclaredType) returnType).getTypeArguments().get(0);
-                    final Element te = processingEnvironment.getTypeUtils().asElement(typeMirror);
-                    serializerCreator.checkCanSerialize(branch, te);
-                }
+                final TypeMirror typeMirror = ((DeclaredType) returnType).getTypeArguments().get(0);
+                serializerCreator.checkCanSerialize(branch, typeMirror);
             }
             else
             {
-                serializerCreator.checkCanSerialize(branch, resultType);
+                serializerCreator.checkCanSerialize(branch, returnType);
             }
             if (SerializerCreator.isArray(returnType))
             {
@@ -141,8 +136,7 @@ class ProxyCreator implements SerializerClasses
             else if (!SerializerCreator.isPrimitive(returnType) && !SerializerCreator.isBoxedPrimitive(returnType))
             {
                 // Non primitives get deserialized by their normal serializer
-                TypeElement object = (TypeElement) resultType;
-                serializerCreator.create(object, branch);
+                serializerCreator.create(returnType, branch);
             }
             // (Boxed)Primitives are left, they are handled specially
         }
@@ -335,8 +329,8 @@ class ProxyCreator implements SerializerClasses
             {
                 needsComma = true;
             }
-            final TypeElement paramType = (TypeElement) processingEnvironment.getTypeUtils().asElement(param.asType());
-            w.print(paramType.getQualifiedName().toString());
+            //final TypeElement paramType = (TypeElement) processingEnvironment.getTypeUtils().asElement(param.asType());
+            w.print(param.toString());
             w.print(" ");
 
             nameFactory.addName(pname);
@@ -406,16 +400,15 @@ class ProxyCreator implements SerializerClasses
                 }
                 else
                 {
-                    final TypeElement pType = (TypeElement) processingEnvironment.getTypeUtils().asElement(paramType);
                     w.println("if (" + pName + " != null) {");
                     //w.indent();
-                    if (SerializerCreator.needsTypeParameter(pType))
+                    if (SerializerCreator.needsTypeParameter(paramType))
                     {
                         w.print(serializerFields[i]);
                     }
                     else
                     {
-                        serializerCreator.generateSerializerReference(pType, w, false);
+                        serializerCreator.generateSerializerReference(paramType, w, false);
                     }
                     w.println(".printJson(" + reqData + ", " + pName + ");");
                     //w.outdent();

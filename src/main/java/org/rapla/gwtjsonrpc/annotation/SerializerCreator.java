@@ -68,40 +68,40 @@ class SerializerCreator implements SerializerClasses
         generatedSerializers = new HashMap<String, String>();
     }
 
-    String create(final TypeElement targetType, final TreeLogger logger) throws UnableToCompleteException
+    String create(final TypeMirror type, final TreeLogger logger) throws UnableToCompleteException
     {
         try
         {
-            if (isParameterized(targetType.asType()) || isArray(targetType.asType()))
+            if (isParameterized(type) || isArray(type))
             {
-                ensureSerializersForTypeParameters(logger, targetType.asType());
+                ensureSerializersForTypeParameters(logger, type);
             }
-            String sClassName = serializerFor(targetType.asType());
+            String sClassName = serializerFor(type);
             if (sClassName != null)
             {
                 return sClassName;
             }
 
-            checkCanSerialize(logger, targetType, true);
-            recursivelyCreateSerializers(logger, targetType);
+            checkCanSerialize(logger, type, true);
 
-            this.targetType = targetType;
+            this.targetType = (TypeElement)processingEnvironment.getTypeUtils().asElement( type);
+            recursivelyCreateSerializers(logger, type );
             final PrintWriter srcWriter = getSourceWriter(logger);
             final String sn = getSerializerQualifiedName(targetType);
-            if (!generatedSerializers.containsKey(targetType.getQualifiedName().toString()))
+            if (!generatedSerializers.containsKey(type.toString()))
             {
-                generatedSerializers.put(targetType.getQualifiedName().toString(), sn);
+                generatedSerializers.put(type.toString(), sn);
             }
             if (srcWriter == null)
             {
                 return sn;
             }
 
-            if (!isAbstract(targetType))
+            if (!isAbstract(type))
             {
                 generateSingleton(srcWriter);
             }
-            if (isEnum(targetType))
+            if (isEnum(type))
             {
                 generateEnumFromJson(srcWriter);
             }
@@ -120,17 +120,18 @@ class SerializerCreator implements SerializerClasses
         }
     }
 
-    private void recursivelyCreateSerializers(final TreeLogger logger, final TypeElement targetType) throws UnableToCompleteException, IOException
+    private void recursivelyCreateSerializers(final TreeLogger logger, final TypeMirror targetType) throws UnableToCompleteException, IOException
     {
         if (isPrimitive(targetType) || isBoxedPrimitive(targetType))
         {
             return;
         }
 
-        final TypeElement targetClass = targetType;
+        final TypeElement targetClass = (TypeElement)processingEnvironment.getTypeUtils().asElement(targetType);
         if (needsSuperSerializer(targetClass))
         {
-            create(getSuperclass(targetClass), logger);
+            final TypeMirror superclass = targetClass.getSuperclass();
+            create(superclass, logger);
         }
 
         for (final VariableElement f : sortFields(targetClass))
@@ -180,26 +181,21 @@ class SerializerCreator implements SerializerClasses
         {
             for (final TypeMirror typeMirror : ((DeclaredType) type).getTypeArguments())
             {
-                final Element t1 = processingEnvironment.getTypeUtils().asElement(typeMirror);
-                ensureSerializer(logger, t1);
+                ensureSerializer(logger, typeMirror);
             }
         }
 
         return false;
     }
 
-    void checkCanSerialize(final TreeLogger logger, final Element type) throws UnableToCompleteException
+    void checkCanSerialize(final TreeLogger logger, final TypeMirror type) throws UnableToCompleteException
     {
-        if (!(type instanceof TypeElement))
-        {
-            throw new UnableToCompleteException("typ not TypeElement" + type);
-        }
-        checkCanSerialize(logger, (TypeElement)type, false);
+        checkCanSerialize(logger, type, false);
     }
 
-    Set<TypeElement> checkedType = new HashSet<TypeElement>();
+    Set<TypeMirror> checkedType = new HashSet<TypeMirror>();
 
-    void checkCanSerialize(final TreeLogger logger, final Element type, boolean allowAbstractType) throws UnableToCompleteException
+    void checkCanSerialize(final TreeLogger logger, final TypeMirror type, boolean allowAbstractType) throws UnableToCompleteException
     {
         if (isPrimitiveLong(type))
         {
@@ -218,7 +214,7 @@ class SerializerCreator implements SerializerClasses
             return;
         }
 
-        if (isJsonPrimitive(type.asType()) || isBoxedPrimitive(type.asType()))
+        if (isJsonPrimitive(type) || isBoxedPrimitive(type))
         {
             return;
         }
@@ -226,9 +222,10 @@ class SerializerCreator implements SerializerClasses
         if (isArray(type) )
         {
             // FIXME need to check the leaf
-            final TypeElement leafType = getArrayType(type.asType());
+            final TypeMirror leafType = getArrayType(type);
             if (isPrimitive(leafType) || isBoxedPrimitive(leafType))
             {
+                ArrayType arrayType = ((ArrayType) type);
                 // FIXME need to check the ranks
 //                if (type.isArray().getRank() != 1)
 //                {
@@ -241,19 +238,19 @@ class SerializerCreator implements SerializerClasses
                     // Rank 1 arrays work fine.
                     return;
             }
-            checkCanSerialize(logger, getArrayType(type.asType()));
+            checkCanSerialize(logger, getArrayType(type));
             return;
         }
 
-        final String qsn = ((TypeElement)type).getQualifiedName().toString();
+        final String qsn = type.toString();
         if (defaultSerializers.containsKey(qsn))
         {
             return;
         }
         if (isParameterized(type))
         {
-            List<? extends TypeParameterElement> typeArgs = ((Parameterizable)type).getTypeParameters();
-            for (final TypeParameterElement t : typeArgs)
+            List<? extends TypeMirror> typeArgs = ((DeclaredType) type).getTypeArguments();
+            for (final TypeMirror t : typeArgs)
             {
                 checkCanSerialize(logger, t);
             }
@@ -280,8 +277,8 @@ class SerializerCreator implements SerializerClasses
             throw new UnableToCompleteException("Interface " + qsn + " not supported in JSON encoding");
         }
 
-        final TypeElement ct = (TypeElement) type;
-        if (checkedType.contains(ct))
+        final TypeMirror ct = type;
+        if (checkedType.contains(type))
         {
             return;
         }
@@ -302,11 +299,11 @@ class SerializerCreator implements SerializerClasses
     {
         if (isArray(t) )
         {
-            final TypeElement componentType = getArrayType(t);
+            final TypeMirror componentType = getArrayType(t);
             if (isPrimitive(componentType) || isBoxedPrimitive(componentType))
                 return PrimitiveArraySerializer;
             else
-                return ObjectArraySerializer + "<" + componentType.getQualifiedName().toString() + ">";
+                return ObjectArraySerializer + "<" + componentType.toString() + ">";
         }
 
         if (isStringMap(t))
@@ -415,7 +412,7 @@ class SerializerCreator implements SerializerClasses
         String serializerFor = serializerFor(type);
         if (isArray(type))
         {
-            final TypeElement componentType = getArrayType(type);
+            final TypeMirror componentType = getArrayType(type);
             if (isPrimitive(componentType) || isBoxedPrimitive(componentType))
             {
                 w.print(PrimitiveArraySerializer);
@@ -704,7 +701,7 @@ class SerializerCreator implements SerializerClasses
         if (needsSuperSerializer(targetType))
         {
             w.print("super.fromJsonImpl(jso, (");
-            w.print(getSuperclass(targetType).getQualifiedName().toString());
+            w.print(targetType.getSuperclass().toString());
             w.println(")dst);");
         }
 
@@ -798,31 +795,36 @@ class SerializerCreator implements SerializerClasses
         return b;
     }
 
-    public static boolean isAbstract(final Element t)
+    public  boolean isAbstract(final TypeMirror t)
     {
-        return t.getModifiers().contains(Modifier.ABSTRACT);
+        final Element element = processingEnvironment.getTypeUtils().asElement(t);
+        return element != null && element.getModifiers().contains(Modifier.ABSTRACT);
     }
 
-    public static boolean isPrivate(final Element t)
+    public  boolean isPrivate(final TypeMirror t)
     {
-        return t.getModifiers().contains(Modifier.PRIVATE);
+        final Element element = processingEnvironment.getTypeUtils().asElement(t);
+        return element != null && element.getModifiers().contains(Modifier.PRIVATE);
     }
 
-    public static boolean isInterface(final Element t)
+    public boolean isInterface(final TypeMirror t)
     {
-        boolean b = t.getKind() == ElementKind.INTERFACE;
+        final Element element = processingEnvironment.getTypeUtils().asElement(t);
+        boolean b = element != null && element.getKind() == ElementKind.INTERFACE;
         return b;
     }
 
-    public static boolean isClass(final Element t)
+    public boolean isClass(final TypeMirror t)
     {
-        boolean b = t.getKind() == ElementKind.CLASS;
+        final Element element = processingEnvironment.getTypeUtils().asElement(t);
+        boolean b = element != null && element.getKind() == ElementKind.CLASS;
         return b;
     }
 
-    public static boolean isEnum(final Element t)
+    public boolean isEnum(final TypeMirror t)
     {
-        return t.getKind() == ElementKind.ENUM;
+        final Element element = processingEnvironment.getTypeUtils().asElement(t);
+        return element != null && element.getKind() == ElementKind.ENUM;
     }
 
 
@@ -845,11 +847,11 @@ class SerializerCreator implements SerializerClasses
     }
 
 
-    private TypeElement getArrayType(TypeMirror type)
+    private TypeMirror getArrayType(TypeMirror type)
     {
         final ArrayType arrayType = processingEnvironment.getTypeUtils().getArrayType(type);
-        final TypeElement ele = (TypeElement) processingEnvironment.getTypeUtils().asElement(arrayType.getComponentType());
-        return ele;
+        final TypeMirror componentType = arrayType.getComponentType();
+        return componentType;
     }
 
     private String getFieldName(VariableElement f)
@@ -869,17 +871,16 @@ class SerializerCreator implements SerializerClasses
     // return paramter type
     public static boolean isParameterized(final TypeMirror t)
     {
-        if (!(t instanceof  Parameterizable))
+        if (!(t instanceof  DeclaredType))
         {
             return  false;
         }
-        List typeParameters = ((Parameterizable)t).getTypeParameters();
+        List typeParameters = ((DeclaredType)t).getTypeArguments();
         return typeParameters.size() > 0;
     }
 
-    static boolean isPrimitiveLong(final Element t)
+    static boolean isPrimitiveLong(final TypeMirror typeMirror)
     {
-        TypeMirror typeMirror = t.asType();
         if ( typeMirror instanceof  PrimitiveType)
         {
             boolean b = ((PrimitiveType) typeMirror).getKind() == TypeKind.LONG;
@@ -889,12 +890,6 @@ class SerializerCreator implements SerializerClasses
         {
             return false;
         }
-    }
-
-    static boolean isPrimitiveChar(final Element t)
-    {
-        TypeMirror typeMirror = t.asType();
-        return isPrimitiveChar(typeMirror);
     }
 
     private static boolean isPrimitiveChar(TypeMirror typeMirror)
@@ -926,12 +921,6 @@ class SerializerCreator implements SerializerClasses
         {
             return false;
         }
-    }
-
-    static boolean isBoxedPrimitive(final TypeElement t)
-    {
-        TypeMirror typeMirror = t.asType();
-        return isBoxedPrimitive(typeMirror);
     }
 
     static boolean isBoxedPrimitive(TypeMirror typeMirror)
