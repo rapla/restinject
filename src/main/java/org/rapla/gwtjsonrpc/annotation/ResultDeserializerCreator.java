@@ -14,15 +14,17 @@
 
 package org.rapla.gwtjsonrpc.annotation;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
+import javax.tools.JavaFileObject;
 
 import org.rapla.gwtjsonrpc.rebind.SerializerClasses;
 
@@ -48,7 +50,7 @@ class ResultDeserializerCreator
     private final NameFactory nameFactory = new NameFactory();
     private final ProcessingEnvironment processingEnvironment;
 
-    private TypeElement targetType;
+    private TypeMirror targetType;
     private TypeElement componentType;
 
     ResultDeserializerCreator(SerializerCreator sc, ProcessingEnvironment processingEnvironment)
@@ -58,10 +60,10 @@ class ResultDeserializerCreator
         serializerCreator = sc;
     }
 
-    void create(TreeLogger logger, TypeElement targetType)
+    void create(TreeLogger logger, TypeMirror targetType)
     {
         this.targetType = targetType;
-        final ArrayType arrayType = processingEnvironment.getTypeUtils().getArrayType(targetType.asType());
+        final ArrayType arrayType = processingEnvironment.getTypeUtils().getArrayType(targetType);
         this.componentType = (TypeElement) processingEnvironment.getTypeUtils().asElement(arrayType.getComponentType());
 
         if (SerializerCreator.isPrimitive(componentType) || SerializerCreator.isBoxedPrimitive(componentType))
@@ -75,23 +77,31 @@ class ResultDeserializerCreator
             return;
         }
 
-        logger.error("Creating result deserializer for " + targetType.getSimpleName());
-        final PrintWriter srcWriter = getSourceWriter(logger);
+        logger.error("Creating result deserializer for " + asTypeElement(targetType).getSimpleName());
+        final SourceWriter srcWriter = getSourceWriter(logger);
         if (srcWriter == null)
         {
             return;
         }
         final String dsn = getDeserializerQualifiedName(targetType);
-        generatedDeserializers.put(targetType.getQualifiedName().toString(), dsn);
+        generatedDeserializers.put(asTypeElement(targetType).getQualifiedName().toString(), dsn);
 
         generateSingleton(srcWriter);
         generateInstanceMembers(srcWriter);
         generateFromResult(srcWriter);
-
+        srcWriter.outdent();
+        srcWriter.println("}");
         srcWriter.close();
     }
+    
+    private TypeElement asTypeElement(TypeMirror tm)
+    {
+        final Types typeUtils = processingEnvironment.getTypeUtils();
+        final Element asElement = typeUtils.asElement(tm);
+        return (TypeElement) asElement;
+    }
 
-    private void generateSingleton(final PrintWriter w)
+    private void generateSingleton(final SourceWriter w)
     {
         w.print("public static final ");
         w.print(getDeserializerSimpleName(targetType, nameFactory, processingEnvironment));
@@ -101,7 +111,7 @@ class ResultDeserializerCreator
         w.println();
     }
 
-    private void generateInstanceMembers(PrintWriter w)
+    private void generateInstanceMembers(SourceWriter w)
     {
         w.print("private final ");
         w.print(serializerCreator.serializerFor(targetType));
@@ -113,55 +123,56 @@ class ResultDeserializerCreator
         w.println();
     }
 
-    private void generateFromResult(PrintWriter w)
+    private void generateFromResult(SourceWriter w)
     {
         final String ctn = componentType.getQualifiedName().toString();
 
         w.println("@Override");
         w.print("public " + ctn + "[] ");
         w.println("fromResult(JavaScriptObject responseObject) {");
-
+        w.indent();
         w.print("final " + ctn + "[] tmp = new " + ctn);
         w.println("[getResultSize(responseObject)];");
 
         w.println("serializer.fromJson(getResult(responseObject), tmp);");
         w.println("return tmp;");
-
+        w.outdent();
         w.println("}");
     }
 
-    private String getDeserializerQualifiedName(TypeElement targetType)
+    private String getDeserializerQualifiedName(TypeMirror targetType)
     {
         final String pkgName = getDeserializerPackageName(targetType);
         final String className = getDeserializerSimpleName(targetType, nameFactory, processingEnvironment);
         return pkgName.length() == 0 ? className : pkgName + "." + className;
     }
 
-    private String getDeserializerPackageName(TypeElement targetType)
+    private String getDeserializerPackageName(TypeMirror targetType)
     {
         // Place array deserializer in same package as the component deserializer
-        final ArrayType arrayType = processingEnvironment.getTypeUtils().getArrayType(targetType.asType());
+        final ArrayType arrayType = processingEnvironment.getTypeUtils().getArrayType(targetType);
         final TypeElement ct = (TypeElement) processingEnvironment.getTypeUtils().asElement(arrayType.getComponentType());
         final String compSerializer = serializerCreator.serializerFor(ct);
         final int end = compSerializer.lastIndexOf('.');
         return end >= 0 ? compSerializer.substring(0, end) : "";
     }
 
-    private static String getDeserializerSimpleName(TypeElement targetType, NameFactory nameFactory, ProcessingEnvironment processingEnvironment)
+    private static String getDeserializerSimpleName(TypeMirror targetType, NameFactory nameFactory, ProcessingEnvironment processingEnvironment)
     {
         return ProxyCreator.synthesizeTopLevelClassName(targetType, DSER_SUFFIX, nameFactory, processingEnvironment)[1];
     }
 
-    private PrintWriter getSourceWriter(TreeLogger logger)
+    private SourceWriter getSourceWriter(TreeLogger logger)
     {
         String pkgName = getDeserializerPackageName(targetType);
         final String simpleName = getDeserializerSimpleName(targetType, nameFactory, processingEnvironment);
-        PrintWriter pw;
+        SourceWriter pw;
         try
         {
-            pw = new PrintWriter(new FileOutputStream(new File(pkgName + "/" + simpleName)));
+            final JavaFileObject writer = processingEnvironment.getFiler().createSourceFile(pkgName + "." + simpleName);
+            pw = new SourceWriter(writer.openWriter());
         }
-        catch (FileNotFoundException e)
+        catch (IOException e)
         {
             return null;
         }
@@ -169,37 +180,39 @@ class ResultDeserializerCreator
         pw.println("import " + JavaScriptObject.class.getCanonicalName() + ";");
         pw.println("import " + org.rapla.gwtjsonrpc.rebind.SerializerClasses.ResultDeserializer + ";");
         pw.println("public class " + simpleName + " extends " + org.rapla.gwtjsonrpc.rebind.SerializerClasses.ArrayResultDeserializer + " implements "
-                + org.rapla.gwtjsonrpc.rebind.SerializerClasses.ResultDeserializer + "<" + targetType.getQualifiedName().toString() + ">{");
+                + org.rapla.gwtjsonrpc.rebind.SerializerClasses.ResultDeserializer + "<" + asTypeElement(targetType).getQualifiedName().toString() + ">");
+        pw.println("{");
+        pw.indent();
         return pw;
     }
 
-    private String deserializerFor(TypeElement targetType)
+    private String deserializerFor(TypeMirror targetType)
     {
-        final ArrayType arrayType = processingEnvironment.getTypeUtils().getArrayType(targetType.asType());
+        final ArrayType arrayType = processingEnvironment.getTypeUtils().getArrayType(targetType);
         TypeElement componentType = (TypeElement) processingEnvironment.getTypeUtils().asElement(arrayType.getComponentType());
         // Custom primitive deserializers
         if (SerializerCreator.isBoxedPrimitive(componentType))
             return org.rapla.gwtjsonrpc.rebind.SerializerClasses.PrimitiveArrayResultDeserializers + "."
                     + componentType.getSimpleName().toString().toUpperCase() + "_INSTANCE";
-        final String name = generatedDeserializers.get(targetType.getQualifiedName().toString());
+        final TypeElement typeElement = (TypeElement) processingEnvironment.getTypeUtils().asElement(targetType);
+        final String name = generatedDeserializers.get(typeElement.getQualifiedName().toString());
 
         return name == null ? null : name + ".INSTANCE";
     }
 
-    public void generateDeserializerReference(TypeElement targetType, PrintWriter w)
+    public void generateDeserializerReference(TypeMirror targetType, PrintWriter w)
     {
         if (SerializerCreator.isBoxedPrimitive(targetType))
         {
             w.print(SerializerClasses.PrimitiveResultDeserializers);
             w.print(".");
-            w.print(targetType.getSimpleName().toString().toUpperCase());
+            w.print(asTypeElement(targetType).getSimpleName().toString().toUpperCase());
             w.print("_INSTANCE");
         }
-        else if (targetType.asType() instanceof ArrayType)
+        else if (targetType instanceof ArrayType)
         {
-            final ArrayType arrayType = processingEnvironment.getTypeUtils().getArrayType(targetType.asType());
-            final TypeElement target = (TypeElement) processingEnvironment.getTypeUtils().asElement(arrayType);
-            w.print(deserializerFor(target));
+            final ArrayType arrayType = processingEnvironment.getTypeUtils().getArrayType(targetType);
+            w.print(deserializerFor(arrayType));
         }
         else
         {
