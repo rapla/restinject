@@ -79,6 +79,8 @@
 						</goals>
 						<phase>generate-test-sources</phase>
 						<configuration>
+							<defaultOutputDirectory>${project.build.directory}/generated-test-sources</defaultOutputDirectory>
+							<outputClassDirectory>${project.build.directory}/generated-test-sources</outputClassDirectory>
 							<processors>
 								<processor>org.rapla.inject.generator.AnnotationInjectionProcessor</processor>
 								<processor>org.rapla.gwtjsonrpc.annotation.RemoteJsonServiceProxyGenerator</processor>
