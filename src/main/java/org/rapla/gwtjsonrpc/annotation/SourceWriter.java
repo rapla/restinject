@@ -37,6 +37,11 @@ public class SourceWriter
         newLine = true;
     }
 
+    public void println()
+    {
+        printWriter.println();
+    }
+
     private void writeIndent()
     {
         if (newLine)
@@ -54,5 +59,12 @@ public class SourceWriter
         printWriter.print(content);
         newLine = false;
     }
+
+    public void close()
+    {
+        printWriter.close();
+        newLine = true;
+    }
+
 
 }
