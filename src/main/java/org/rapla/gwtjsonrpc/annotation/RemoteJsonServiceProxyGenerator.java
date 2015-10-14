@@ -22,6 +22,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic;
 
 import org.rapla.gwtjsonrpc.RemoteJsonMethod;
 
@@ -41,7 +42,6 @@ public class RemoteJsonServiceProxyGenerator extends AbstractProcessor
         return Collections.singleton( RemoteJsonMethod.class.getCanonicalName());
     }
 
-
     @Override public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
     {
         if (roundEnv.processingOver())
@@ -59,6 +59,7 @@ public class RemoteJsonServiceProxyGenerator extends AbstractProcessor
             }
             catch (org.rapla.gwtjsonrpc.annotation.UnableToCompleteException e)
             {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,e.getLocalizedMessage());
                 return false;
             }
         }

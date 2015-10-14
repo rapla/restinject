@@ -25,6 +25,7 @@ import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 import org.rapla.gwtjsonrpc.RemoteJsonMethod;
 
+import javax.lang.model.type.DeclaredType;
 import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
@@ -60,7 +61,6 @@ class ProxyCreator implements SerializerClasses
         generateProxyCallCreator(logger, srcWriter);
         generateProxyMethods(logger, srcWriter);
         srcWriter.commit(logger);
-
         return getProxyQualifiedName();
     }
 
@@ -91,7 +91,7 @@ class ProxyCreator implements SerializerClasses
                     serializerCreator.create((JClassType) p.getType(), branch);
                 }
             }
-
+// FIXME isnt this done below
             {
                 JClassType p = resultType;
                 final TreeLogger branch = logger.branch(TreeLogger.DEBUG, m.getName() + ", result " + p.getName());
