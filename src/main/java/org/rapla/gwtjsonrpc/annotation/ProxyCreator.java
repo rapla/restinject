@@ -64,6 +64,7 @@ class ProxyCreator implements SerializerClasses
         generateProxyConstructor(logger, srcWriter);
         generateProxyCallCreator(logger, srcWriter);
         generateProxyMethods(logger, srcWriter);
+        srcWriter.outdent();
         srcWriter.println("};");
         srcWriter.close();
 
@@ -204,6 +205,7 @@ class ProxyCreator implements SerializerClasses
         pw.println(SerializerCreator.getGeneratorString());
         pw.println("public class " + className + " extends " + AbstractJsonProxy_simple + " implements " + interfaceName);
         pw.println("{");
+        pw.indent();
         return pw;
     }
 
@@ -214,8 +216,7 @@ class ProxyCreator implements SerializerClasses
         {
             w.println();
             w.println("public " + getProxySimpleName() + "() {");
-            //w.indent();
-
+            w.indent();
             String path = relPath.path();
             if (path == null || path.isEmpty())
             {
@@ -223,7 +224,7 @@ class ProxyCreator implements SerializerClasses
                 path = erasedType.getQualifiedName().toString();
             }
             w.println("setPath(\"" + path + "\");");
-            //w.outdent();
+            w.outdent();
             w.println("}");
         }
     }
@@ -238,13 +239,13 @@ class ProxyCreator implements SerializerClasses
         w.print("<T> newJsonCall(final AbstractJsonProxy proxy, ");
         w.print("final String methodName, final String reqData, ");
         w.println("final ResultDeserializer<T> ser) {");
-        //w.indent();
+        w.indent();
 
         w.print("return new ");
         w.print(callName);
         w.println("<T>(proxy, methodName, reqData, ser);");
 
-        //w.outdent();
+        w.outdent();
         w.println("}");
     }
 
@@ -335,7 +336,7 @@ class ProxyCreator implements SerializerClasses
         }
 
         w.println(") {");
-        //w.indent();
+        w.indent();
 
         if (returnsCallbackHandle(method))
         {
@@ -353,7 +354,7 @@ class ProxyCreator implements SerializerClasses
             w.print(", " + "null" // callback.getName()
             );
             w.println(");");
-            //w.outdent();
+            w.outdent();
             w.println("}");
             return;
         }
@@ -398,7 +399,7 @@ class ProxyCreator implements SerializerClasses
                 else
                 {
                     w.println("if (" + pName + " != null) {");
-                    //w.indent();
+                    w.indent();
                     if (SerializerCreator.needsTypeParameter(paramType, processingEnvironment))
                     {
                         w.print(serializerFields[i]);
@@ -408,11 +409,11 @@ class ProxyCreator implements SerializerClasses
                         serializerCreator.generateSerializerReference(paramType, w, false);
                     }
                     w.println(".printJson(" + reqData + ", " + pName + ");");
-                    //w.outdent();
+                    w.outdent();
                     w.println("} else {");
-                    //w.indent();
+                    w.indent();
                     w.println(reqData + ".append(" + JsonSerializer + ".JS_NULL);");
-                    //w.outdent();
+                    w.outdent();
                     w.println("}");
                 }
             }
@@ -445,7 +446,7 @@ class ProxyCreator implements SerializerClasses
         w.println(");");
         w.println("return result;");
 
-        //w.outdent();
+        w.outdent();
         w.println("}");
     }
 

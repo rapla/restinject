@@ -382,7 +382,7 @@ class SerializerCreator implements SerializerClasses
         w.print(serializerSimpleName);
         w.println(">(){");
         w.indent();
-        w.print("public " + serializerSimpleName + " get(){return INSTANCE;} ");
+        w.println("public " + serializerSimpleName + " get(){return INSTANCE;}");
         w.outdent();
         w.println("};");
         w.println();
@@ -694,6 +694,7 @@ class SerializerCreator implements SerializerClasses
         w.print("public ");
         w.print(targetType.getQualifiedName().toString());
         w.println(" fromJson(Object in) {");
+        w.indent();
         if (isAbstract(targetType.asType()))
         {
             w.println("throw new UnsupportedOperationException();");
@@ -709,13 +710,14 @@ class SerializerCreator implements SerializerClasses
             w.println("fromJsonImpl(jso, dst);");
             w.println("return dst;");
         }
+        w.outdent();
         w.println("}");
         w.println();
 
         w.print("protected void fromJsonImpl(JavaScriptObject jso,");
         w.print(targetType.getQualifiedName().toString());
         w.println(" dst) {");
-
+        w.indent();
         if (needsSuperSerializer(targetType))
         {
             w.print("super.fromJsonImpl(jso, (");
@@ -745,7 +747,7 @@ class SerializerCreator implements SerializerClasses
             {
                 final TypeMirror ct = getArrayType(type);
                 w.println("if (" + doget + " != null) {");
-
+                w.indent();
                 w.print("final ");
                 w.print(ct.toString());
                 w.print("[] tmp = new ");
@@ -761,7 +763,7 @@ class SerializerCreator implements SerializerClasses
                 w.print("tmp");
                 w.print(doset1);
                 w.println(";");
-
+                w.outdent();
                 w.println("}");
 
             }
@@ -802,7 +804,7 @@ class SerializerCreator implements SerializerClasses
                 w.println(";");
             }
         }
-
+        w.outdent();
         w.println("}");
         w.println();
     }
