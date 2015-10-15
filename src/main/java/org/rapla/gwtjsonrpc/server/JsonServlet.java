@@ -70,7 +70,7 @@ import com.google.gson.JsonSyntaxException;
  * <b>JSON-RPC 2.0</b><br>
  * Calling conventions match the JSON-RPC 2.0 specification.
  * <p>
- * When supported by the browser/client, the "gzip" encoding is used to compress
+ * When supported by the browser/gwt, the "gzip" encoding is used to compress
  * the resulting JSON, reducing transfer time for the response data.
  */
 public class JsonServlet {
@@ -111,7 +111,7 @@ public class JsonServlet {
     /** @return maximum size of a JSON request, in bytes */
     protected int maxRequestSize() {
         // Our default limit of 100 MB should be sufficient for nearly any
-        // application. It takes a long time to format this on the client
+        // application. It takes a long time to format this on the gwt
         // or to upload it.
         //
         return 100 * 1024 * 1024;
@@ -195,13 +195,13 @@ public class JsonServlet {
     // private boolean acceptJSON(final CallType call) {
     // final String accepts = call.httpRequest.getHeader("Accept");
     // if (accepts == null) {
-    // // A really odd client, it didn't send us an accept header?
+    // // A really odd gwt, it didn't send us an accept header?
     // //
     // return false;
     // }
     //
     // if (JsonConstants.JSON_TYPE.equals(accepts)) {
-    // // Common case, as our JSON client side code sets only this
+    // // Common case, as our JSON gwt side code sets only this
     // //
     // return true;
     // }
@@ -223,7 +223,7 @@ public class JsonServlet {
     // }
     // }
     //
-    // // Assume the client is busted and won't take JSON back.
+    // // Assume the gwt is busted and won't take JSON back.
     // //
     // return false;
     // }

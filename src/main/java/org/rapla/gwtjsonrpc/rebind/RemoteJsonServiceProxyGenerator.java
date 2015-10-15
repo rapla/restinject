@@ -54,7 +54,7 @@ public class RemoteJsonServiceProxyGenerator extends Generator {
 
     TreeLogger proxyLogger =
         logger.branch(TreeLogger.DEBUG,
-            "Generating client proxy for remote service interface '"
+            "Generating gwt proxy for remote service interface '"
                 + remoteService.getQualifiedSourceName() + "'", null);
 
     return proxyCreator.create(proxyLogger, ctx);

@@ -257,10 +257,10 @@ public class RaplaGwtModuleGenerator extends Generator
         composer.addImplementedInterface("GinModule");
         composer.addImport(packageName + "." + classType.getSimpleSourceName());
         composer.addImport("javax.inject.Singleton");
-        composer.addImport("com.google.gwt.inject.client.GinModule");
-        composer.addImport("com.google.gwt.inject.client.binder.GinBinder");
-        composer.addImport("com.google.gwt.inject.client.multibindings.GinMultibinder");
-        composer.addImport("com.google.gwt.inject.client.multibindings.GinMapBinder");
+        composer.addImport("com.google.gwt.inject.gwt.GinModule");
+        composer.addImport("com.google.gwt.inject.gwt.binder.GinBinder");
+        composer.addImport("com.google.gwt.inject.gwt.multibindings.GinMultibinder");
+        composer.addImport("com.google.gwt.inject.gwt.multibindings.GinMapBinder");
         PrintWriter printWriter = context.tryCreate(logger, packageName, simpleName);
         if (printWriter == null)
         {

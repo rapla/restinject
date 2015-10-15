@@ -32,7 +32,7 @@ import java.util.HashMap;
  * All object arrays that have a JSONSerializer for the array component can be
  * generated, but they will need to live in the same package as the serializer.
  * To do this, if the serializer lives in the
- * <code>com.google.gwtjsonrpc.client</code> package (where custom object
+ * <code>com.google.gwtjsonrpc.gwt</code> package (where custom object
  * serializers live), the ResultDeserializer for it's array will be placed in
  * this package as well. Else it will be placed with the serializer in the
  * package the object lives.

@@ -9,6 +9,7 @@
 	<name>jsonrpc module for rapla forked from https://gerrit.googlesource.com/gwtjsonrpc/</name>
 	<inceptionYear>2015</inceptionYear>
 
+
 	<licenses>
 		<license>
 			<name>Apache 2.0</name>
@@ -38,8 +39,11 @@
 		<url>https://github.com/rapla/gwtjsonrpc.git</url>
 	</scm>
 
+
 	<properties>
+		<gwt.plugin.productionmode>false</gwt.plugin.productionmode>
 		<gwt.version>2.7.0</gwt.version>
+		<gwt.plugin.version>2.7.0</gwt.plugin.version>
 		<gson.version>2.3.1</gson.version>
 		<javax.inject.version>1</javax.inject.version>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -79,15 +83,44 @@
 						</goals>
 						<phase>generate-test-sources</phase>
 						<configuration>
-							<defaultOutputDirectory>${project.build.directory}/generated-test-sources</defaultOutputDirectory>
-							<outputClassDirectory>${project.build.directory}/generated-test-sources</outputClassDirectory>
+							<defaultOutputDirectory>${project.build.directory}/generated-test-sources/apt-test</defaultOutputDirectory>
 							<processors>
+								<processor>dagger.internal.codegen.ComponentProcessor</processor>
 								<processor>org.rapla.inject.generator.AnnotationInjectionProcessor</processor>
-								<processor>org.rapla.gwtjsonrpc.annotation.RemoteJsonServiceProxyGenerator</processor>
 							</processors>
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>gwt-maven-plugin</artifactId>
+				<version>${gwt.plugin.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>test</goal>
+						</goals>
+						<phase>test</phase>
+					</execution>
+				</executions>
+				<configuration>
+					<!--
+					<extraJvmArgs>-agentlib:jdwp=transport=dt_socket,server=n,address=192.168.0.102:5005,suspend=y</extraJvmArgs>
+					-->
+					<includes>**/*GwtTest.java</includes>
+					<productionMode>${gwt.plugin.productionmode}</productionMode>
+					<module>org.rapla.client.GwtTestModule</module>
+					<testTimeOut>360</testTimeOut>
+					<!--
+					<gwtSdkFirstInClasspath>true</gwtSdkFirstInClasspath>
+					-->
+					<sourceLevel>1.7</sourceLevel>
+					<jsInteropMode>JS</jsInteropMode>
+					<generateDirectory>${project.build.testOutputDirectory}/generated-gwt-test-code</generateDirectory>
+					<warSourceDirectory>${project.build.testSourceDirectory}/webapp</warSourceDirectory>
+					<detail>false</detail>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
@@ -98,6 +131,20 @@
 					<serverId>ossrh</serverId>
 					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
 					<autoReleaseAfterClose>true</autoReleaseAfterClose>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.18.1</version>
+				<configuration>
+					<includes>
+						<include>**/bootstrap/*.*</include>
+					</includes>
+					<excludes>
+						<exclude>**/bootstrap/*.png</exclude>
+						<exclude>**/*GwtTest.java</exclude>
+					</excludes>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -166,11 +213,6 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>javax.ws.rs</groupId>
-			<artifactId>javax.ws.rs-api</artifactId>
-			<version>2.0.1</version>
-		</dependency>
-		<dependency>
 			<groupId>javax.inject</groupId>
 			<artifactId>javax.inject</artifactId>
 			<version>${javax.inject.version}</version>
@@ -205,6 +247,19 @@
 			<artifactId>gin</artifactId>
 			<version>2.1.2</version>
 			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.google.dagger</groupId>
+			<artifactId>dagger</artifactId>
+			<version>2.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.google.dagger</groupId>
+			<artifactId>dagger-compiler</artifactId>
+			<version>2.0</version>
+			<optional>true</optional>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 </project>

@@ -30,7 +30,7 @@ import javax.tools.JavaFileObject;
 import java.io.*;
 import java.util.*;
 
-class ProxyCreator implements SerializerClasses
+public class ProxyCreator implements SerializerClasses
 {
     private static final String PROXY_SUFFIX = "_JsonProxy";
     private TypeElement svcInf;
@@ -40,17 +40,24 @@ class ProxyCreator implements SerializerClasses
     private int instanceField;
     private final ProcessingEnvironment processingEnvironment;
     private final NameFactory nameFactory = new NameFactory();
+    String generatorName;
 
-    ProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment)
+    public ProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName)
     {
         svcInf = remoteService;
+        this.generatorName = generatorName;
         this.processingEnvironment = processingEnvironment;
-        serializerCreator = new SerializerCreator(processingEnvironment, nameFactory);
-        deserializerCreator = new org.rapla.gwtjsonrpc.annotation.ResultDeserializerCreator(serializerCreator, processingEnvironment);
+        serializerCreator = new SerializerCreator(processingEnvironment, nameFactory, generatorName);
+        deserializerCreator = new org.rapla.gwtjsonrpc.annotation.ResultDeserializerCreator(serializerCreator, processingEnvironment, generatorName);
         futureResultClassName = FutureResultImpl;
     }
 
-    String create(final TreeLogger logger) throws UnableToCompleteException
+    private String getGeneratorString()
+    {
+        return "@javax.annotation.Generated(\"" + generatorName + "\")";
+    }
+
+    public String create(final TreeLogger logger) throws UnableToCompleteException
     {
         final List<ExecutableElement> methods = getMethods(processingEnvironment);
         checkMethods(logger, processingEnvironment);
@@ -202,7 +209,7 @@ class ProxyCreator implements SerializerClasses
         pw.println();
         TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
         String interfaceName =  erasedType.getQualifiedName().toString();
-        pw.println(SerializerCreator.getGeneratorString());
+        pw.println(getGeneratorString());
         pw.println("public class " + className + " extends " + AbstractJsonProxy_simple + " implements " + interfaceName);
         pw.println("{");
         pw.indent();

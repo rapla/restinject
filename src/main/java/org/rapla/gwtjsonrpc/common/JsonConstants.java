@@ -14,7 +14,7 @@
 
 package org.rapla.gwtjsonrpc.common;
 
-/** Shared constants between client and server implementations. */
+/** Shared constants between gwt and server implementations. */
 public class JsonConstants {
   /** Proper Content-Type header value for JSON encoded data. */
   public static final String JSON_TYPE = "application/json";

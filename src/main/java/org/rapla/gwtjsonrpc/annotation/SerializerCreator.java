@@ -21,7 +21,6 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
-import java.lang.annotation.ElementType;
 import java.util.*;
 
 class SerializerCreator implements SerializerClasses
@@ -41,7 +40,7 @@ class SerializerCreator implements SerializerClasses
     private static final HashMap<String, String> defaultSerializers;
     private static final HashMap<String, String> parameterizedSerializers;
     private static final HashMap<String, String> generatedSerializers;
-
+    private final String generatorName;
 
     static
     {
@@ -61,10 +60,11 @@ class SerializerCreator implements SerializerClasses
         generatedSerializers = new HashMap<String, String>();
     }
 
-    SerializerCreator(ProcessingEnvironment processingEnvironment, NameFactory nameFactory)
+    SerializerCreator(ProcessingEnvironment processingEnvironment, NameFactory nameFactory, String generatorName)
     {
         this.processingEnvironment = processingEnvironment;
         this.nameFactory = nameFactory;
+        this.generatorName = generatorName;
     }
 
     String create(final TypeMirror type, final TreeLogger logger) throws UnableToCompleteException
@@ -1019,6 +1019,11 @@ class SerializerCreator implements SerializerClasses
         return pw;
     }
 
+    private String getGeneratorString()
+    {
+        return "@javax.annotation.Generated(\"" + generatorName + "\")";
+    }
+
     private void addImport(SourceWriter pw, String canonicalName)
     {
         pw.println("import " + canonicalName + ";");
@@ -1079,8 +1084,4 @@ class SerializerCreator implements SerializerClasses
         return r;
     }
 
-    static public String getGeneratorString()
-    {
-        return "@javax.annotation.Generated(\"" + RemoteJsonServiceProxyGenerator.class.getCanonicalName() + "\")";
-    }
 }

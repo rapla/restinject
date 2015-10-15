@@ -15,10 +15,8 @@
 package org.rapla.gwtjsonrpc.annotation;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.HashMap;
 
-import javax.annotation.Generated;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
@@ -37,7 +35,7 @@ import com.google.gwt.core.client.JavaScriptObject;
  * All object arrays that have a JSONSerializer for the array component can be
  * generated, but they will need to live in the same package as the serializer.
  * To do this, if the serializer lives in the
- * <code>com.google.gwtjsonrpc.client</code> package (where custom object
+ * <code>com.google.gwtjsonrpc.gwt</code> package (where custom object
  * serializers live), the ResultDeserializer for it's array will be placed in
  * this package as well. Else it will be placed with the serializer in the
  * package the object lives.
@@ -54,11 +52,13 @@ class ResultDeserializerCreator
 
     private TypeMirror targetType;
     private TypeMirror componentType;
+    private final String generatorName;
 
-    ResultDeserializerCreator(SerializerCreator sc, ProcessingEnvironment processingEnvironment)
+    ResultDeserializerCreator(SerializerCreator sc, ProcessingEnvironment processingEnvironment, String generatorName)
     {
         this.processingEnvironment = processingEnvironment;
         serializerCreator = sc;
+        this.generatorName = generatorName;
     }
 
     void create(TreeLogger logger, TypeMirror targetType)
@@ -181,12 +181,17 @@ class ResultDeserializerCreator
         pw.println("package " + pkgName + ";");
         pw.println("import " + JavaScriptObject.class.getCanonicalName() + ";");
         pw.println("import " + org.rapla.gwtjsonrpc.rebind.SerializerClasses.ResultDeserializer + ";");
-        pw.println(SerializerCreator.getGeneratorString());
+        pw.println(getGeneratorString());
         pw.println("public class " + simpleName + " extends " + org.rapla.gwtjsonrpc.rebind.SerializerClasses.ArrayResultDeserializer + " implements "
                 + org.rapla.gwtjsonrpc.rebind.SerializerClasses.ResultDeserializer + "<" + asTypeElement(targetType).getQualifiedName().toString() + ">");
         pw.println("{");
         pw.indent();
         return pw;
+    }
+
+    private String getGeneratorString()
+    {
+        return "@javax.annotation.Generated(\"" + generatorName + "\")";
     }
 
     private String deserializerFor(TypeMirror targetType)
