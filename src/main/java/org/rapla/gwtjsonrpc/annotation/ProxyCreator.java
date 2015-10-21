@@ -16,6 +16,7 @@ package org.rapla.gwtjsonrpc.annotation;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +33,8 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.JavaFileObject;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 
 import org.rapla.gwtjsonrpc.RemoteJsonMethod;
 
@@ -168,8 +171,14 @@ public class ProxyCreator implements SerializerClasses
     {
         Element enclosingElement = m.getEnclosingElement();
         Set<Modifier> modifiers = m.getModifiers();
+        final Produces producesAnnotation = m.getAnnotation(Produces.class);
         String methodClass = enclosingElement.asType().toString();
-        return modifiers.contains(Modifier.FINAL) || modifiers.contains(Modifier.PRIVATE) || methodClass.equals("java.lang.Object");
+        return modifiers.contains(Modifier.FINAL) || modifiers.contains(Modifier.PRIVATE) || methodClass.equals("java.lang.Object") || (producesAnnotation != null && !producesJson(producesAnnotation.value()));
+    }
+
+    private boolean producesJson(String[] value)
+    {
+        return Arrays.asList(value).contains(MediaType.APPLICATION_JSON);
     }
 
     private boolean returnsCallbackHandle(final ExecutableElement m)
