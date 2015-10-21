@@ -14,21 +14,29 @@
 
 package org.rapla.gwtjsonrpc.annotation;
 
-import org.rapla.gwtjsonrpc.RemoteJsonMethod;
-
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.client.JavaScriptObject;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.*;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.JavaFileObject;
 
-import java.io.*;
-import java.util.*;
+import org.rapla.gwtjsonrpc.RemoteJsonMethod;
+
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.JavaScriptObject;
 
 public class ProxyCreator implements SerializerClasses
 {
@@ -182,7 +190,7 @@ public class ProxyCreator implements SerializerClasses
 
     private SourceWriter getSourceWriter(final TreeLogger logger) throws UnableToCompleteException
     {
-        final String pkgName = processingEnvironment.getElementUtils().getPackageOf(svcInf).toString();
+        final String pkgName = processingEnvironment.getElementUtils().getPackageOf(svcInf).getQualifiedName().toString();
         SourceWriter pw = null;
 
         final String className = svcInf.getSimpleName().toString() + PROXY_SUFFIX;
@@ -486,7 +494,7 @@ public class ProxyCreator implements SerializerClasses
         else
         {
             //assert(SerializerCreator.isClass(typeMirror) || SerializerCreator.isInterface(typeMirror));
-            packageName = processingEnvironment.getElementUtils().getPackageOf(leafType).toString();
+            packageName = processingEnvironment.getElementUtils().getPackageOf(processingEnvironment.getTypeUtils().asElement(typeMirror)).getQualifiedName().toString();
             className = typeMirror.toString().substring( packageName.length() + 1);
 
         }
