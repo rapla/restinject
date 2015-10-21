@@ -160,7 +160,7 @@ class SerializerCreator implements SerializerClasses
         {
             return;
         }
-        if (!isClass(type))
+        if (!isClass(type) && !isEnum(type))
         {
             throw new UnableToCompleteException("type " + type + " is not a class");
         }
