@@ -64,7 +64,7 @@ class ResultDeserializerCreator
     void create(TreeLogger logger, TypeMirror targetType)
     {
         this.targetType = targetType;
-        final ArrayType arrayType = processingEnvironment.getTypeUtils().getArrayType(targetType);
+        final ArrayType arrayType = (ArrayType)targetType;//processingEnvironment.getTypeUtils().getArrayType(targetType);
         this.componentType = arrayType.getComponentType();
 
         if (SerializerCreator.isPrimitive(componentType) || SerializerCreator.isBoxedPrimitive(componentType))
@@ -73,7 +73,7 @@ class ResultDeserializerCreator
             return;
         }
 
-        if (deserializerFor(targetType) != null)
+        if (deserializerFor(arrayType) != null)
         {
             return;
         }
@@ -194,14 +194,16 @@ class ResultDeserializerCreator
         return "@javax.annotation.Generated(\"" + generatorName + "\")";
     }
 
-    private String deserializerFor(TypeMirror targetType)
+    private String deserializerFor(ArrayType arrayType)
     {
-        final ArrayType arrayType = processingEnvironment.getTypeUtils().getArrayType(targetType);
         TypeMirror componentType = arrayType.getComponentType();
         // Custom primitive deserializers
         if (SerializerCreator.isBoxedPrimitive(componentType))
             return org.rapla.gwtjsonrpc.rebind.SerializerClasses.PrimitiveArrayResultDeserializers + "."
                     + asTypeElement(componentType).getSimpleName().toString().toUpperCase() + "_INSTANCE";
+        if(SerializerCreator.isPrimitive(componentType))
+            return org.rapla.gwtjsonrpc.rebind.SerializerClasses.PrimitiveArrayResultDeserializers + "."
+                    + getPrimitiveSerializerName(componentType) + "_INSTANCE";
         final TypeElement typeElement = (TypeElement) processingEnvironment.getTypeUtils().asElement(targetType);
         final String name = generatedDeserializers.get(typeElement.getQualifiedName().toString());
 
@@ -222,15 +224,7 @@ class ResultDeserializerCreator
             }
             else
             {
-                final String primitiveClassName = targetType.toString().toUpperCase();
-                if("INT".equals(primitiveClassName))
-                {
-                    serializerName = "INTEGER";
-                }
-                else
-                {
-                    serializerName = primitiveClassName;
-                }
+                serializerName = getPrimitiveSerializerName(targetType);
                 
             }
             w.print(serializerName);
@@ -238,12 +232,27 @@ class ResultDeserializerCreator
         }
         else if (targetType instanceof ArrayType)
         {
-            final ArrayType arrayType = processingEnvironment.getTypeUtils().getArrayType(targetType);
+            final ArrayType arrayType = (ArrayType)targetType;
             w.print(deserializerFor(arrayType));
         }
         else
         {
             serializerCreator.generateSerializerReference(targetType, w, false);
         }
+    }
+
+    private String getPrimitiveSerializerName(TypeMirror targetType)
+    {
+        final String serializerName;
+        final String primitiveClassName = targetType.toString().toUpperCase();
+        if("INT".equals(primitiveClassName))
+        {
+            serializerName = "INTEGER";
+        }
+        else
+        {
+            serializerName = primitiveClassName;
+        }
+        return serializerName;
     }
 }

@@ -320,7 +320,14 @@ public class ProxyCreator implements SerializerClasses
             w.print(" = ");
             final List<? extends TypeMirror> typeArguments = ((DeclaredType) resultType).getTypeArguments();
             parameterizedResult = typeArguments.get(0);
-            serializerCreator.generateSerializerReference(parameterizedResult, w, false);
+            if(parameterizedResult instanceof ArrayType)
+            {
+                deserializerCreator.generateDeserializerReference(parameterizedResult, w);
+            }
+            else
+            {
+                serializerCreator.generateSerializerReference(parameterizedResult, w, false);
+            }
             w.println(";");
         }
 
