@@ -1013,7 +1013,7 @@ class SerializerCreator implements SerializerClasses
         }
         pw.println();
         pw.println(getGeneratorString());
-        pw.println("class " + serializerSimpleName + " extends " + superclass);
+        pw.println("public class " + serializerSimpleName + " extends " + superclass);
         pw.println("{");
         pw.indent();
         return pw;
