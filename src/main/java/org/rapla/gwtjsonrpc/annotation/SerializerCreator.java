@@ -50,6 +50,8 @@ class SerializerCreator implements SerializerClasses
         defaultSerializers.put(String.class.getCanonicalName(), JavaLangString_JsonSerializer);
         defaultSerializers.put(Integer.class.getCanonicalName(), JavaLangInteger_JsonSerializer);
         defaultSerializers.put(Date.class.getCanonicalName(), JavaUtilDate_JsonSerializer);
+        defaultSerializers.put(Void.class.getCanonicalName(), VoidResult_JsonSerializer);
+        defaultSerializers.put("void", VoidResult_JsonSerializer);
         //    defaultSerializers.put(java.sql.Date.class.getCanonicalName(),
         //        JavaSqlDate_JsonSerializer.class.getCanonicalName());
         //    defaultSerializers.put(java.sql.Timestamp.class.getCanonicalName(),
@@ -87,7 +89,7 @@ class SerializerCreator implements SerializerClasses
             recursivelyCreateSerializers(logger, type);
             final String sn = getSerializerQualifiedName(targetType);
             //final TypeMirror erasedType = getErasedType(type, processingEnvironment);
-            final String qname = targetType.getQualifiedName().toString();
+            final String qname = targetType  != null ? targetType.getQualifiedName().toString() : type.toString();
             if (!generatedSerializers.containsKey(qname))
             {
                 generatedSerializers.put(qname, sn);
@@ -297,10 +299,13 @@ class SerializerCreator implements SerializerClasses
             throw new UnableToCompleteException("Abstract type " + qsn + " not supported here");
         }
         final TypeElement element = (TypeElement) processingEnvironment.getTypeUtils().asElement(ct);
-        for (final VariableElement f : sortFields(element))
+        if(element != null)
         {
-            //    final TreeLogger branch = logger.branch(TreeLogger.DEBUG, "In type " + qsn + ", field " + f.getName());
-            checkCanSerialize(logger, f.asType());
+            for (final VariableElement f : sortFields(element))
+            {
+                //    final TreeLogger branch = logger.branch(TreeLogger.DEBUG, "In type " + qsn + ", field " + f.getName());
+                checkCanSerialize(logger, f.asType());
+            }
         }
     }
 

@@ -33,6 +33,7 @@ public interface SerializerClasses
     String SetSerializer = org.rapla.gwtjsonrpc.client.impl.ser.SetSerializer.class.getCanonicalName();
     String PrimitiveArrayResultDeserializers = org.rapla.gwtjsonrpc.client.impl.ser.PrimitiveArrayResultDeserializers.class.getCanonicalName();
     String PrimitiveResultDeserializers = org.rapla.gwtjsonrpc.client.impl.ser.PrimitiveResultDeserializers.class.getCanonicalName();
+    String VoidResult_JsonSerializer = org.rapla.gwtjsonrpc.client.impl.ser.VoidResult_JsonSerializer.class.getCanonicalName();
 
 
 }

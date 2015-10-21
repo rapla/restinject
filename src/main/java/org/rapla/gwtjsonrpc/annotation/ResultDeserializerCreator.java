@@ -210,11 +210,30 @@ class ResultDeserializerCreator
 
     public void generateDeserializerReference(TypeMirror targetType, SourceWriter w)
     {
-        if (SerializerCreator.isBoxedPrimitive(targetType))
+        if (SerializerCreator.isBoxedPrimitive(targetType) || SerializerCreator.isPrimitive(targetType))
         {
             w.print(SerializerClasses.PrimitiveResultDeserializers);
             w.print(".");
-            w.print(asTypeElement(targetType).getSimpleName().toString().toUpperCase());
+            final String serializerName;
+            final TypeElement typeElement = asTypeElement(targetType);
+            if (typeElement != null)
+            {
+                serializerName = typeElement.getSimpleName().toString().toUpperCase();
+            }
+            else
+            {
+                final String primitiveClassName = targetType.toString().toUpperCase();
+                if("INT".equals(primitiveClassName))
+                {
+                    serializerName = "INTEGER";
+                }
+                else
+                {
+                    serializerName = primitiveClassName;
+                }
+                
+            }
+            w.print(serializerName);
             w.print("_INSTANCE");
         }
         else if (targetType instanceof ArrayType)
