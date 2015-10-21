@@ -173,12 +173,7 @@ public class ProxyCreator implements SerializerClasses
         Set<Modifier> modifiers = m.getModifiers();
         final Produces producesAnnotation = m.getAnnotation(Produces.class);
         String methodClass = enclosingElement.asType().toString();
-        return modifiers.contains(Modifier.FINAL) || modifiers.contains(Modifier.PRIVATE) || methodClass.equals("java.lang.Object") || (producesAnnotation != null && !producesJson(producesAnnotation.value()));
-    }
-
-    private boolean producesJson(String[] value)
-    {
-        return Arrays.asList(value).contains(MediaType.APPLICATION_JSON);
+        return modifiers.contains(Modifier.FINAL) || modifiers.contains(Modifier.PRIVATE) || methodClass.equals("java.lang.Object");
     }
 
     private boolean returnsCallbackHandle(final ExecutableElement m)

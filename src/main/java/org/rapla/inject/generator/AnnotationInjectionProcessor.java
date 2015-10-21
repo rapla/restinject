@@ -10,6 +10,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
@@ -83,6 +84,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         for ( Element element :roundEnv.getElementsAnnotatedWith(RemoteJsonMethod.class))
         {
             final TypeElement interfaceElement = (TypeElement) element;
+            if(interfaceElement.getKind() != ElementKind.INTERFACE)
+            {
+                continue;
+            }
             ProxyCreator proxyCreator = new ProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
             String proxyClassName = proxyCreator.create(proxyLogger);
             final String qualifiedName = interfaceElement.getQualifiedName().toString();
