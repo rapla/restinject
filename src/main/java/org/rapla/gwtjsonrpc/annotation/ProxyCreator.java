@@ -16,7 +16,6 @@ package org.rapla.gwtjsonrpc.annotation;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -34,7 +33,6 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.JavaFileObject;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
 
 import org.rapla.gwtjsonrpc.RemoteJsonMethod;
 
@@ -324,14 +322,7 @@ public class ProxyCreator implements SerializerClasses
             w.print(" = ");
             final List<? extends TypeMirror> typeArguments = ((DeclaredType) resultType).getTypeArguments();
             parameterizedResult = typeArguments.get(0);
-            if(parameterizedResult instanceof ArrayType)
-            {
-                deserializerCreator.generateDeserializerReference(parameterizedResult, w);
-            }
-            else
-            {
-                serializerCreator.generateSerializerReference(parameterizedResult, w, false);
-            }
+            deserializerCreator.generateDeserializerReference(parameterizedResult, w);
             w.println(";");
         }
 

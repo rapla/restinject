@@ -15,14 +15,21 @@
 package org.rapla.gwtjsonrpc.client.impl.ser;
 
 import org.rapla.gwtjsonrpc.client.impl.JsonSerializer;
+import org.rapla.gwtjsonrpc.client.impl.ResultDeserializer;
+
+import com.google.gwt.core.client.JavaScriptObject;
 
 /** Base serializer for Enum types. */
 public abstract class EnumSerializer<T extends Enum<?>> extends
-    JsonSerializer<T> {
+    JsonSerializer<T> implements ResultDeserializer<Object> {
   @Override
   public void printJson(final StringBuilder sb, final T o) {
     sb.append('"');
     sb.append(o.name());
     sb.append('"');
+  }
+  @Override
+  public Object fromResult(JavaScriptObject responseObject) {
+    return fromJson(responseObject.toString());
   }
 }
