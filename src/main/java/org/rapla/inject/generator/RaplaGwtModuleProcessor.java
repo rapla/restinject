@@ -196,7 +196,6 @@ public class RaplaGwtModuleProcessor
             }
         }
 
-        final String folder = "META-INF/services/";
         boolean foundExtension = false;
         boolean foundDefaultImpl = false;
         // load all implementations or extensions from service list file
@@ -205,14 +204,6 @@ public class RaplaGwtModuleProcessor
         final BufferedReader br = new BufferedReader(new FileReader(modules));
         for (String implementationClassName = br.readLine(); implementationClassName != null; implementationClassName = br.readLine())
         {
-            if ( interfaceClass.getAnnotation(RemoteJsonMethod.class) != null)
-            {
-                String sourceLine = "binder.bind(" + interfaceName + ".class).to(" + implementationClassName + ".class)";
-                sourceLine += ";";
-                src.println(sourceLine);
-                foundDefaultImpl = true;
-                continue;
-            }
             final TypeElement implementingType = processingEnv.getElementUtils().getTypeElement(implementationClassName);
 
             if (implementingType == null)
@@ -223,7 +214,19 @@ public class RaplaGwtModuleProcessor
                     continue;
             }
             Collection<String> idList = getImplementingIds(interfaceClass, implementingType);
-
+            if ( interfaceClass.getAnnotation(RemoteJsonMethod.class) != null)
+            {
+                final DefaultImplementation annotation = implementingType.getAnnotation(DefaultImplementation.class);
+                final InjectionContext[] context = annotation.context();
+                if(InjectionContext.isInjectableOnGwt(context))
+                {
+                    String sourceLine = "binder.bind(" + interfaceName + ".class).to(" + implementationClassName + ".class)";
+                    sourceLine += ";";
+                    src.println(sourceLine);
+                    foundDefaultImpl = true;
+                }
+                continue;
+            }
             if (idList.size() > 0)
             {
                 foundExtension = true;
@@ -261,7 +264,7 @@ public class RaplaGwtModuleProcessor
                 src.println(sourceLine);
             }
         }
-
+        br.close();
         if (isExtensionPoint)
         {
             if (!foundExtension)
