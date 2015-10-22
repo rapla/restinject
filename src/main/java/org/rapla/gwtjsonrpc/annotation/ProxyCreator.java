@@ -212,8 +212,7 @@ public class ProxyCreator implements SerializerClasses
         TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
         String interfaceName =  erasedType.getQualifiedName().toString();
         pw.println(getGeneratorString());
-        pw.println("@" + DefaultImplementation.class.getCanonicalName() + "(of=" + interfaceName + ".class, context="
-                + InjectionContext.class.getCanonicalName() + "." + InjectionContext.gwt + ")");
+        //pw.println("@" + DefaultImplementation.class.getCanonicalName() + "(of=" + interfaceName + ".class, context=" + InjectionContext.class.getCanonicalName() + "." + InjectionContext.gwt + ")");
         pw.println("public class " + className + " extends " + AbstractJsonProxy_simple + " implements " + interfaceName);
         pw.println("{");
         pw.indent();

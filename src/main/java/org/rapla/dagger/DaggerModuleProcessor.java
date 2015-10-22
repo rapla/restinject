@@ -17,6 +17,7 @@ import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
 import org.rapla.gwtjsonrpc.annotation.ProxyCreator;
@@ -134,10 +135,9 @@ public class DaggerModuleProcessor
         for (String implementingClass : implementingClasses)
         {
             final TypeElement implementingClassTypeElement = processingEnvironment.getElementUtils().getTypeElement(implementingClass);
-            if (implementingClassTypeElement == null)
+            final Generated generated = new Generated(interfaceName, implementingClass);
+            if (implementingClass.endsWith(ProxyCreator.PROXY_SUFFIX) && !alreadyGenerated.contains(generated))
             {// Generated Json Proxies
-                final Generated generated = new Generated(interfaceName, implementingClass);
-                if (implementingClass.endsWith(ProxyCreator.PROXY_SUFFIX) && !alreadyGenerated.contains(generated))
                 {
                     alreadyGenerated.add(generated);
                     String interaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
@@ -204,6 +204,11 @@ public class DaggerModuleProcessor
             alreadyGenerated.add(generated);
             final String interfaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
             final ExecutableElement constructor = getConstructor(implementingClassTypeElement);
+            if ( constructor == null)
+            {
+                processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR,"No injectable constructor found for " + implementingClassTypeElement + " Ignoring.");
+                return;
+            }
             final List<? extends VariableElement> parameters = constructor.getParameters();
             moduleWriter.println();
             moduleWriter.println("@Provides");
@@ -249,6 +254,11 @@ public class DaggerModuleProcessor
         final String interfaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
         final String defaultImplClassName = implementingClassTypeElement.getSimpleName().toString();
         final ExecutableElement constructor = getConstructor(implementingClassTypeElement);
+        if ( constructor == null)
+        {
+            processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR,"No injectable constructor found for " + implementingClassTypeElement + " Ignoring.");
+            return;
+        }
         final List<? extends VariableElement> parameters = constructor.getParameters();
         moduleWriter.println();
         moduleWriter.println("@Provides");

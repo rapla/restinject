@@ -15,8 +15,6 @@
 package org.rapla.gwtjsonrpc.annotation;
 
 import org.rapla.gwtjsonrpc.RemoteJsonMethod;
-import org.rapla.inject.DefaultImplementation;
-import org.rapla.inject.InjectionContext;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
@@ -204,8 +202,7 @@ public class SwingProxyCreator implements SerializerClasses
         TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
         String interfaceName = erasedType.getQualifiedName().toString();
         pw.println(getGeneratorString());
-        pw.println("@" + DefaultImplementation.class.getCanonicalName() + "(of=" + interfaceName + ".class, context="
-                + InjectionContext.class.getCanonicalName() + "." + InjectionContext.swing + ")");
+        //pw.println("@" + DefaultImplementation.class.getCanonicalName() + "(of=" + interfaceName + ".class, context=" + InjectionContext.class.getCanonicalName() + "." + InjectionContext.swing + ")");
         pw.println("public class " + className + " extends " + AbstractJsonJavaProxy + " implements " + interfaceName);
         pw.println("{");
         pw.indent();
