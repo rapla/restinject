@@ -21,6 +21,8 @@ public class MySwingTest extends TestCase
 
     BasicRaplaHTTPConnector.CustomConnector connector = new BasicRaplaHTTPConnector.CustomConnector()
     {
+
+        String accessToken;
         Executor executor = new Executor()
         {
             @Override public void execute(Runnable command)
@@ -31,7 +33,12 @@ public class MySwingTest extends TestCase
 
         @Override public String reauth(BasicRaplaHTTPConnector proxy) throws Exception
         {
-            return null;
+            return accessToken;
+        }
+
+        @Override public String getAccessToken()
+        {
+            return accessToken;
         }
 
         @Override public Exception deserializeException(String classname, String s, List<String> params)
@@ -54,6 +61,8 @@ public class MySwingTest extends TestCase
         {
             return executor;
         }
+
+
     };
 
 

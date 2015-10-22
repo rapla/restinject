@@ -119,6 +119,7 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         Class[] getNonPrimitiveClasses();
         Exception getConnectError(IOException ex);
         Executor getScheduler();
+        String getAccessToken();
     }
 
     private Gson createJsonMapper()
@@ -219,8 +220,15 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         return new RaplaConnectException(message.toString());
     }
 
+    synchronized protected JsonObject sendCall_(String requestMethod, URL methodURL, JsonElement jsonObject) throws Exception
+    {
+        String authenticationToken = customConnector.getAccessToken();
+        return sendCall_(requestMethod, methodURL, jsonObject, authenticationToken);
+    }
+
     synchronized protected JsonObject sendCall_(String requestMethod, URL methodURL, JsonElement jsonObject, String authenticationToken) throws Exception
     {
+
         JsonObject resultMessage;
         try
         {
@@ -255,71 +263,10 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
             {
                 throw ex;
             }
-
         }
         return resultMessage;
     }
 
-    /*
-    static private String reauth(BasicRaplaHTTPConnector proxy) throws Exception
-    {
-        String retryCode;
-        if (!loginCmd)
-        {
-            String newAuthCode;
-            // we only start one reauth call at a time. So check if reauth is in progress
-
-            if (!reAuthNode.tryAcquire())
-            {
-                // if yes
-                if (reAuthNode.tryAcquire(10000, TimeUnit.MILLISECONDS))
-                {
-                    reAuthNode.release();
-                    // try the recently acquired access token
-                    newAuthCode = serverInfo.getAccessToken();
-                }
-                else
-                {
-                    throw new RaplaConnectException("Login in progress. Taking longer than expected ");
-                }
-            }
-            else
-            {
-                // no reauth in progress so we start a new one
-                try
-                {
-                    newAuthCode = reAuth();
-                }
-                finally
-                {
-                    reAuthNode.release();
-                }
-            }
-            retryCode = newAuthCode;
-        }
-        else
-        {
-            retryCode = null;
-        }
-        return retryCode;
-    }
-
-    Semaphore reAuthNode = new Semaphore(1);
-
-
-    private String reAuth() throws Exception
-    {
-        URL loginURL = getMethodUrl(reconnectInfo.service, serverInfo);
-        JsonElement jsonObject = serializeCall(reconnectInfo.method, reconnectInfo.args);
-        JsonObject resultMessage = sendCall_("POST", loginURL, jsonObject, null);
-        checkError(resultMessage);
-        LoginTokens result = (LoginTokens) getResult(reconnectInfo.method, resultMessage);
-        String newAuthCode = result.getAccessToken();
-        serverInfo.setAccessToken(newAuthCode);
-        //logger.warn("TEST", new RaplaException("TEST Ex"));
-        return newAuthCode;
-    }
-    */
 
     protected void checkError(JsonObject resultMessage) throws Exception
     {
@@ -327,18 +274,7 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         if (errorElement != null)
         {
             Exception ex = deserializeExceptionObject(resultMessage);
-//            String message = ex.getMessage();
-//            if (loginCmd || message == null)
-//            {
-//                throw ex;
-//            }
-//            // test if error cause is an expired authorization
-//            if (message.indexOf(RemoteStorage.USER_WAS_NOT_AUTHENTIFIED) >= 0 && reconnectInfo != null)
-//            {
-//                throw new AuthenticationException(message);
-//            }
             throw ex;
-
         }
     }
 
@@ -431,23 +367,6 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         return element;
     }
 
-    class ReconnectInfo
-    {
-        Class service;
-        Method method;
-        Object[] args;
-    }
-
-    ReconnectInfo reconnectInfo;
-
-    public void setReAuthentication(Class service, Method method, Object[] args)
-    {
-        reconnectInfo = new ReconnectInfo();
-        reconnectInfo.service = service;
-        reconnectInfo.method = method;
-        reconnectInfo.args = args;
-    }
-
     //    private void addParams(Appendable writer, Map<String,String> args ) throws IOException
     //    {
     //    	writer.append( "v="+URLEncoder.encode(clientVersion,"utf-8"));
@@ -468,7 +387,7 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
     //        }
     //    }
 
-    static class AuthenticationException extends Exception
+    public static class AuthenticationException extends Exception
     {
         public AuthenticationException(String message)
         {

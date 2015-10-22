@@ -209,7 +209,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             
             // Dagger
             processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Dagger Modules");
-            new DaggerModuleProcessor(processingEnv).process();
+            final DaggerModuleProcessor daggerModuleProcessor = new DaggerModuleProcessor(processingEnv);
+            //daggerModuleProcessor.process();
         }
 
         return found;

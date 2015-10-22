@@ -394,14 +394,13 @@ public class SwingProxyCreator implements SerializerClasses
         w.indent();
         final String className = svcInf.getQualifiedName().toString();
         w.println("URL methodURL = getMethodUrl(\"" + className + "\", \"" + methodName + "\");");
-        w.println("String accessToken = null;");
         //final String resultClassname = "org.rapla.gwtjsonrpc.annotation.AnnotationProcessingTest.Result";
 
         w.println("Method remoteMethod = findMethod(" + className + ".class, \"" + methodName + "\");");
         w.println("Object[] args = new Object[] { " + argsBuilder.toString() + " };");
 
         w.println("final JsonObject element = serializeCall(remoteMethod, args);");
-        w.println("JsonObject resultMessage = sendCall_(\"POST\", methodURL, element, accessToken);");
+        w.println("JsonObject resultMessage = sendCall_(\"POST\", methodURL, element);");
         w.println("Class resultType = " + resultClassname + ".class;");
         w.println("Class containerClass = " + containerClass + ";");
         w.println("final Object result = getResult(resultMessage, resultType, containerClass);");
