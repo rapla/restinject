@@ -85,8 +85,8 @@
 						<configuration>
 							<defaultOutputDirectory>${project.build.directory}/generated-test-sources/apt-test</defaultOutputDirectory>
 							<processors>
-								<processor>dagger.internal.codegen.ComponentProcessor</processor>
 								<processor>org.rapla.inject.generator.AnnotationInjectionProcessor</processor>
+								<processor>dagger.internal.codegen.ComponentProcessor</processor>
 							</processors>
 						</configuration>
 					</execution>

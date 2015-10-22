@@ -23,6 +23,7 @@ import org.rapla.inject.generator.AnnotationInjectionProcessor;
 
 import dagger.Module;
 import dagger.Provides;
+import dagger.Provides.Type;
 
 public class DaggerModuleProcessor
 {
@@ -99,6 +100,7 @@ public class DaggerModuleProcessor
         moduleWriter.println("package org.rapla.dagger;");
         moduleWriter.println();
         moduleWriter.println("import " + Provides.class.getCanonicalName() + ";");
+        moduleWriter.println("import " + Provides.Type.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Module.class.getCanonicalName() + ";");
         moduleWriter.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
         moduleWriter.println();
@@ -226,9 +228,17 @@ public class DaggerModuleProcessor
         final String interfaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
         final String defaultImplClassName = implementingClassTypeElement.getSimpleName().toString();
         moduleWriter.println();
-        moduleWriter.println("@Provides");
+        moduleWriter.println("@Provides(type=Type.MAP)");
         moduleWriter.println("@" + DaggerMapKey.class.getSimpleName() + "(\"" + extension.id() + "\")");
         moduleWriter.println("public " + interfaceName + " provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName + "_Map("
+                + implementingClassTypeElement.getQualifiedName().toString() + "_Factory factory) {");
+        moduleWriter.indent();
+        moduleWriter.println("return factory.get();");
+        moduleWriter.outdent();
+        moduleWriter.println("}");
+        moduleWriter.println();
+        moduleWriter.println("@Provides(type=Type.SET)");
+        moduleWriter.println("public " + interfaceName + " provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName + "_Set("
                 + implementingClassTypeElement.getQualifiedName().toString() + "_Factory factory) {");
         moduleWriter.indent();
         moduleWriter.println("return factory.get();");
