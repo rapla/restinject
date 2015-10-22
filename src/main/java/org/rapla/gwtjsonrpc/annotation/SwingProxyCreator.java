@@ -15,6 +15,8 @@
 package org.rapla.gwtjsonrpc.annotation;
 
 import org.rapla.gwtjsonrpc.RemoteJsonMethod;
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.InjectionContext;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
@@ -195,12 +197,15 @@ public class SwingProxyCreator implements SerializerClasses
         pw.println("import java.net.URL;");
         pw.println("import " + FutureResult + ";");
         pw.println("import " + AbstractJsonJavaProxy + ";");
+        pw.println("import " + AbstractJsonJavaProxy + ".CustomConnector;");
         pw.println("import " + FutureResultImpl + ";");
 
         pw.println();
         TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
         String interfaceName = erasedType.getQualifiedName().toString();
         pw.println(getGeneratorString());
+        pw.println("@" + DefaultImplementation.class.getCanonicalName() + "(of=" + interfaceName + ".class, context="
+                + InjectionContext.class.getCanonicalName() + "." + InjectionContext.swing + ")");
         pw.println("public class " + className + " extends " + AbstractJsonJavaProxy + " implements " + interfaceName);
         pw.println("{");
         pw.indent();
@@ -213,9 +218,10 @@ public class SwingProxyCreator implements SerializerClasses
         if (relPath != null)
         {
             w.println();
-            w.println("public " + getProxySimpleName() + "(Executor scheduler, String connectErrorString) {");
+            w.println("@javax.inject.Inject");
+            w.println("public " + getProxySimpleName() + "(CustomConnector customConnector) {");
             w.indent();
-            w.println("super(scheduler, connectErrorString);");
+            w.println("super(customConnector);");
             String path = relPath.path();
             if (path == null || path.isEmpty())
             {
@@ -323,6 +329,7 @@ public class SwingProxyCreator implements SerializerClasses
         w.indent();
         final boolean wrapFutureResult;
         final String resultClassname;
+        final String cast;
         String containerClass = "null";
         {
             if ((resultType instanceof DeclaredType) && ((DeclaredType) resultType).getTypeArguments() != null && !((DeclaredType) resultType)
@@ -334,21 +341,25 @@ public class SwingProxyCreator implements SerializerClasses
                 if ( !wrapFutureResult)
                 {
                     TypeMirror erasedType = SerializerCreator.getErasedType(resultType1, processingEnvironment);
-                    containerClass = "\"" +erasedType.toString() + "\"";
+                    containerClass = erasedType.toString() + ".class";
                     resultClassname = typeArguments.get(0).toString();
+                    cast = resultType1.toString();
                 }
                 else
                 {
-                    if (typeArguments.size() == 1)
+                    final TypeMirror typeMirror = typeArguments.get(0);
+                    if ((typeMirror instanceof DeclaredType) && ((DeclaredType) typeMirror).getTypeArguments() != null && !((DeclaredType) typeMirror).getTypeArguments().isEmpty())
                     {
-                        containerClass = "null";
-                        resultClassname = typeArguments.get(0).toString();
+                        final TypeMirror erasedType = SerializerCreator.getErasedType(typeMirror, processingEnvironment);
+                        containerClass = erasedType.toString() + ".class";
+                        final TypeMirror innerType = ((DeclaredType) typeMirror).getTypeArguments().get(0);
+                        resultClassname = innerType.toString();
                     }
                     else
                     {
-                        containerClass = typeArguments.get(0).toString();
-                        resultClassname = typeArguments.get(1).toString();
+                        resultClassname = typeMirror.toString();
                     }
+                    cast = typeMirror.toString();
                 }
 
                 {
@@ -364,6 +375,7 @@ public class SwingProxyCreator implements SerializerClasses
             {
                 resultClassname = resultType.toString();
                 wrapFutureResult = false;
+                cast = resultClassname;
             }
         }
         w.println("try{");
@@ -398,7 +410,14 @@ public class SwingProxyCreator implements SerializerClasses
         w.println("final Object result = getResult(resultMessage, resultType, containerClass);");
         if ( !"void".equals(resultClassname))
         {
-            w.println("return (" + resultClassname + ") result;");
+            if ( wrapFutureResult)
+            {
+                w.println("return result;");
+            }
+            else
+            {
+                w.println("return (" + cast + ") result;");
+            }
         }
 
         if (wrapFutureResult)

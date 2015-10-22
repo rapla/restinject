@@ -13,9 +13,9 @@ import java.util.Set;
 public interface AnnotationProcessingTest
 {
 
-    FutureResult<Result> sayHello(Parameter param);
-
+    FutureResult<List<Result>> sayHello(Parameter param);
     Result sayHello2(Parameter param);
+    List<Result> sayHello3(Parameter param);
 
     public static class Result {
         private String name;
@@ -81,7 +81,6 @@ public interface AnnotationProcessingTest
 
     public static class Parameter
     {
-
         private Map<String, List<String>> requestedIds;
         private List<Integer> actionIds;
         private Date lastRequestTime;
@@ -126,6 +125,5 @@ public interface AnnotationProcessingTest
         {
             this.casts = casts;
         }
-
     }
 }

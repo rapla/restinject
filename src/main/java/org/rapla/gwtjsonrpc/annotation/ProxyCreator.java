@@ -226,6 +226,7 @@ public class ProxyCreator implements SerializerClasses
         if (relPath != null)
         {
             w.println();
+            w.println("@javax.inject.Inject");
             w.println("public " + getProxySimpleName() + "() {");
             w.indent();
             String path = relPath.path();

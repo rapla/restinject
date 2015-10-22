@@ -4,6 +4,7 @@ import org.rapla.gwtjsonrpc.annotation.AnnotationProcessingTest;
 import org.rapla.gwtjsonrpc.common.FutureResult;
 
 import javax.inject.Inject;
+import java.util.List;
 
 public class Bootstrap
 {
@@ -17,8 +18,8 @@ public class Bootstrap
 
     public AnnotationProcessingTest.Result call(AnnotationProcessingTest.Parameter p) throws Exception
     {
-        final FutureResult<AnnotationProcessingTest.Result> resultFutureResult = webservice.sayHello(p);
-        final AnnotationProcessingTest.Result result = resultFutureResult.get();
+        final FutureResult<List<AnnotationProcessingTest.Result>> resultFutureResult = webservice.sayHello(p);
+        final AnnotationProcessingTest.Result result = resultFutureResult.get().get(0);
         return result;
     }
 }

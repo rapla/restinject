@@ -8,11 +8,19 @@ import java.util.List;
 
 public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
 {
-    @Override public FutureResult<Result> sayHello(Parameter param)
+    @Override public FutureResult<List<Result>> sayHello(Parameter param)
+    {
+        List<Result> list = sayHello3(param);
+        final ResultImpl<List<Result>> futureResult = new ResultImpl<>(list);
+        return futureResult;
+    }
+
+    @Override public List<Result> sayHello3(Parameter param)
     {
         Result result = sayHello2(param);
-        final ResultImpl<Result> futureResult = new ResultImpl<Result>(result);
-        return futureResult;
+        List<Result> list = new ArrayList<>();
+        list.add( result );
+        return list;
     }
 
     @Override public Result sayHello2(Parameter param)

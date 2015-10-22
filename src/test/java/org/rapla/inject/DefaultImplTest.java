@@ -11,14 +11,8 @@ import javax.inject.Inject;
 })
 public class DefaultImplTest implements  ImplInterface, OtherInterface
 {
-    
-    public DefaultImplTest(String param)
-    {
-
-    }
-
     @Inject
-    public DefaultImplTest(List<String> param1, boolean isSo)
+    public DefaultImplTest()
     {
 
     }
