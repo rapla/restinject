@@ -21,11 +21,4 @@
   <inherits name='com.google.gwt.json.JSON'/>
   <source path='client' />
   <source path='common' />
-
-    <!--
-  <generate-with class="org.rapla.gwtjsonrpc.rebind.RemoteJsonServiceProxyGenerator">
-    <when-type-assignable class="org.rapla.gwtjsonrpc.common.RemoteJsonService" />
-    <when-type-annotated class="javax.jws.WebService"/>
-  </generate-with>
-    -->
 </module>

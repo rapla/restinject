@@ -3,11 +3,11 @@ package org.rapla.gwtjsonrpc.annotation;
 
 public interface SerializerClasses
 {
-    String CallbackHandle = org.rapla.gwtjsonrpc.client.CallbackHandle.class.getCanonicalName();
     String FutureResult = org.rapla.gwtjsonrpc.common.FutureResult.class.getCanonicalName();
 
     String JsonCall20HttpGet = org.rapla.gwtjsonrpc.client.impl.JsonCall20HttpGet.class.getCanonicalName();
     String JsonCall20HttpPost = org.rapla.gwtjsonrpc.client.impl.JsonCall20HttpPost.class.getCanonicalName();
+    String AbstractJsonJavaProxy = org.rapla.rest.client.BasicRaplaHTTPConnector.class.getCanonicalName();
     String AbstractJsonProxy = org.rapla.gwtjsonrpc.client.impl.AbstractJsonProxy.class.getCanonicalName();
     String AbstractJsonProxy_simple = org.rapla.gwtjsonrpc.client.impl.AbstractJsonProxy.class.getSimpleName();
     String FutureResultImpl = org.rapla.gwtjsonrpc.client.impl.FutureResultImpl.class.getCanonicalName();

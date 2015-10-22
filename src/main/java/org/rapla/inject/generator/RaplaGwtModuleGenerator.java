@@ -1,117 +1,124 @@
 package org.rapla.inject.generator;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import org.rapla.gwtjsonrpc.RemoteJsonMethod;
+import org.rapla.gwtjsonrpc.annotation.ProxyCreator;
+import org.rapla.gwtjsonrpc.annotation.SourceWriter;
+import org.rapla.inject.*;
 
+import javax.annotation.processing.Filer;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.inject.Singleton;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.MirroredTypeException;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.*;
 
-import org.rapla.inject.DefaultImplementation;
-import org.rapla.inject.Extension;
-import org.rapla.inject.ExtensionPoint;
-import org.rapla.inject.InjectionContext;
-
-import com.google.gwt.core.ext.Generator;
-import com.google.gwt.core.ext.GeneratorContext;
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
-import com.google.gwt.user.rebind.SourceWriter;
-
-public class RaplaGwtModuleGenerator extends Generator
+public class RaplaGwtModuleGenerator
 {
-    ClassLoader classLoader;
 
-    @Override public String generate(TreeLogger logger, GeneratorContext context, String typeName) throws UnableToCompleteException
+    ProcessingEnvironment processingEnv;
+    RaplaGwtModuleGenerator.MyLogger logger;
+
+    public RaplaGwtModuleGenerator(ProcessingEnvironment processingEnv)
     {
+        this.processingEnv = processingEnv;
+
+        logger = new RaplaGwtModuleGenerator.MyLogger()
+        {
+            @Override public void warn(String message)
+            {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, message);
+            }
+
+            @Override public void info(String message)
+            {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, message);
+
+            }
+        };
+    }
+
+    public void process(String packageName, String className) throws IOException
+    {
+        SourceWriter src = null;
         try
         {
-            JClassType classType;
-            classType = context.getTypeOracle().getType(typeName);
-            classLoader = Class.forName(typeName).getClassLoader();
-            SourceWriter src = getSourceWriter(classType, context, logger);
-            // if we already created getSourceWriter returns null so we can abort
-            String nameOfGeneratedClass = typeName + "Generated";
-            if ( src == null)
-            {
-                return  nameOfGeneratedClass;
-            }
+            //Class classType = null;
+            src = getSourceWriter(packageName, className);
             src.println("public void configure(GinBinder binder) {");
-            src.indent();
+
             String folder = AnnotationInjectionProcessor.GWT_MODULE_LIST;
+            File f = AnnotationInjectionProcessor.getFile(processingEnv.getFiler());
+            BufferedReader reader = new BufferedReader(new FileReader(f));
             Set<String> interfaces = new LinkedHashSet<String>();
-            final Collection<URL> resources = find(folder);
-            for (URL url : resources)
+            for (String line = reader.readLine(); line != null;line = reader.readLine() )
             {
-                final InputStream modules = url.openStream();
-                final BufferedReader br = new BufferedReader(new InputStreamReader(modules, "UTF-8"));
-                String module = null;
-                while ((module = br.readLine()) != null)
-                {
-                    interfaces.add(module);
-                }
-                br.close();
+                interfaces.add(line);
             }
+            reader.close();
+
             for (String interfaceName : interfaces)
             {
-                Class<?> interaceClazz = null;
-                try
+                TypeElement interaceClazz = processingEnv.getElementUtils().getTypeElement(interfaceName);
+                if (interaceClazz != null)
                 {
-                    interaceClazz = Class.forName(interfaceName);
-                    addImplementations(interaceClazz, src, logger);
+                    addImplementations(interaceClazz, src, logger, f);
                 }
-                catch (ClassNotFoundException e1)
+                else
                 {
-                    logger.log(Type.WARN, "Found interfaceName definition but no class for " + interfaceName);
+                    logger.warn("Found interfaceName definition but no class for " + interfaceName);
                 }
             }
-            src.outdent();
             src.println("}");
-            src.commit(logger);
-            logger.log(Type.INFO, "Generating for: " + typeName + " ");
-            System.out.println("Generating for: " + typeName);
-            return  nameOfGeneratedClass;
+            src.println("}");
         }
-        catch (Exception e)
+        finally
         {
-            logger.log(Type.ERROR, e.getMessage(), e);
-            throw new UnableToCompleteException();
+            if (src != null)
+            {
+                src.close();
+            }
         }
     }
-
-    private Collection<URL> find(String fileWithfolder) throws IOException
-    {
-
-        List<URL> result = new ArrayList<URL>();
-        Enumeration<URL> resources = classLoader.getResources(fileWithfolder);
-        while (resources.hasMoreElements())
-        {
-            result.add(resources.nextElement());
-        }
-        return result;
-    }
+    //
+    //    private Collection<URL> find(ClassLoader classLoader,String fileWithfolder) throws IOException
+    //    {
+    //        List<URL> result = new ArrayList<URL>();
+    //        Enumeration<URL> resources = classLoader.getResources(fileWithfolder);
+    //        while (resources.hasMoreElements())
+    //        {
+    //            result.add(resources.nextElement());
+    //        }
+    //        return result;
+    //    }
 
     protected boolean isRelevant(InjectionContext... context)
     {
         return InjectionContext.isInjectableOnGwt(context);
     }
 
-    private boolean isImplementing(Class<?> interfaceClass, DefaultImplementation... clazzAnnot)
+    private boolean isImplementing(TypeElement interfaceClass, TypeElement implementingClass)
     {
-        for (DefaultImplementation ext : clazzAnnot)
+        List<DefaultImplementation> exts = new ArrayList<DefaultImplementation>();
+        DefaultImplementation di = implementingClass.getAnnotation(DefaultImplementation.class);
+        if(di != null)
+            exts.add(di);
+        final DefaultImplementationRepeatable dir = implementingClass.getAnnotation(DefaultImplementationRepeatable.class);
+        if(dir != null)
         {
-            final Class<?> provides = ext.of();
+            final DefaultImplementation[] value = dir.value();
+            exts.addAll(Arrays.asList(value));
+        }
+        for(DefaultImplementation ext : exts)
+        {
+            final TypeElement provides = getDefaultImplementationOf(ext);
             final InjectionContext[] contexts = ext.context();
             if (provides.equals(interfaceClass) && isRelevant(contexts))
             {
@@ -121,12 +128,22 @@ public class RaplaGwtModuleGenerator extends Generator
         return false;
     }
 
-    public static Collection<String> getImplementingIds(Class<?> interfaceClass, Extension... clazzAnnot)
+    public  Collection<String> getImplementingIds(TypeElement interfaceClass, TypeElement implementingClass)
     {
-        Set<String> ids = new LinkedHashSet<>();
-        for (Extension ext : clazzAnnot)
+        List<Extension> exts = new ArrayList<Extension>();
+        Extension di = implementingClass.getAnnotation(Extension.class);
+        if(di != null)
+            exts.add(di);
+        final ExtensionRepeatable dir = implementingClass.getAnnotation(ExtensionRepeatable.class);
+        if(dir != null)
         {
-            final Class<?> provides = ext.provides();
+            final Extension[] value = dir.value();
+            exts.addAll(Arrays.asList(value));
+        }
+        List<String> ids = new ArrayList<String>();
+        for (Extension ext : exts)
+        {
+            final TypeElement provides = getProvides(ext);
             if (provides.equals(interfaceClass))
             {
                 String id = ext.id();
@@ -134,11 +151,39 @@ public class RaplaGwtModuleGenerator extends Generator
             }
         }
         return ids;
+
     }
 
-    private <T> void addImplementations(Class<T> interfaceClass, SourceWriter src, TreeLogger logger) throws IOException
+    public interface MyLogger
     {
-        String interfaceName = interfaceClass.getCanonicalName();
+        void warn(String message);
+
+        void info(String message);
+    }
+
+    private TypeElement getContext(ExtensionPoint annotation)
+    {
+        try
+        {
+            annotation.context(); // this should throw
+        }
+        catch (MirroredTypeException mte)
+        {
+            return asTypeElement(mte.getTypeMirror());
+        }
+        return null; // can this ever happen ??
+    }
+
+    private TypeElement asTypeElement(TypeMirror typeMirror)
+    {
+        Types TypeUtils = this.processingEnv.getTypeUtils();
+        return (TypeElement) TypeUtils.asElement(typeMirror);
+    }
+
+    private <T> void addImplementations(TypeElement interfaceClass, SourceWriter src, MyLogger logger, File f) throws IOException
+    {
+
+        String interfaceName = interfaceClass.getQualifiedName().toString();
         final ExtensionPoint extensionPointAnnotation = interfaceClass.getAnnotation(ExtensionPoint.class);
         final boolean isExtensionPoint = extensionPointAnnotation != null;
         if (isExtensionPoint)
@@ -150,87 +195,76 @@ public class RaplaGwtModuleGenerator extends Generator
             }
         }
 
-        final String folder = "META-INF/services/";
         boolean foundExtension = false;
         boolean foundDefaultImpl = false;
         // load all implementations or extensions from service list file
-        Set<String> implemantations = new LinkedHashSet<String>();
-        final Collection<URL> resources = find(folder + interfaceName);
-        for (URL url : resources)
+        //Set<String> implemantations = new LinkedHashSet<String>();
+        File modules = AnnotationInjectionProcessor.getFile(interfaceName, f);
+        final BufferedReader br = new BufferedReader(new FileReader(modules));
+        for (String implementationClassName = br.readLine(); implementationClassName != null; implementationClassName = br.readLine())
         {
-            //final URL def = moduleDefinition.nextElement();
-            final InputStream in = url.openStream();
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-            String implementationClassName = null;
-            boolean implOrExtensionFound = false;
-            while ((implementationClassName = reader.readLine()) != null)
+
+            if ( interfaceClass.getAnnotation(RemoteJsonMethod.class) != null)
             {
-                try
+                //final DefaultImplementation annotation = implementingType.getAnnotation(DefaultImplementation.class);
+                //final InjectionContext[] context = annotation.context();
+                if(implementationClassName.endsWith(ProxyCreator.PROXY_SUFFIX))
                 {
-                    if (implemantations.contains(implementationClassName))
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        implemantations.add(implementationClassName);
-                    }
-                    // load class for implementation or extension
-                    final Class<?> clazz = Class.forName(implementationClassName);
-                    final Extension[] extensions = clazz.getAnnotationsByType(Extension.class);
-                    Collection<String> idList = getImplementingIds(interfaceClass, extensions);
-
-                    if (idList.size() > 0)
-                    {
-                        foundExtension = true;
-                        src.println("{");
-                        src.indent();
-                        src.println("GinMultibinder<" + interfaceName + "> setBinder = GinMultibinder.newSetBinder(binder, " + interfaceName + ".class);");
-                        src.println("setBinder.addBinding().to(" + implementationClassName + ".class).in(Singleton.class);");
-                        src.println("GinMapBinder<String," + interfaceName + "> mapBinder = GinMapBinder.newMapBinder(binder,String.class, " + interfaceName
-                                + ".class);");
-                        for (String id : idList)
-                        {
-                            src.println("mapBinder.addBinding(\"" + id + "\").to(" + implementationClassName + ".class).in(Singleton.class);");
-                        }
-                        src.outdent();
-                        src.println("}");
-                    }
-                    else
-                    {
-                        if (isExtensionPoint)
-                        {
-                            logger.log(Type.WARN, clazz + " provides no extension for " + interfaceName + " but is in the service list of " + interfaceName
-                                    + ". You may need run a clean build.");
-                        }
-                    }
-
-                    final DefaultImplementation[] defaultImplementations = clazz.getAnnotationsByType(DefaultImplementation.class);
-                    final boolean implementing = isImplementing(interfaceClass, defaultImplementations);
-                    if (implementing)
-                    {
-                        foundDefaultImpl = true;
-                        Singleton singletonAnnotation = interfaceClass.getAnnotation(Singleton.class);
-                        String sourceLine = "binder.bind(" + interfaceName + ".class).to(" + implementationClassName + ".class)";
-                        if(singletonAnnotation != null)
-                        {
-                            sourceLine += ".in(Singleton.class)";
-                        }
-                        sourceLine+=";";
-                        src.println(sourceLine);
-                    }
-
+                    String sourceLine = "binder.bind(" + interfaceName + ".class).to(" + implementationClassName + ".class)";
+                    sourceLine += ";";
+                    src.println(sourceLine);
+                    foundDefaultImpl = true;
                 }
-                catch (ClassNotFoundException e)
-                {
-                    logger.log(Type.WARN, "Error loading implementationClassName (" + implementationClassName + ") for " + interfaceName
-                            + " it maybe renamed/removed or the annotations have changed.");
-                }
-
+                continue;
             }
-            reader.close();
-        }
+            final TypeElement implementingType = processingEnv.getElementUtils().getTypeElement(implementationClassName);
 
+            if (implementingType == null)
+            {
+
+                logger.warn("Error loading implementationClassName (" + implementationClassName + ") for " + interfaceName
+                        + " it maybe renamed/removed or the annotations have changed.");
+                continue;
+            }
+            Collection<String> idList = getImplementingIds(interfaceClass, implementingType);
+            if (idList.size() > 0)
+            {
+                foundExtension = true;
+                src.println("{");
+                src.println("  GinMultibinder<" + interfaceName + "> setBinder = GinMultibinder.newSetBinder(binder, " + interfaceName + ".class);");
+                src.println("  setBinder.addBinding().to(" + implementationClassName + ".class).in(Singleton.class);");
+                src.println("  GinMapBinder<String," + interfaceName + "> mapBinder = GinMapBinder.newMapBinder(binder,String.class, " + interfaceName
+                        + ".class);");
+                for (String id : idList)
+                {
+                    src.println("  mapBinder.addBinding(\"" + id + "\").to(" + implementationClassName + ".class).in(Singleton.class);");
+                }
+                src.println("}");
+            }
+            else
+            {
+                if (isExtensionPoint)
+                {
+                    logger.warn(implementationClassName + " provides no extension for " + interfaceName + " but is in the service list of " + interfaceName
+                            + ". You may need run a clean build.");
+                }
+            }
+
+            final boolean implementing = isImplementing(interfaceClass, implementingType);
+            if (implementing)
+            {
+                foundDefaultImpl = true;
+                Object singletonAnnotation = interfaceClass.getAnnotation(Singleton.class);
+                String sourceLine = "binder.bind(" + interfaceName + ".class).to(" + implementationClassName + ".class)";
+                if (singletonAnnotation != null)
+                {
+                    sourceLine += ".in(Singleton.class)";
+                }
+                sourceLine += ";";
+                src.println(sourceLine);
+            }
+        }
+        br.close();
         if (isExtensionPoint)
         {
             if (!foundExtension)
@@ -243,34 +277,50 @@ public class RaplaGwtModuleGenerator extends Generator
         {
             if (!foundDefaultImpl)
             {
-                logger.log(Type.WARN,
-                        "No DefaultImplemenation found for " + interfaceName + " Interface will not be available in the supported context gwt ");
+                logger.warn("No DefaultImplementation found for " + interfaceName + " Interface will not be available in the supported context gwt ");
             }
         }
     }
 
-    public SourceWriter getSourceWriter(JClassType classType, GeneratorContext context, TreeLogger logger)
+    public  SourceWriter getSourceWriter(String packageName, String simpleName) throws IOException
     {
-        String packageName = classType.getPackage().getName();
-        String simpleName = classType.getSimpleSourceName() + "Generated";
-        ClassSourceFileComposerFactory composer = new ClassSourceFileComposerFactory(packageName, simpleName);
-        composer.addImplementedInterface("GinModule");
-        composer.addImport(packageName + "." + classType.getSimpleSourceName());
-        composer.addImport("javax.inject.Singleton");
-        composer.addImport("com.google.gwt.inject.gwt.GinModule");
-        composer.addImport("com.google.gwt.inject.gwt.binder.GinBinder");
-        composer.addImport("com.google.gwt.inject.gwt.multibindings.GinMultibinder");
-        composer.addImport("com.google.gwt.inject.gwt.multibindings.GinMapBinder");
-        PrintWriter printWriter = context.tryCreate(logger, packageName, simpleName);
-        if (printWriter == null)
+        Filer filer = processingEnv.getFiler();
+        JavaFileObject sourceFile = filer.createSourceFile(packageName + "." + simpleName );
+        SourceWriter writer = new SourceWriter(sourceFile.openWriter());
+        writer.println("package " + packageName + ";");
+        writer.println("import javax.inject.Singleton;");
+        writer.println("import com.google.gwt.inject.client.GinModule;");
+        writer.println("import com.google.gwt.inject.client.binder.GinBinder;");
+        writer.println("import com.google.gwt.inject.client.multibindings.GinMultibinder;");
+        writer.println("import com.google.gwt.inject.client.multibindings.GinMapBinder;");
+        writer.println("class " + simpleName + " implements GinModule {");
+        return writer;
+    }
+
+    private TypeElement getProvides(Extension annotation)
+    {
+        try
         {
-            return null;
+            annotation.provides(); // this should throw
         }
-        else
+        catch (MirroredTypeException mte)
         {
-            SourceWriter sw = composer.createSourceWriter(context, printWriter);
-            return sw;
+            return asTypeElement(mte.getTypeMirror());
         }
+        return null; // can this ever happen ??
+    }
+
+    private TypeElement getDefaultImplementationOf(DefaultImplementation annotation)
+    {
+        try
+        {
+            annotation.of(); // this should throw
+        }
+        catch (MirroredTypeException mte)
+        {
+            return asTypeElement(mte.getTypeMirror());
+        }
+        return null; // can this ever happen ??
     }
 
 }

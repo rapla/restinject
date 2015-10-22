@@ -14,8 +14,7 @@
 
 package org.rapla.gwtjsonrpc.annotation;
 
-import java.io.IOException;
-import java.util.HashMap;
+import com.google.gwt.core.client.JavaScriptObject;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -24,10 +23,8 @@ import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.tools.JavaFileObject;
-
-import org.rapla.gwtjsonrpc.rebind.SerializerClasses;
-
-import com.google.gwt.core.client.JavaScriptObject;
+import java.io.IOException;
+import java.util.HashMap;
 
 /**
  * Creator of ResultDeserializers. Actually, only object arrays have created
@@ -180,10 +177,10 @@ class ResultDeserializerCreator
         }
         pw.println("package " + pkgName + ";");
         pw.println("import " + JavaScriptObject.class.getCanonicalName() + ";");
-        pw.println("import " + org.rapla.gwtjsonrpc.rebind.SerializerClasses.ResultDeserializer + ";");
+        pw.println("import " + org.rapla.gwtjsonrpc.annotation.SerializerClasses.ResultDeserializer + ";");
         pw.println(getGeneratorString());
-        pw.println("public class " + simpleName + " extends " + org.rapla.gwtjsonrpc.rebind.SerializerClasses.ArrayResultDeserializer + " implements "
-                + org.rapla.gwtjsonrpc.rebind.SerializerClasses.ResultDeserializer + "<" + asTypeElement(targetType).getQualifiedName().toString() + ">");
+        pw.println("public class " + simpleName + " extends " + org.rapla.gwtjsonrpc.annotation.SerializerClasses.ArrayResultDeserializer + " implements "
+                + org.rapla.gwtjsonrpc.annotation.SerializerClasses.ResultDeserializer + "<" + asTypeElement(targetType).getQualifiedName().toString() + ">");
         pw.println("{");
         pw.indent();
         return pw;
@@ -199,10 +196,10 @@ class ResultDeserializerCreator
         TypeMirror componentType = arrayType.getComponentType();
         // Custom primitive deserializers
         if (SerializerCreator.isBoxedPrimitive(componentType))
-            return org.rapla.gwtjsonrpc.rebind.SerializerClasses.PrimitiveArrayResultDeserializers + "."
+            return org.rapla.gwtjsonrpc.annotation.SerializerClasses.PrimitiveArrayResultDeserializers + "."
                     + asTypeElement(componentType).getSimpleName().toString().toUpperCase() + "_INSTANCE";
         if(SerializerCreator.isPrimitive(componentType))
-            return org.rapla.gwtjsonrpc.rebind.SerializerClasses.PrimitiveArrayResultDeserializers + "."
+            return org.rapla.gwtjsonrpc.annotation.SerializerClasses.PrimitiveArrayResultDeserializers + "."
                     + getPrimitiveSerializerName(componentType) + "_INSTANCE";
         final TypeElement typeElement = (TypeElement) processingEnvironment.getTypeUtils().asElement(targetType);
         final String name = generatedDeserializers.get(typeElement.getQualifiedName().toString());

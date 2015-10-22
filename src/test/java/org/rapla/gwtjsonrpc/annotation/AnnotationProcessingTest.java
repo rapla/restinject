@@ -12,10 +12,11 @@ import java.util.Set;
 @RemoteJsonMethod
 public interface AnnotationProcessingTest
 {
-    @ResultType(Result.class)
+
     FutureResult<Result> sayHello(Parameter param);
 
-    
+    Result sayHello2(Parameter param);
+
     public static class Result {
         private String name;
         private List<String> ids;

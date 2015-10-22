@@ -2,8 +2,10 @@ package org.rapla.inject.generator;
 
 import org.rapla.gwtjsonrpc.RemoteJsonMethod;
 import org.rapla.gwtjsonrpc.annotation.ProxyCreator;
+import org.rapla.gwtjsonrpc.annotation.SwingProxyCreator;
 import org.rapla.inject.*;
 
+import javax.annotation.Generated;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -70,7 +72,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         }
         catch (Exception ioe)
         {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, ioe.getMessage());
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, ioe.getMessage());
+            return false;
         }
         return true;
     }
@@ -81,20 +84,30 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         File f = getFile(processingEnv.getFiler());
         boolean found = false;
         org.rapla.gwtjsonrpc.annotation.TreeLogger proxyLogger = new org.rapla.gwtjsonrpc.annotation.TreeLogger();
-        for ( Element element :roundEnv.getElementsAnnotatedWith(RemoteJsonMethod.class))
+        final Set<? extends Element> remoteMethods = roundEnv.getElementsAnnotatedWith(RemoteJsonMethod.class);
+        for ( Element element : remoteMethods)
         {
             final TypeElement interfaceElement = (TypeElement) element;
             if(interfaceElement.getKind() != ElementKind.INTERFACE)
             {
                 continue;
             }
+
             ProxyCreator proxyCreator = new ProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
             String proxyClassName = proxyCreator.create(proxyLogger);
+
+            SwingProxyCreator swingProxyCreator = new SwingProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
+            String swingproxyClassName = swingProxyCreator.create(proxyLogger);
+
             final String qualifiedName = interfaceElement.getQualifiedName().toString();
             appendToServiceList(f, qualifiedName);
             final File serviceFile = getFile(qualifiedName, f);
             appendToFile(serviceFile, proxyClassName);
-            found = true;
+            appendToFile(serviceFile, swingproxyClassName );
+            if (interfaceElement.getAnnotation(Generated.class) == null)
+            {
+                found = true;
+            }
         }
 
         //        List<InjectionContext> gwtContexts = Arrays.asList(new InjectionContext[] { InjectionContext.gwt, InjectionContext.gwt });
@@ -106,7 +119,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             final String qualifiedName = interfaceElement.getQualifiedName().toString();
             appendToServiceList(f, qualifiedName);
             addServiceFile(interfaceElement, implementationElement, f);
-            found = true;
+            if (implementationElement.getAnnotation(Generated.class) == null)
+            {
+                found = true;
+            }
         }
 
         for (Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementationRepeatable.class))
@@ -119,8 +135,12 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 final String qualifiedName = interfaceElement.getQualifiedName().toString();
                 appendToServiceList(f, qualifiedName);
                 addServiceFile(interfaceElement, implementationElement, f);
+                if (implementationElement.getAnnotation(Generated.class) == null)
+                {
+                    found = true;
+                }
             }
-            found = true;
+
         }
 
         for (Element elem : roundEnv.getElementsAnnotatedWith(ExtensionPoint.class))
@@ -138,7 +158,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             final Extension annotation = typeElement.getAnnotation(Extension.class);
             TypeElement provider = getProvides(annotation);
             addServiceFile(provider, typeElement, f);
-            found = true;
+            if (typeElement.getAnnotation(Generated.class) == null)
+            {
+                found = true;
+            }
 
         }
         for (Element elem : roundEnv.getElementsAnnotatedWith(ExtensionRepeatable.class))
@@ -151,7 +174,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 TypeElement provider = getProvides(extension);
                 addServiceFile(provider, typeElement, f);
             }
-            found = true;
+            if (typeElement.getAnnotation(Generated.class) == null)
+            {
+                found = true;
+            }
         }
 
         // Path
@@ -173,9 +199,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         // only generate the modules if we processed a class
         if ( found)
         {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating RaplaGinModulesGenerated");
             String className = "RaplaGinModulesGenerated";
             String packageName = "org.rapla.inject.client.gwt";
-            final RaplaGwtModuleProcessor raplaGwtModuleProcessor = new RaplaGwtModuleProcessor(processingEnv);
+            final RaplaGwtModuleGenerator raplaGwtModuleProcessor = new RaplaGwtModuleGenerator(processingEnv);
             raplaGwtModuleProcessor.process(packageName, className);
         }
 

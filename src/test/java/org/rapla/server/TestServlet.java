@@ -1,8 +1,10 @@
 package org.rapla.server;
 
+import com.google.gwt.i18n.client.Messages;
 import org.rapla.gwtjsonrpc.RemoteJsonMethod;
 import org.rapla.gwtjsonrpc.annotation.AnnotationProcessingTest;
 import org.rapla.gwtjsonrpc.annotation.AnnotationProcessingTestImpl;
+import org.rapla.gwtjsonrpc.annotation.ExampleWithParameterArray;
 import org.rapla.gwtjsonrpc.server.JsonServlet;
 
 import javax.servlet.ServletContext;
@@ -49,12 +51,16 @@ public class TestServlet extends HttpServlet
 
     private Object createWebservice(Class role, HttpServletRequest request) throws Exception
     {
-        if ( role.equals(AnnotationProcessingTest.class))
+        final String implClass = role.getCanonicalName() + "Impl";
+        try
         {
-            final AnnotationProcessingTest annotationProcessingTest = new AnnotationProcessingTestImpl();
-            return annotationProcessingTest;
+            final Object instance = Class.forName(implClass).newInstance();
+            return instance;
         }
-        throw new Exception("Service " + role + " not supported");
+        catch (ClassNotFoundException ex)
+        {
+            throw new Exception("Service " + role + " not supported. No implementation found. Looking for " + implClass);
+        }
     }
 
 
