@@ -6,5 +6,6 @@ public class MyAppTest extends TestCase
 {
     public void testApplication() throws Exception
     {
+        DaggerGwtInjectionTest.create().getRapla().print();
     }
 }
