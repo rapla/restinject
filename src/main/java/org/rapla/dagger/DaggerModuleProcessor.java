@@ -7,7 +7,6 @@ import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -113,7 +112,6 @@ public class DaggerModuleProcessor
         moduleWriter.println("import " + Module.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Factory.class.getCanonicalName() + ";");
         moduleWriter.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
-        moduleWriter.println("import " + Provider.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Singleton.class.getCanonicalName() + ";");
         moduleWriter.println();
         moduleWriter.println("@Module");
@@ -346,7 +344,6 @@ public class DaggerModuleProcessor
                 }
                 if (withType)
                 {
-                    sb.append("Provider<");
                     final TypeMirror asType = parameter.asType();
                     if (asType instanceof PrimitiveType)
                     {
@@ -367,7 +364,7 @@ public class DaggerModuleProcessor
                     {
                         sb.append(asType.toString());
                     }
-                    sb.append("> ");
+                    sb.append(" ");
                 }
                 sb.append(parameter.getSimpleName().toString());
             }
