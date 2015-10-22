@@ -1,9 +1,15 @@
 package org.rapla.inject.generator;
 
-import org.rapla.gwtjsonrpc.RemoteJsonMethod;
-import org.rapla.gwtjsonrpc.annotation.ProxyCreator;
-import org.rapla.gwtjsonrpc.annotation.SourceWriter;
-import org.rapla.inject.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -14,11 +20,16 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.*;
+
+import org.rapla.gwtjsonrpc.RemoteJsonMethod;
+import org.rapla.gwtjsonrpc.annotation.ProxyCreator;
+import org.rapla.gwtjsonrpc.annotation.SourceWriter;
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.DefaultImplementationRepeatable;
+import org.rapla.inject.Extension;
+import org.rapla.inject.ExtensionPoint;
+import org.rapla.inject.ExtensionRepeatable;
+import org.rapla.inject.InjectionContext;
 
 public class RaplaGwtModuleGenerator
 {
@@ -54,15 +65,8 @@ public class RaplaGwtModuleGenerator
             src = getSourceWriter(packageName, className);
             src.println("public void configure(GinBinder binder) {");
 
-            String folder = AnnotationInjectionProcessor.GWT_MODULE_LIST;
-            File f = AnnotationInjectionProcessor.getFile(processingEnv.getFiler());
-            BufferedReader reader = new BufferedReader(new FileReader(f));
             Set<String> interfaces = new LinkedHashSet<String>();
-            for (String line = reader.readLine(); line != null;line = reader.readLine() )
-            {
-                interfaces.add(line);
-            }
-            reader.close();
+            final File f = AnnotationInjectionProcessor.readInterfacesInto(interfaces, processingEnv);
 
             for (String interfaceName : interfaces)
             {
@@ -87,6 +91,7 @@ public class RaplaGwtModuleGenerator
             }
         }
     }
+
     //
     //    private Collection<URL> find(ClassLoader classLoader,String fileWithfolder) throws IOException
     //    {

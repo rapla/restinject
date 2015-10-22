@@ -1,5 +1,6 @@
 package org.rapla.inject.generator;
 
+import org.rapla.dagger.DaggerModuleProcessor;
 import org.rapla.gwtjsonrpc.RemoteJsonMethod;
 import org.rapla.gwtjsonrpc.annotation.ProxyCreator;
 import org.rapla.gwtjsonrpc.annotation.SwingProxyCreator;
@@ -24,6 +25,7 @@ import javax.tools.StandardLocation;
 import javax.ws.rs.Path;
 import java.io.*;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -204,6 +206,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             String packageName = "org.rapla.inject.client.gwt";
             final RaplaGwtModuleGenerator raplaGwtModuleProcessor = new RaplaGwtModuleGenerator(processingEnv);
             raplaGwtModuleProcessor.process(packageName, className);
+            
+            // Dagger
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Dagger Modules");
+            new DaggerModuleProcessor(processingEnv).process();
         }
 
         return found;
@@ -232,6 +238,14 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         {
             appendToFile(serviceFile, implementationName);
         }
+    }
+    
+    public static Set<String> readFileContent(String serviceFileName, File allserviceList) throws FileNotFoundException, IOException
+    {
+        final File file = getFile(serviceFileName, allserviceList);
+        Set<String> collection = new LinkedHashSet<String>();
+        readInto(collection , file);
+        return collection;
     }
 
     static public File getFile(String serviceFileName, File allserviceList)
@@ -270,6 +284,27 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             w.write(className + "\n");
         }
         w.close();
+    }
+
+    /**
+     * Reads the interfaces defined in META-INF/org.rapla.servicelist into the provided set
+     * and returns the File.
+     */
+    public static File readInterfacesInto(Set<String> interfaces, ProcessingEnvironment processingEnvironment) throws IOException, FileNotFoundException
+    {
+        File f = AnnotationInjectionProcessor.getFile(processingEnvironment.getFiler());
+        readInto(interfaces, f);
+        return f;
+    }
+
+    private static void readInto(Set<String> interfaces, File f) throws FileNotFoundException, IOException
+    {
+        BufferedReader reader = new BufferedReader(new FileReader(f));
+        for (String line = reader.readLine(); line != null;line = reader.readLine() )
+        {
+            interfaces.add(line);
+        }
+        reader.close();
     }
 
     public static File getFile(Filer filer) throws IOException
