@@ -11,7 +11,6 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.tools.JavaFileObject;
 
-import org.omg.CORBA.OMGVMCID;
 import org.rapla.gwtjsonrpc.annotation.ProxyCreator;
 import org.rapla.gwtjsonrpc.annotation.SourceWriter;
 import org.rapla.inject.DefaultImplementation;
@@ -55,6 +54,7 @@ public class DaggerModuleProcessor
         }
         moduleWriter.outdent();
         moduleWriter.println("}");
+        moduleWriter.close();
     }
 
     private void createMethods(String interfaceName, SourceWriter moduleWriter, File allserviceList) throws Exception
@@ -67,16 +67,19 @@ public class DaggerModuleProcessor
             {// Generated Json Proxies
                 if (implementingClass.endsWith(ProxyCreator.PROXY_SUFFIX))
                 {
-                    moduleWriter.println("public " + interfaceName + " provide_" + interfaceName + "_" + implementingClass + "() {");
+                    String interaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
+                    final String implementingClassWithoutPackage = extractNameWithoutPackage(implementingClass);
+                    moduleWriter.println("public " + interfaceName + " provide_" + interaceNameWithoutPackage + "_" + implementingClassWithoutPackage + "() {");
                     moduleWriter.indent();
-                    moduleWriter.println("return new " + implementingClassTypeElement.getQualifiedName().toString() + "();");
+                    moduleWriter.println("return new " + implementingClass + "();");
                     moduleWriter.outdent();
                     moduleWriter.println("}");
                 }
             }
             else
             {
-                final DefaultImplementationRepeatable defaultImplementationRepeatable = implementingClassTypeElement.getAnnotation(DefaultImplementationRepeatable.class);
+                final DefaultImplementationRepeatable defaultImplementationRepeatable = implementingClassTypeElement
+                        .getAnnotation(DefaultImplementationRepeatable.class);
                 if (defaultImplementationRepeatable != null)
                 {
                     final DefaultImplementation[] defaultImplementations = defaultImplementationRepeatable.value();
@@ -108,14 +111,18 @@ public class DaggerModuleProcessor
         }
     }
 
-    private void generate(TypeElement implementingClassTypeElement, String interfaceName, DefaultImplementation defaultImplementation, SourceWriter moduleWriter)
+    private void generate(TypeElement implementingClassTypeElement, String interfaceName, DefaultImplementation defaultImplementation,
+            SourceWriter moduleWriter)
     {
         final TypeElement defaultImplementationOf = getDefaultImplementationOf(defaultImplementation);
-        if (defaultImplementation != null && processingEnvironment.getTypeUtils().isAssignable(implementingClassTypeElement.asType(), defaultImplementationOf.asType()))
+        if (defaultImplementation != null
+                && processingEnvironment.getTypeUtils().isAssignable(implementingClassTypeElement.asType(), defaultImplementationOf.asType()))
         {
-            moduleWriter.println("public " + interfaceName + " provide_" + interfaceName + "_" + implementingClassTypeElement.getSimpleName().toString() + "() {");
+            final String defaultImplClassName = implementingClassTypeElement.getSimpleName().toString();
+            final String interaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
+            moduleWriter.println("public " + interfaceName + " provide_" + interaceNameWithoutPackage + "_" + defaultImplClassName + "() {");
             moduleWriter.indent();
-            moduleWriter.println("return new "+implementingClassTypeElement.getQualifiedName().toString()+"();");
+            moduleWriter.println("return new " + implementingClassTypeElement.getQualifiedName().toString() + "();");
             moduleWriter.outdent();
             moduleWriter.println("}");
         }
@@ -125,6 +132,16 @@ public class DaggerModuleProcessor
     {
         // TODO Auto-generated method stub
 
+    }
+
+    private static String extractNameWithoutPackage(String className)
+    {
+        final int lastIndexOf = className.lastIndexOf(".");
+        if (lastIndexOf >= 0)
+        {
+            return className.substring(lastIndexOf + 1);
+        }
+        return className;
     }
 
     private TypeElement getProvides(Extension annotation)
