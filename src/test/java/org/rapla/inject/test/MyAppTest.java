@@ -6,12 +6,15 @@ import org.rapla.dagger.DaggerGwtModule;
 import org.rapla.inject.extension.ExampleExtensionPoint;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import java.util.Map;
 import java.util.Set;
 
 public class MyAppTest extends TestCase
 {
     @Component(modules = { DaggerGwtModule.class })
+    @Singleton
     public interface GwtInjectionTest
     {
         Rapla getRapla();

@@ -8,6 +8,7 @@ import java.util.Set;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -17,7 +18,6 @@ import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Types;
-import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
 import org.rapla.gwtjsonrpc.annotation.ProxyCreator;
@@ -114,6 +114,7 @@ public class DaggerModuleProcessor
         moduleWriter.println("import " + Factory.class.getCanonicalName() + ";");
         moduleWriter.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Provider.class.getCanonicalName() + ";");
+        moduleWriter.println("import " + Singleton.class.getCanonicalName() + ";");
         moduleWriter.println();
         moduleWriter.println("@Module");
         moduleWriter.println("public class DaggerGwtModule {");
@@ -138,20 +139,18 @@ public class DaggerModuleProcessor
             final Generated generated = new Generated(interfaceName, implementingClass);
             if (implementingClass.endsWith(ProxyCreator.PROXY_SUFFIX) && !alreadyGenerated.contains(generated))
             {// Generated Json Proxies
-                {
-                    alreadyGenerated.add(generated);
-                    String interaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
-                    final String implementingClassWithoutPackage = extractNameWithoutPackage(implementingClass);
-                    moduleWriter.println();
-                    moduleWriter.println("@Provides");
-                    moduleWriter.println("public " + interfaceName + " provide_" + interaceNameWithoutPackage + "_" + implementingClassWithoutPackage + "() {");
-                    moduleWriter.indent();
-                    moduleWriter.println("return new " + implementingClass + "();");
-                    moduleWriter.outdent();
-                    moduleWriter.println("}");
-                }
+                alreadyGenerated.add(generated);
+                String interaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
+                final String implementingClassWithoutPackage = extractNameWithoutPackage(implementingClass);
+                moduleWriter.println();
+                moduleWriter.println("@Provides");
+                moduleWriter.println("public " + interfaceName + " provide_" + interaceNameWithoutPackage + "_" + implementingClassWithoutPackage + "() {");
+                moduleWriter.indent();
+                moduleWriter.println("return new " + implementingClass + "();");
+                moduleWriter.outdent();
+                moduleWriter.println("}");
             }
-            else
+            else if (implementingClassTypeElement != null)
             {
                 final DefaultImplementationRepeatable defaultImplementationRepeatable = implementingClassTypeElement
                         .getAnnotation(DefaultImplementationRepeatable.class);
@@ -204,27 +203,16 @@ public class DaggerModuleProcessor
             alreadyGenerated.add(generated);
             final String interfaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
             final ExecutableElement constructor = getConstructor(implementingClassTypeElement);
-            if ( constructor == null)
-            {
-                processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR,"No injectable constructor found for " + implementingClassTypeElement + " Ignoring.");
-                return;
-            }
             final List<? extends VariableElement> parameters = constructor.getParameters();
+            final boolean isSingleton = implementingClassTypeElement.getAnnotation(Singleton.class) != null;
             moduleWriter.println();
             moduleWriter.println("@Provides");
-            final String factoryName = implementingClassTypeElement.getQualifiedName().toString() + "_Factory";
-            moduleWriter.println("public Factory<" + implementingClassTypeElement.getQualifiedName().toString() + "> provide_" + interfaceNameWithoutPackage
-                    + "_" + defaultImplClassName + "_Factory(" + createString(parameters, true) + ") {");
+            if (isSingleton)
+                moduleWriter.println("@Singleton");
+            moduleWriter.println("public " + interfaceName + " provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName + "("
+                    + createString(parameters, true) + ") {");
             moduleWriter.indent();
-            moduleWriter.println("return " + factoryName + ".create(" + createString(parameters, false) + ");");
-            moduleWriter.outdent();
-            moduleWriter.println("}");
-            moduleWriter.println();
-            moduleWriter.println("@Provides");
-            moduleWriter.println("public " + interfaceName + " provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName + "(Factory<"
-                    + implementingClassTypeElement.getQualifiedName().toString() + "> factory) {");
-            moduleWriter.indent();
-            moduleWriter.println("return factory.get();");
+            moduleWriter.println("return new " + implementingClassTypeElement.getQualifiedName().toString() + "(" + createString(parameters, false) + ");");
             moduleWriter.outdent();
             moduleWriter.println("}");
         }
@@ -254,39 +242,48 @@ public class DaggerModuleProcessor
         final String interfaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
         final String defaultImplClassName = implementingClassTypeElement.getSimpleName().toString();
         final ExecutableElement constructor = getConstructor(implementingClassTypeElement);
-        if ( constructor == null)
-        {
-            processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR,"No injectable constructor found for " + implementingClassTypeElement + " Ignoring.");
-            return;
-        }
         final List<? extends VariableElement> parameters = constructor.getParameters();
+        final String qualifiedName = implementingClassTypeElement.getQualifiedName().toString();
+        final boolean isSingleton = implementingClassTypeElement.getAnnotation(Singleton.class) != null;
         moduleWriter.println();
-        moduleWriter.println("@Provides");
-        final String factoryName = implementingClassTypeElement.getQualifiedName().toString() + "_Factory";
-        moduleWriter.println("public Factory<" + implementingClassTypeElement.getQualifiedName().toString() + "> provide_" + interfaceNameWithoutPackage + "_"
-                + defaultImplClassName + "_Factory(" + createString(parameters, true) + ") {");
-        moduleWriter.indent();
-        moduleWriter.println("return " + factoryName + ".create(" + createString(parameters, false) + ");");
-        moduleWriter.outdent();
-        moduleWriter.println("}");
-        moduleWriter.println();
+        if (isSingleton)
+        {
+            final String fullQualifiedName = "provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName;
+            moduleWriter.println("private " + qualifiedName + " " + fullQualifiedName + "=null;");
+        }
         moduleWriter.println("@Provides(type=Type.MAP)");
         moduleWriter.println("@" + DaggerMapKey.class.getSimpleName() + "(\"" + extension.id() + "\")");
-        moduleWriter.println("public " + interfaceName + " provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName + "_Map(Factory<"
-                + implementingClassTypeElement.getQualifiedName().toString() + "> factory) {");
-        moduleWriter.indent();
-        moduleWriter.println("return factory.get();");
-        moduleWriter.outdent();
-        moduleWriter.println("}");
+        writeMethod(interfaceName, moduleWriter, interfaceNameWithoutPackage, defaultImplClassName, parameters, qualifiedName, isSingleton, "Map");
         moduleWriter.println();
         moduleWriter.println("@Provides(type=Type.SET)");
-        moduleWriter.println("public " + interfaceName + " provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName + "_Set(Factory<"
-                + implementingClassTypeElement.getQualifiedName().toString() + "> factory) {");
+        writeMethod(interfaceName, moduleWriter, interfaceNameWithoutPackage, defaultImplClassName, parameters, qualifiedName, isSingleton, "Set");
+    }
+
+    private void writeMethod(String interfaceName, SourceWriter moduleWriter, final String interfaceNameWithoutPackage, final String defaultImplClassName,
+            final List<? extends VariableElement> parameters, final String qualifiedName, final boolean isSingleton, final String methodSuffix)
+    {
+        final String fullQualifiedName = "provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName;
+        if (isSingleton)
+            moduleWriter.println("@Singleton");
+        moduleWriter.println("public " + interfaceName + " " + fullQualifiedName + "_" + methodSuffix + "(" + createString(parameters, true) + ") {");
         moduleWriter.indent();
-        moduleWriter.println("return factory.get();");
+        if (isSingleton)
+        {
+            moduleWriter.println("if (" + fullQualifiedName + "!=null) {");
+            moduleWriter.indent();
+            moduleWriter.println("return " + fullQualifiedName + ";");
+            moduleWriter.outdent();
+            moduleWriter.println("}");
+        }
+        String variable = "result";
+        moduleWriter.println(qualifiedName + " " + variable + " = new " + qualifiedName + "(" + createString(parameters, false) + ");");
+        if (isSingleton)
+        {
+            moduleWriter.println(fullQualifiedName + "=" + variable + ";");
+        }
+        moduleWriter.println("return " + variable + ";");
         moduleWriter.outdent();
         moduleWriter.println("}");
-
     }
 
     private static String extractNameWithoutPackage(String className)
