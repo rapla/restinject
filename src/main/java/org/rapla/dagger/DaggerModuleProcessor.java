@@ -16,13 +16,69 @@ import org.rapla.gwtjsonrpc.annotation.SourceWriter;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.DefaultImplementationRepeatable;
 import org.rapla.inject.Extension;
+import org.rapla.inject.ExtensionPoint;
 import org.rapla.inject.ExtensionRepeatable;
+import org.rapla.inject.InjectionContext;
 import org.rapla.inject.generator.AnnotationInjectionProcessor;
 
 import dagger.Module;
+import dagger.Provides;
+import dagger.Provides.Type;
 
 public class DaggerModuleProcessor
 {
+
+    private static class Generated
+    {
+        private final String interfaceName;
+        private final String className;
+
+        protected Generated(String interfaceName, String className)
+        {
+            this.interfaceName = interfaceName;
+            this.className = className;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((className == null) ? 0 : className.hashCode());
+            result = prime * result + ((interfaceName == null) ? 0 : interfaceName.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Generated other = (Generated) obj;
+            if (className == null)
+            {
+                if (other.className != null)
+                    return false;
+            }
+            else if (!className.equals(other.className))
+                return false;
+            if (interfaceName == null)
+            {
+                if (other.interfaceName != null)
+                    return false;
+            }
+            else if (!interfaceName.equals(other.interfaceName))
+                return false;
+            return true;
+        }
+
+    }
+
+    private final Set<Generated> alreadyGenerated = new LinkedHashSet<Generated>();
 
     private final ProcessingEnvironment processingEnvironment;
 
@@ -43,7 +99,12 @@ public class DaggerModuleProcessor
         final SourceWriter moduleWriter = new SourceWriter(source.openOutputStream());
         moduleWriter.println("package org.rapla.dagger;");
         moduleWriter.println();
-        moduleWriter.println("@" + Module.class.getCanonicalName());
+        moduleWriter.println("import " + Provides.class.getCanonicalName() + ";");
+        moduleWriter.println("import " + Provides.Type.class.getCanonicalName() + ";");
+        moduleWriter.println("import " + Module.class.getCanonicalName() + ";");
+        moduleWriter.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
+        moduleWriter.println();
+        moduleWriter.println("@Module");
         moduleWriter.println("public class DaggerGwtModule {");
         moduleWriter.indent();
         Set<String> interfaces = new LinkedHashSet<String>();
@@ -65,10 +126,14 @@ public class DaggerModuleProcessor
             final TypeElement implementingClassTypeElement = processingEnvironment.getElementUtils().getTypeElement(implementingClass);
             if (implementingClassTypeElement == null)
             {// Generated Json Proxies
-                if (implementingClass.endsWith(ProxyCreator.PROXY_SUFFIX))
+                final Generated generated = new Generated(interfaceName, implementingClass);
+                if (implementingClass.endsWith(ProxyCreator.PROXY_SUFFIX) && !alreadyGenerated.contains(generated))
                 {
+                    alreadyGenerated.add(generated);
                     String interaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
                     final String implementingClassWithoutPackage = extractNameWithoutPackage(implementingClass);
+                    moduleWriter.println();
+                    moduleWriter.println("@Provides");
                     moduleWriter.println("public " + interfaceName + " provide_" + interaceNameWithoutPackage + "_" + implementingClassWithoutPackage + "() {");
                     moduleWriter.indent();
                     moduleWriter.println("return new " + implementingClass + "();");
@@ -114,15 +179,26 @@ public class DaggerModuleProcessor
     private void generate(TypeElement implementingClassTypeElement, String interfaceName, DefaultImplementation defaultImplementation,
             SourceWriter moduleWriter)
     {
+        final InjectionContext[] context = defaultImplementation.context();
+        if (!InjectionContext.isInjectableOnGwt(context))
+        {
+            return;
+        }
+        final String defaultImplClassName = implementingClassTypeElement.getSimpleName().toString();
+        final Generated generated = new Generated(interfaceName, defaultImplClassName);
         final TypeElement defaultImplementationOf = getDefaultImplementationOf(defaultImplementation);
         if (defaultImplementation != null
-                && processingEnvironment.getTypeUtils().isAssignable(implementingClassTypeElement.asType(), defaultImplementationOf.asType()))
+                && processingEnvironment.getTypeUtils().isAssignable(implementingClassTypeElement.asType(), defaultImplementationOf.asType())
+                && !alreadyGenerated.contains(generated))
         {
-            final String defaultImplClassName = implementingClassTypeElement.getSimpleName().toString();
-            final String interaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
-            moduleWriter.println("public " + interfaceName + " provide_" + interaceNameWithoutPackage + "_" + defaultImplClassName + "() {");
+            alreadyGenerated.add(generated);
+            final String interfaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
+            moduleWriter.println();
+            moduleWriter.println("@Provides");
+            moduleWriter.println("public " + interfaceName + " provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName + "("
+                    + implementingClassTypeElement.getQualifiedName().toString() + "_Factory factory) {");
             moduleWriter.indent();
-            moduleWriter.println("return new " + implementingClassTypeElement.getQualifiedName().toString() + "();");
+            moduleWriter.println("return factory.get();");
             moduleWriter.outdent();
             moduleWriter.println("}");
         }
@@ -130,7 +206,44 @@ public class DaggerModuleProcessor
 
     private void generate(TypeElement implementingClassTypeElement, String interfaceName, Extension extension, SourceWriter moduleWriter)
     {
-        // TODO Auto-generated method stub
+        if (extension == null)
+        {
+            return;
+        }
+        final TypeElement interfaceProvided = getProvides(extension);
+        final ExtensionPoint extensionPoint = interfaceProvided.getAnnotation(ExtensionPoint.class);
+        if (extensionPoint == null)
+        {
+            return;
+        }
+        final InjectionContext[] context = extensionPoint.context();
+        if (!InjectionContext.isInjectableOnGwt(context))
+        {
+            return;
+        }
+        if (!processingEnvironment.getTypeUtils().isAssignable(implementingClassTypeElement.asType(), interfaceProvided.asType()))
+        {
+            return;
+        }
+        final String interfaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
+        final String defaultImplClassName = implementingClassTypeElement.getSimpleName().toString();
+        moduleWriter.println();
+        moduleWriter.println("@Provides(type=Type.MAP)");
+        moduleWriter.println("@" + DaggerMapKey.class.getSimpleName() + "(\"" + extension.id() + "\")");
+        moduleWriter.println("public " + interfaceName + " provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName + "_Map("
+                + implementingClassTypeElement.getQualifiedName().toString() + "_Factory factory) {");
+        moduleWriter.indent();
+        moduleWriter.println("return factory.get();");
+        moduleWriter.outdent();
+        moduleWriter.println("}");
+        moduleWriter.println();
+        moduleWriter.println("@Provides(type=Type.SET)");
+        moduleWriter.println("public " + interfaceName + " provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName + "_Set("
+                + implementingClassTypeElement.getQualifiedName().toString() + "_Factory factory) {");
+        moduleWriter.indent();
+        moduleWriter.println("return factory.get();");
+        moduleWriter.outdent();
+        moduleWriter.println("}");
 
     }
 
@@ -175,4 +288,53 @@ public class DaggerModuleProcessor
         Types TypeUtils = processingEnvironment.getTypeUtils();
         return (TypeElement) TypeUtils.asElement(typeMirror);
     }
+
+    /*
+    private String createString(List<? extends VariableElement> parameters, boolean withType)
+    {
+        final StringBuilder sb = new StringBuilder();
+        if(parameters != null)
+        {
+            boolean first = true;
+            for (VariableElement parameter : parameters)
+            {
+                if(first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    sb.append(", ");
+                }
+                if(withType)
+                {
+                    sb.append(parameter.asType().toString());
+                    sb.append(" ");
+                }
+                sb.append(parameter.getSimpleName().toString());
+            }
+        }
+        return sb.toString();
+    }
+    
+    private ExecutableElement getConstructor(TypeElement element)
+    {
+        final List<? extends Element> allMembers = processingEnvironment.getElementUtils().getAllMembers(element);
+        final List<ExecutableElement> constructors = ElementFilter.constructorsIn(allMembers);
+        ExecutableElement foundConstructor = null;
+        if(constructors != null)
+        {
+            for (ExecutableElement constructor : constructors)
+            {
+                final boolean hasInjectAnnotation = constructor.getAnnotation(Inject.class) != null || constructor.getAnnotation(com.google.inject.Inject.class) != null;
+                if(hasInjectAnnotation)
+                {
+                    foundConstructor = constructor;
+                    break;
+                }
+            }
+        }
+        return foundConstructor;
+    }
+         */
 }
