@@ -209,9 +209,17 @@ public class DaggerModuleProcessor
             if (isSingleton)
                 moduleWriter.println("@Singleton");
             moduleWriter.println("public " + interfaceName + " provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName + "("
-                    + createString(parameters, true) + ") throws Exception {");
+                    + createString(parameters, true) + ") {");
+            moduleWriter.indent();
+            moduleWriter.println("try {");
             moduleWriter.indent();
             moduleWriter.println("return new " + implementingClassTypeElement.getQualifiedName().toString() + "(" + createString(parameters, false) + ");");
+            moduleWriter.outdent();
+            moduleWriter.println("} catch (Exception e) {");
+            moduleWriter.indent();
+            moduleWriter.println("throw new RuntimeException(e.getMessage(), e);");
+            moduleWriter.outdent();
+            moduleWriter.println("}");
             moduleWriter.outdent();
             moduleWriter.println("}");
         }
@@ -264,7 +272,9 @@ public class DaggerModuleProcessor
         final String fullQualifiedName = "provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName;
         if (isSingleton)
             moduleWriter.println("@Singleton");
-        moduleWriter.println("public " + interfaceName + " " + fullQualifiedName + "_" + methodSuffix + "(" + createString(parameters, true) + ") throws Exception {");
+        moduleWriter.println("public " + interfaceName + " " + fullQualifiedName + "_" + methodSuffix + "(" + createString(parameters, true) + ") {");
+        moduleWriter.indent();
+        moduleWriter.println("try {");
         moduleWriter.indent();
         if (isSingleton)
         {
@@ -281,6 +291,12 @@ public class DaggerModuleProcessor
             moduleWriter.println(fullQualifiedName + "=" + variable + ";");
         }
         moduleWriter.println("return " + variable + ";");
+        moduleWriter.outdent();
+        moduleWriter.println("} catch (Exception e) {");
+        moduleWriter.indent();
+        moduleWriter.println("throw new RuntimeException(e.getMessage(), e);");
+        moduleWriter.outdent();
+        moduleWriter.println("}");
         moduleWriter.outdent();
         moduleWriter.println("}");
     }
