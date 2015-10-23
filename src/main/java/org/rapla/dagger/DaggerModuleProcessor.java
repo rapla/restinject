@@ -113,6 +113,7 @@ public class DaggerModuleProcessor
         moduleWriter.println("import " + Factory.class.getCanonicalName() + ";");
         moduleWriter.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Singleton.class.getCanonicalName() + ";");
+        moduleWriter.println("import " + Exception.class.getCanonicalName() + ";");
         moduleWriter.println();
         moduleWriter.println("@Module");
         moduleWriter.println("public class DaggerGwtModule {");
@@ -208,7 +209,7 @@ public class DaggerModuleProcessor
             if (isSingleton)
                 moduleWriter.println("@Singleton");
             moduleWriter.println("public " + interfaceName + " provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName + "("
-                    + createString(parameters, true) + ") {");
+                    + createString(parameters, true) + ") throws Exception {");
             moduleWriter.indent();
             moduleWriter.println("return new " + implementingClassTypeElement.getQualifiedName().toString() + "(" + createString(parameters, false) + ");");
             moduleWriter.outdent();
@@ -263,7 +264,7 @@ public class DaggerModuleProcessor
         final String fullQualifiedName = "provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName;
         if (isSingleton)
             moduleWriter.println("@Singleton");
-        moduleWriter.println("public " + interfaceName + " " + fullQualifiedName + "_" + methodSuffix + "(" + createString(parameters, true) + ") {");
+        moduleWriter.println("public " + interfaceName + " " + fullQualifiedName + "_" + methodSuffix + "(" + createString(parameters, true) + ") throws Exception {");
         moduleWriter.indent();
         if (isSingleton)
         {
@@ -389,6 +390,10 @@ public class DaggerModuleProcessor
                     break;
                 }
             }
+        }
+        if(foundConstructor == null)
+        {
+            throw new IllegalStateException("No @Inject constructor found for: "+element.getQualifiedName().toString());
         }
         return foundConstructor;
     }
