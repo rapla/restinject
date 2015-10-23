@@ -201,11 +201,11 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         // only generate the modules if we processed a class
         if ( found)
         {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating RaplaGinModulesGenerated");
-            String className = "RaplaGinModulesGenerated";
-            String packageName = "org.rapla.inject.client.gwt";
-            final RaplaGwtModuleGenerator raplaGwtModuleProcessor = new RaplaGwtModuleGenerator(processingEnv);
-            raplaGwtModuleProcessor.process(packageName, className);
+//            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating RaplaGinModulesGenerated");
+//            String className = "RaplaGinModulesGenerated";
+//            String packageName = "org.rapla.inject.client.gwt";
+//            final RaplaGwtModuleGenerator raplaGwtModuleProcessor = new RaplaGwtModuleGenerator(processingEnv);
+//            raplaGwtModuleProcessor.process(packageName, className);
             
             // Dagger
             processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Dagger Modules");

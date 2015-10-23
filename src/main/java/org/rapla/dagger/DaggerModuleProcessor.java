@@ -100,7 +100,7 @@ public class DaggerModuleProcessor
         this.processingEnvironment = processingEnvironment;
         for (int i = 0; i < alreadyGenerated.length; i++)
         {
-            alreadyGenerated[i]=new LinkedHashSet<Generated>();
+            alreadyGenerated[i] = new LinkedHashSet<Generated>();
         }
     }
 
@@ -207,11 +207,14 @@ public class DaggerModuleProcessor
     private void generate(TypeElement implementingClassTypeElement, String interfaceName, DefaultImplementation defaultImplementation)
     {
         final InjectionContext[] context = defaultImplementation.context();
-        final String defaultImplClassName = implementingClassTypeElement.getSimpleName().toString();
+        final Types typeUtils = processingEnvironment.getTypeUtils();
+        final String defaultImplClassName = typeUtils.asElement(typeUtils.erasure(implementingClassTypeElement.asType())).getSimpleName().toString();
         final Generated generated = new Generated(interfaceName, defaultImplClassName);
         final TypeElement defaultImplementationOf = getDefaultImplementationOf(defaultImplementation);
-        if (defaultImplementation != null
-                && processingEnvironment.getTypeUtils().isAssignable(implementingClassTypeElement.asType(), defaultImplementationOf.asType()))
+        final TypeMirror asTypeImpl = typeUtils.erasure(implementingClassTypeElement.asType());
+        final TypeMirror asTypeOf = typeUtils.erasure(defaultImplementationOf.asType());
+        final boolean assignable = typeUtils.isAssignable(asTypeImpl, asTypeOf);
+        if (defaultImplementation != null && assignable)
         {
             final String interfaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
             final ExecutableElement constructor = getConstructor(implementingClassTypeElement);
@@ -286,13 +289,17 @@ public class DaggerModuleProcessor
         {
             return;
         }
-        if (!processingEnvironment.getTypeUtils().isAssignable(implementingClassTypeElement.asType(), interfaceProvided.asType()))
+        final Types typeUtils = processingEnvironment.getTypeUtils();
+        final TypeMirror asTypeImpl = typeUtils.erasure(implementingClassTypeElement.asType());
+        final TypeMirror asTypeInterface = typeUtils.erasure(interfaceProvided.asType());
+        final boolean assignable = typeUtils.isAssignable(asTypeImpl, asTypeInterface);
+        if (!assignable)
         {
             return;
         }
         final InjectionContext[] context = extensionPoint.context();
         final String interfaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
-        final String defaultImplClassName = implementingClassTypeElement.getSimpleName().toString();
+        final String defaultImplClassName = typeUtils.asElement(typeUtils.erasure(implementingClassTypeElement.asType())).getSimpleName().toString();
         final ExecutableElement constructor = getConstructor(implementingClassTypeElement);
         final List<? extends VariableElement> parameters = constructor.getParameters();
         final String qualifiedName = implementingClassTypeElement.getQualifiedName().toString();
@@ -432,7 +439,7 @@ public class DaggerModuleProcessor
         if (parameters != null)
         {
             boolean first = true;
-            for (VariableElement parameter : parameters)
+            for (Element parameter : parameters)
             {
                 if (first)
                 {
@@ -444,25 +451,18 @@ public class DaggerModuleProcessor
                 }
                 if (withType)
                 {
-                    final TypeMirror asType = parameter.asType();
+                    TypeMirror asType = parameter.asType();
+                    final Types typeUtils = processingEnvironment.getTypeUtils();
                     if (asType instanceof PrimitiveType)
                     {
-                        final String string = asType.toString();
-                        if ("int".equalsIgnoreCase(string))
-                        {
-                            sb.append("java.lang.Integer");
-                        }
-                        else
-                        {
-                            sb.append("java.lang.");
-                            final char[] charArray = string.toCharArray();
-                            charArray[0] = Character.toUpperCase(charArray[0]);
-                            sb.append(charArray);
-                        }
+                        final TypeElement boxedClass = typeUtils.boxedClass((PrimitiveType)asType);
+                        final String string = boxedClass.toString();
+                        sb.append(string);
                     }
                     else
                     {
-                        sb.append(asType.toString());
+                        final TypeMirror erasure = typeUtils.erasure(asType);
+                        sb.append(erasure.toString());
                     }
                     sb.append(" ");
                 }
@@ -481,8 +481,8 @@ public class DaggerModuleProcessor
         {
             for (ExecutableElement constructor : constructors)
             {
-                final boolean hasInjectAnnotation = constructor.getAnnotation(Inject.class) != null
-                        || constructor.getAnnotation(com.google.inject.Inject.class) != null;
+                final boolean hasInjectAnnotation = constructor.getAnnotation(Inject.class) != null;
+//                        || constructor.getAnnotation(com.google.inject.Inject.class) != null;
                 if (hasInjectAnnotation)
                 {
                     foundConstructor = constructor;

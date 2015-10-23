@@ -4,14 +4,16 @@
     <inherits name='com.google.gwt.core.Core'/>
     <inherits name='com.google.gwt.user.User'/>
     <inherits name='org.rapla.gwtjsonrpc.gwtjsonrpc'/>
-    <inherits name='com.google.gwt.inject.Inject'/>
+    <inherits name='org.rapla.inject.inject'/>
+<!--     <inherits name='com.google.gwt.inject.Inject'/> -->
     <source path='client' />
-    <define-configuration-property name='extra.ginModules' is-multi-valued='true' />
-    <extend-configuration-property name='extra.ginModules' value='org.rapla.inject.client.gwt.RaplaGinModulesGenerated' />
+<!--     <define-configuration-property name='extra.ginModules' is-multi-valued='true' /> -->
+<!--     <extend-configuration-property name='extra.ginModules' value='org.rapla.inject.client.gwt.RaplaGinModulesGenerated' /> -->
     <source path='gwtjsonrpc/annotation'/>
     <source path='client'/>
     <source path='inject'/>
     <source path='inject/client'/>
     <source path='inject/gwt'/>
+    <source path='dagger'/>
     <servlet path='/rapla/*' class='org.rapla.server.TestServlet'/>
 </module>
