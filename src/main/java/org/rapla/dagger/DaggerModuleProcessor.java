@@ -8,11 +8,13 @@ import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
@@ -111,7 +113,7 @@ public class DaggerModuleProcessor
 
     private void generateModuleClass() throws Exception
     {
-        sourceWriters[SERVER_SOURCE_WRITER] = createSourceWriter("Server");
+//        sourceWriters[SERVER_SOURCE_WRITER] = createSourceWriter("Server");
         sourceWriters[JAVA_CLIENT_SOURCE_WRITER] = createSourceWriter("JavaClient");
         sourceWriters[GWT_SOURCE_WRITER] = createSourceWriter("Gwt");
         Set<String> interfaces = new LinkedHashSet<String>();
@@ -122,6 +124,8 @@ public class DaggerModuleProcessor
         }
         for (SourceWriter moduleWriter : sourceWriters)
         {
+            if(moduleWriter == null)
+                continue;
             moduleWriter.outdent();
             moduleWriter.println("}");
             moduleWriter.close();
@@ -141,6 +145,7 @@ public class DaggerModuleProcessor
         moduleWriter.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Singleton.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Exception.class.getCanonicalName() + ";");
+//        moduleWriter.println("import " + Provider.class.getCanonicalName() + ";");
         moduleWriter.println();
         moduleWriter.println("@Module");
         moduleWriter.println("public class Dagger" + type + "Module {");
@@ -230,26 +235,26 @@ public class DaggerModuleProcessor
                             isSingleton, moduleWriter);
                 }
             }
-            if (InjectionContext.isInjectableOnServer(context))
-            {
-                if (!alreadyGenerated[SERVER_SOURCE_WRITER].contains(generated))
-                {
-                    alreadyGenerated[SERVER_SOURCE_WRITER].add(generated);
-                    SourceWriter moduleWriter = sourceWriters[SERVER_SOURCE_WRITER];
-                    generateDefaultImplementation(implementingClassTypeElement, interfaceName, defaultImplClassName, interfaceNameWithoutPackage, parameters,
-                            isSingleton, moduleWriter);
-                }
-            }
-            if (InjectionContext.isInjectableOnSwing(context))
-            {
-                if (!alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].contains(generated))
-                {
-                    alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].add(generated);
-                    SourceWriter moduleWriter = sourceWriters[JAVA_CLIENT_SOURCE_WRITER];
-                    generateDefaultImplementation(implementingClassTypeElement, interfaceName, defaultImplClassName, interfaceNameWithoutPackage, parameters,
-                            isSingleton, moduleWriter);
-                }
-            }
+//            if (InjectionContext.isInjectableOnServer(context))
+//            {
+//                if (!alreadyGenerated[SERVER_SOURCE_WRITER].contains(generated))
+//                {
+//                    alreadyGenerated[SERVER_SOURCE_WRITER].add(generated);
+//                    SourceWriter moduleWriter = sourceWriters[SERVER_SOURCE_WRITER];
+//                    generateDefaultImplementation(implementingClassTypeElement, interfaceName, defaultImplClassName, interfaceNameWithoutPackage, parameters,
+//                            isSingleton, moduleWriter);
+//                }
+//            }
+//            if (InjectionContext.isInjectableOnSwing(context))
+//            {
+//                if (!alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].contains(generated))
+//                {
+//                    alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].add(generated);
+//                    SourceWriter moduleWriter = sourceWriters[JAVA_CLIENT_SOURCE_WRITER];
+//                    generateDefaultImplementation(implementingClassTypeElement, interfaceName, defaultImplClassName, interfaceNameWithoutPackage, parameters,
+//                            isSingleton, moduleWriter);
+//                }
+//            }
 
         }
     }
@@ -275,6 +280,32 @@ public class DaggerModuleProcessor
         moduleWriter.println("}");
         moduleWriter.outdent();
         moduleWriter.println("}");
+//        moduleWriter.println();
+//        moduleWriter.println("@Provides");
+//        if (isSingleton)
+//            moduleWriter.println("@Singleton");
+//        moduleWriter.println("public Provider<" + interfaceName + "> provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName + "_Prov ("
+//                + createString(parameters, true) + ") {");
+//        moduleWriter.indent();
+//        moduleWriter.println("return new Provider<"+interfaceName+">() {");
+//        moduleWriter.indent();
+//        moduleWriter.println("public "+interfaceName+" get() {");
+//        moduleWriter.indent();
+//        moduleWriter.println("try {");
+//        moduleWriter.indent();
+//        moduleWriter.println("return new " + implementingClassTypeElement.getQualifiedName().toString() + "(" + createString(parameters, false) + ");");
+//        moduleWriter.outdent();
+//        moduleWriter.println("} catch (Exception e) {");
+//        moduleWriter.indent();
+//        moduleWriter.println("throw new RuntimeException(e.getMessage(), e);");
+//        moduleWriter.outdent();
+//        moduleWriter.println("}");
+//        moduleWriter.outdent();
+//        moduleWriter.println("}");
+//        moduleWriter.outdent();
+//        moduleWriter.println("};");
+//        moduleWriter.outdent();
+//        moduleWriter.println("}");
     }
 
     private void generate(TypeElement implementingClassTypeElement, String interfaceName, Extension extension)
@@ -315,26 +346,26 @@ public class DaggerModuleProcessor
                         moduleWriter);
             }
         }
-        if (InjectionContext.isInjectableOnServer(context))
-        {
-            if (!alreadyGenerated[SERVER_SOURCE_WRITER].contains(generated))
-            {
-                alreadyGenerated[SERVER_SOURCE_WRITER].add(generated);
-                SourceWriter moduleWriter = sourceWriters[SERVER_SOURCE_WRITER];
-                generateExtensionMethods(interfaceName, extension, interfaceNameWithoutPackage, defaultImplClassName, parameters, qualifiedName, isSingleton,
-                        moduleWriter);
-            }
-        }
-        if (InjectionContext.isInjectableOnSwing(context))
-        {
-            if (!alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].contains(generated))
-            {
-                alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].add(generated);
-                SourceWriter moduleWriter = sourceWriters[JAVA_CLIENT_SOURCE_WRITER];
-                generateExtensionMethods(interfaceName, extension, interfaceNameWithoutPackage, defaultImplClassName, parameters, qualifiedName, isSingleton,
-                        moduleWriter);
-            }
-        }
+//        if (InjectionContext.isInjectableOnServer(context))
+//        {
+//            if (!alreadyGenerated[SERVER_SOURCE_WRITER].contains(generated))
+//            {
+//                alreadyGenerated[SERVER_SOURCE_WRITER].add(generated);
+//                SourceWriter moduleWriter = sourceWriters[SERVER_SOURCE_WRITER];
+//                generateExtensionMethods(interfaceName, extension, interfaceNameWithoutPackage, defaultImplClassName, parameters, qualifiedName, isSingleton,
+//                        moduleWriter);
+//            }
+//        }
+//        if (InjectionContext.isInjectableOnSwing(context))
+//        {
+//            if (!alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].contains(generated))
+//            {
+//                alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].add(generated);
+//                SourceWriter moduleWriter = sourceWriters[JAVA_CLIENT_SOURCE_WRITER];
+//                generateExtensionMethods(interfaceName, extension, interfaceNameWithoutPackage, defaultImplClassName, parameters, qualifiedName, isSingleton,
+//                        moduleWriter);
+//            }
+//        }
     }
 
     private void generateExtensionMethods(String interfaceName, Extension extension, final String interfaceNameWithoutPackage,
@@ -347,18 +378,28 @@ public class DaggerModuleProcessor
             final String fullQualifiedName = "provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName;
             moduleWriter.println("private " + qualifiedName + " " + fullQualifiedName + "=null;");
         }
-        moduleWriter.println("@Provides(type=Type.MAP)");
-        moduleWriter.println("@" + DaggerMapKey.class.getSimpleName() + "(\"" + extension.id() + "\")");
-        final String id = extension.id().replaceAll("\\.", "_");
-        writeMethod(interfaceName, moduleWriter, interfaceNameWithoutPackage, defaultImplClassName, parameters, qualifiedName, isSingleton, id + "_Map");
-        moduleWriter.println();
-        moduleWriter.println("@Provides(type=Type.SET)");
-        writeMethod(interfaceName, moduleWriter, interfaceNameWithoutPackage, defaultImplClassName, parameters, qualifiedName, isSingleton, id + "_Set");
+        writeMethod(interfaceName, moduleWriter, interfaceNameWithoutPackage, defaultImplClassName, parameters, qualifiedName, isSingleton, true, extension);
+        writeMethod(interfaceName, moduleWriter, interfaceNameWithoutPackage, defaultImplClassName, parameters, qualifiedName, isSingleton, false, extension);
     }
 
     private void writeMethod(String interfaceName, SourceWriter moduleWriter, final String interfaceNameWithoutPackage, final String defaultImplClassName,
-            final List<? extends VariableElement> parameters, final String qualifiedName, final boolean isSingleton, final String methodSuffix)
+            final List<? extends VariableElement> parameters, final String qualifiedName, final boolean isSingleton, final boolean isMap, final Extension extension)
     {
+        final String methodSuffix;
+        if(isMap)
+        {
+            moduleWriter.println("@Provides(type=Type.MAP)");
+            moduleWriter.println("@" + DaggerMapKey.class.getSimpleName() + "(\"" + extension.id() + "\")");
+            final String id = extension.id().replaceAll("\\.", "_");
+            methodSuffix = id+"_Map";
+        }
+        else
+        {
+            moduleWriter.println();
+            moduleWriter.println("@Provides(type=Type.SET)");
+            final String id = extension.id().replaceAll("\\.", "_");
+            methodSuffix = id+"_Set";
+        }
         final String fullQualifiedName = "provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName;
         if (isSingleton)
             moduleWriter.println("@Singleton");
@@ -461,7 +502,7 @@ public class DaggerModuleProcessor
                     }
                     else
                     {
-                        final TypeMirror erasure = typeUtils.erasure(asType);
+                        final TypeMirror erasure = hasUnboundType(asType) ? typeUtils.erasure(asType):asType;
                         sb.append(erasure.toString());
                     }
                     sb.append(" ");
@@ -470,6 +511,26 @@ public class DaggerModuleProcessor
             }
         }
         return sb.toString();
+    }
+
+    private boolean hasUnboundType(TypeMirror asType)
+    {
+        if (asType instanceof DeclaredType)
+        {
+            List<? extends TypeMirror> typeParameters = ((DeclaredType) asType).getTypeArguments();
+            for (TypeMirror typeMirror : typeParameters)
+            {
+                if(hasUnboundType(typeMirror))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        else
+        {
+            return !asType.toString().contains(".");
+        }
     }
 
     private ExecutableElement getConstructor(TypeElement element)
