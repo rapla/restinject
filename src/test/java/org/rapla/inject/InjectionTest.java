@@ -1,6 +1,6 @@
 package org.rapla.inject;
 
-@ExtensionPoint(id="org.rapla.injext.test",context = InjectionContext.all)
+@ExtensionPoint(id="org.rapla.inject.test",context = InjectionContext.all)
 public interface InjectionTest
 {
 }
