@@ -328,27 +328,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return f;
     }
 
-    private File getModuleFile() throws IOException
-    {
-        final Filer filer = processingEnv.getFiler();
-        CharSequence pkg = "";
-        JavaFileManager.Location location = StandardLocation.SOURCE_OUTPUT;
-
-        File f;
-        try
-        {
-            FileObject resource = filer.getResource(location, pkg, GWT_MODULE_LIST);
-            f = new File(resource.toUri());
-        }
-        catch (IOException ex)
-        {
-            FileObject resource = filer.createResource(location, pkg, GWT_MODULE_LIST);
-            f = new File(resource.toUri());
-        }
-        f.getParentFile().mkdirs();
-        return f;
-    }
-
     private TypeElement getProvides(Extension annotation)
     {
         try
