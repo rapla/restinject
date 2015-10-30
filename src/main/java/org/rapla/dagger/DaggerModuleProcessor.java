@@ -114,7 +114,7 @@ public class DaggerModuleProcessor
 
     private void generateModuleClass() throws Exception
     {
-//        sourceWriters[SERVER_SOURCE_WRITER] = createSourceWriter("Server");
+        sourceWriters[SERVER_SOURCE_WRITER] = createSourceWriter("Server");
         sourceWriters[JAVA_CLIENT_SOURCE_WRITER] = createSourceWriter("JavaClient");
         sourceWriters[GWT_SOURCE_WRITER] = createSourceWriter("Gwt");
         Set<String> interfaces = new LinkedHashSet<String>();
@@ -125,8 +125,6 @@ public class DaggerModuleProcessor
         }
         for (SourceWriter moduleWriter : sourceWriters)
         {
-            if(moduleWriter == null)
-                continue;
             moduleWriter.outdent();
             moduleWriter.println("}");
             moduleWriter.close();
@@ -244,26 +242,24 @@ public class DaggerModuleProcessor
                     generateDefaultImplementation(implementingClassTypeElement, interfaceTypeElement, moduleWriter);
                 }
             }
-//            if (InjectionContext.isInjectableOnServer(context))
-//            {
-//                if (!alreadyGenerated[SERVER_SOURCE_WRITER].contains(generated))
-//                {
-//                    alreadyGenerated[SERVER_SOURCE_WRITER].add(generated);
-//                    SourceWriter moduleWriter = sourceWriters[SERVER_SOURCE_WRITER];
-//                    generateDefaultImplementation(implementingClassTypeElement, interfaceName, defaultImplClassName, interfaceNameWithoutPackage, parameters,
-//                            isSingleton, moduleWriter);
-//                }
-//            }
-//            if (InjectionContext.isInjectableOnSwing(context))
-//            {
-//                if (!alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].contains(generated))
-//                {
-//                    alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].add(generated);
-//                    SourceWriter moduleWriter = sourceWriters[JAVA_CLIENT_SOURCE_WRITER];
-//                    generateDefaultImplementation(implementingClassTypeElement, interfaceName, defaultImplClassName, interfaceNameWithoutPackage, parameters,
-//                            isSingleton, moduleWriter);
-//                }
-//            }
+            if (InjectionContext.isInjectableOnServer(context))
+            {
+                if (!alreadyGenerated[SERVER_SOURCE_WRITER].contains(generated))
+                {
+                    alreadyGenerated[SERVER_SOURCE_WRITER].add(generated);
+                    SourceWriter moduleWriter = sourceWriters[SERVER_SOURCE_WRITER];
+                    generateDefaultImplementation(implementingClassTypeElement, interfaceTypeElement, moduleWriter);
+                }
+            }
+            if (InjectionContext.isInjectableOnSwing(context))
+            {
+                if (!alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].contains(generated))
+                {
+                    alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].add(generated);
+                    SourceWriter moduleWriter = sourceWriters[JAVA_CLIENT_SOURCE_WRITER];
+                    generateDefaultImplementation(implementingClassTypeElement, interfaceTypeElement, moduleWriter);
+                }
+            }
 
         }
     }
@@ -359,26 +355,24 @@ public class DaggerModuleProcessor
                 generateExtensionMethods(extension,interfaceElementType , defaultImpl,moduleWriter);
             }
         }
-//        if (InjectionContext.isInjectableOnServer(context))
-//        {
-//            if (!alreadyGenerated[SERVER_SOURCE_WRITER].contains(generated))
-//            {
-//                alreadyGenerated[SERVER_SOURCE_WRITER].add(generated);
-//                SourceWriter moduleWriter = sourceWriters[SERVER_SOURCE_WRITER];
-//                generateExtensionMethods(interfaceName, extension, interfaceNameWithoutPackage, defaultImplClassName, parameters, qualifiedName, isSingleton,
-//                        moduleWriter);
-//            }
-//        }
-//        if (InjectionContext.isInjectableOnSwing(context))
-//        {
-//            if (!alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].contains(generated))
-//            {
-//                alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].add(generated);
-//                SourceWriter moduleWriter = sourceWriters[JAVA_CLIENT_SOURCE_WRITER];
-//                generateExtensionMethods(interfaceName, extension, interfaceNameWithoutPackage, defaultImplClassName, parameters, qualifiedName, isSingleton,
-//                        moduleWriter);
-//            }
-//        }
+        if (InjectionContext.isInjectableOnServer(context))
+        {
+            if (!alreadyGenerated[SERVER_SOURCE_WRITER].contains(generated))
+            {
+                alreadyGenerated[SERVER_SOURCE_WRITER].add(generated);
+                SourceWriter moduleWriter = sourceWriters[SERVER_SOURCE_WRITER];
+                generateExtensionMethods(extension,interfaceElementType , defaultImpl,moduleWriter);
+            }
+        }
+        if (InjectionContext.isInjectableOnSwing(context))
+        {
+            if (!alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].contains(generated))
+            {
+                alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].add(generated);
+                SourceWriter moduleWriter = sourceWriters[JAVA_CLIENT_SOURCE_WRITER];
+                generateExtensionMethods(extension,interfaceElementType , defaultImpl,moduleWriter);
+            }
+        }
     }
 
     private void generateExtensionMethods(Extension extension, final TypeElement interfaceName,final TypeElement defaultImplClassName,
@@ -445,16 +439,16 @@ public class DaggerModuleProcessor
         moduleWriter.outdent();
         moduleWriter.println("}");
     }
-
-    private static String extractNameWithoutPackage(String className)
-    {
-        final int lastIndexOf = className.lastIndexOf(".");
-        if (lastIndexOf >= 0)
-        {
-            return className.substring(lastIndexOf + 1);
-        }
-        return className;
-    }
+//
+//    private static String extractNameWithoutPackage(String className)
+//    {
+//        final int lastIndexOf = className.lastIndexOf(".");
+//        if (lastIndexOf >= 0)
+//        {
+//            return className.substring(lastIndexOf + 1);
+//        }
+//        return className;
+//    }
 
     private TypeElement getProvides(Extension annotation)
     {
