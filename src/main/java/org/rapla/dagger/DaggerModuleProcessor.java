@@ -1,31 +1,24 @@
 package org.rapla.dagger;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import dagger.Module;
+import dagger.Provides;
+import dagger.internal.Factory;
+import org.rapla.gwtjsonrpc.annotation.JavaClientProxyCreator;
+import org.rapla.gwtjsonrpc.annotation.ProxyCreator;
+import org.rapla.gwtjsonrpc.annotation.SourceWriter;
+import org.rapla.inject.*;
+import org.rapla.inject.generator.AnnotationInjectionProcessor;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.inject.Singleton;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.tools.JavaFileObject;
-
-import org.rapla.gwtjsonrpc.annotation.ProxyCreator;
-import org.rapla.gwtjsonrpc.annotation.SourceWriter;
-import org.rapla.inject.DefaultImplementation;
-import org.rapla.inject.DefaultImplementationRepeatable;
-import org.rapla.inject.Extension;
-import org.rapla.inject.ExtensionPoint;
-import org.rapla.inject.ExtensionRepeatable;
-import org.rapla.inject.InjectionContext;
-import org.rapla.inject.generator.AnnotationInjectionProcessor;
-
-import dagger.Module;
-import dagger.Provides;
-import dagger.internal.Factory;
+import java.io.File;
+import java.io.IOException;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class DaggerModuleProcessor
 {
@@ -132,9 +125,6 @@ public class DaggerModuleProcessor
         moduleWriter.println("import " + Module.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Factory.class.getCanonicalName() + ";");
         moduleWriter.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
-        //moduleWriter.println("import " + Singleton.class.getCanonicalName() + ";");
-        //moduleWriter.println("import " + Exception.class.getCanonicalName() + ";");
-//        moduleWriter.println("import " + Provider.class.getCanonicalName() + ";");
         moduleWriter.println();
         moduleWriter.println("@Module");
         moduleWriter.println("public class Dagger" + type + "Module {");
@@ -149,23 +139,13 @@ public class DaggerModuleProcessor
         {
             final TypeElement implementingClassTypeElement = processingEnvironment.getElementUtils().getTypeElement(implementingClass);
             final TypeElement interfaceClassTypeElement = processingEnvironment.getElementUtils().getTypeElement(interfaceName);
-            if (implementingClass.endsWith(ProxyCreator.PROXY_SUFFIX))
-            {// Generated Json Proxies
-
-                final Generated generated = new Generated(interfaceName, implementingClass);
-                if (!alreadyGenerated[GWT_SOURCE_WRITER].contains(generated))
-                {
-                    alreadyGenerated[GWT_SOURCE_WRITER].add(generated);
-                    sourceWriters[GWT_SOURCE_WRITER].println();
-                    sourceWriters[GWT_SOURCE_WRITER].println("@Provides");
-                    sourceWriters[GWT_SOURCE_WRITER].println(
-                            "public " + interfaceName + " provide_" + q(interfaceClassTypeElement) + "_" + implementingClass.replaceAll("\\.","_") + "("
-                                    + implementingClass + " result) {");
-                    sourceWriters[GWT_SOURCE_WRITER].indent();
-                    sourceWriters[GWT_SOURCE_WRITER].println("return result;");
-                    sourceWriters[GWT_SOURCE_WRITER].outdent();
-                    sourceWriters[GWT_SOURCE_WRITER].println("}");
-                }
+            if (implementingClass.endsWith(ProxyCreator.PROXY_SUFFIX) )
+            {
+                generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, GWT_SOURCE_WRITER);
+            }
+            else if (implementingClass.endsWith(JavaClientProxyCreator.PROXY_SUFFIX) )
+            {
+                generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, JAVA_CLIENT_SOURCE_WRITER);
             }
             else if (implementingClassTypeElement != null)
             {
@@ -202,7 +182,25 @@ public class DaggerModuleProcessor
         }
     }
 
-    private String q(TypeElement className)
+    private void generateProxyMethods(String interfaceName, String implementingClass, TypeElement interfaceClassTypeElement, int sourceWriterIndex)
+    {
+        final Generated generated = new Generated(interfaceName, implementingClass);
+        if (!alreadyGenerated[sourceWriterIndex].contains(generated))
+        {
+            alreadyGenerated[sourceWriterIndex].add(generated);
+            sourceWriters[sourceWriterIndex].println();
+            sourceWriters[sourceWriterIndex].println("@Provides");
+            sourceWriters[sourceWriterIndex].println(
+                    "public " + interfaceName + " provide_" + toJavaName(interfaceClassTypeElement) + "_" + implementingClass.replaceAll("\\.", "_")
+                            + "(" + implementingClass + " result) {");
+            sourceWriters[sourceWriterIndex].indent();
+            sourceWriters[sourceWriterIndex].println("return result;");
+            sourceWriters[sourceWriterIndex].outdent();
+            sourceWriters[sourceWriterIndex].println("}");
+        }
+    }
+
+    private String toJavaName(TypeElement className)
     {
         return className.getQualifiedName().toString().replaceAll("\\.","_");
     }
@@ -211,7 +209,6 @@ public class DaggerModuleProcessor
     {
         final InjectionContext[] context = defaultImplementation.context();
         final Types typeUtils = processingEnvironment.getTypeUtils();
-        //final String defaultImplClassName = typeUtils.asElement(typeUtils.erasure(implementingClassTypeElement.asType())).getSimpleName().toString();
         final Generated generated = new Generated(interfaceTypeElement.getQualifiedName().toString(), implementingClassTypeElement.getQualifiedName().toString());
         final TypeElement defaultImplementationOf = getDefaultImplementationOf(defaultImplementation);
         final TypeMirror asTypeImpl = typeUtils.erasure(implementingClassTypeElement.asType());
@@ -219,10 +216,6 @@ public class DaggerModuleProcessor
         final boolean assignable = typeUtils.isAssignable(asTypeImpl, asTypeOf);
         if (defaultImplementation != null && assignable)
         {
-            //final String interfaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
-            //final ExecutableElement constructor = getConstructor(implementingClassTypeElement);
-            //final List<? extends VariableElement> parameters = constructor.getParameters();
-            final boolean isSingleton = implementingClassTypeElement.getAnnotation(Singleton.class) != null;
             if (InjectionContext.isInjectableOnGwt(context))
             {
                 if (!alreadyGenerated[GWT_SOURCE_WRITER].contains(generated))
@@ -259,53 +252,14 @@ public class DaggerModuleProcessor
     {
         moduleWriter.println();
         moduleWriter.println("@Provides");
-        //if (isSingleton)
-            //moduleWriter.println("@Singleton");
 
         String implementingName = implementingClassTypeElement.getQualifiedName().toString();
-        //moduleWriter.println("public " + interfaceName + " provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName + "("
-//                + createString(parameters, true) + ") {");
-        moduleWriter.println("public " + interfaceName + " provide_" + q(interfaceName) + "_" + q(implementingClassTypeElement) + "("
+        moduleWriter.println("public " + interfaceName + " provide_" + toJavaName(interfaceName) + "_" + toJavaName(implementingClassTypeElement) + "("
                 + implementingName + " result) {");
         moduleWriter.indent();
         moduleWriter.println("return result;");
-//        moduleWriter.println("try {");
-  //      moduleWriter.indent();
-        // moduleWriter.println("return new " + implementingClassTypeElement.getQualifiedName().toString() + "(" + createString(parameters, false) + ");");
-    //    moduleWriter.outdent();
-      //  moduleWriter.println("} catch (Exception e) {");
-        //moduleWriter.indent();
-        //moduleWriter.println("throw new RuntimeException(e.getMessage(), e);");
-        //moduleWriter.outdent();
-        //moduleWriter.println("}");
         moduleWriter.outdent();
         moduleWriter.println("}");
-//        moduleWriter.println();
-//        moduleWriter.println("@Provides");
-//        if (isSingleton)
-//            moduleWriter.println("@Singleton");
-//        moduleWriter.println("public Provider<" + interfaceName + "> provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName + "_Prov ("
-//                + createString(parameters, true) + ") {");
-//        moduleWriter.indent();
-//        moduleWriter.println("return new Provider<"+interfaceName+">() {");
-//        moduleWriter.indent();
-//        moduleWriter.println("public "+interfaceName+" get() {");
-//        moduleWriter.indent();
-//        moduleWriter.println("try {");
-//        moduleWriter.indent();
-//        moduleWriter.println("return new " + implementingClassTypeElement.getQualifiedName().toString() + "(" + createString(parameters, false) + ");");
-//        moduleWriter.outdent();
-//        moduleWriter.println("} catch (Exception e) {");
-//        moduleWriter.indent();
-//        moduleWriter.println("throw new RuntimeException(e.getMessage(), e);");
-//        moduleWriter.outdent();
-//        moduleWriter.println("}");
-//        moduleWriter.outdent();
-//        moduleWriter.println("}");
-//        moduleWriter.outdent();
-//        moduleWriter.println("};");
-//        moduleWriter.outdent();
-//        moduleWriter.println("}");
     }
 
     private void generate(TypeElement implementingClassTypeElement, TypeElement interfaceElementType, Extension extension)
@@ -329,12 +283,7 @@ public class DaggerModuleProcessor
             return;
         }
         final InjectionContext[] context = extensionPoint.context();
-        //final String interfaceNameWithoutPackage = extractNameWithoutPackage(interfaceName);
         final TypeElement defaultImpl =(( TypeElement)typeUtils.asElement(typeUtils.erasure(implementingClassTypeElement.asType())));
-        //final ExecutableElement constructor = getConstructor(implementingClassTypeElement);
-        //final List<? extends VariableElement> parameters = constructor.getParameters();
-        final String qualifiedName = implementingClassTypeElement.getQualifiedName().toString();
-        final boolean isSingleton = implementingClassTypeElement.getAnnotation(Singleton.class) != null;
         final Generated generated = new Generated(interfaceElementType.getQualifiedName().toString(), defaultImpl.getQualifiedName().toString());
         if (InjectionContext.isInjectableOnGwt(context))
         {
@@ -396,49 +345,13 @@ public class DaggerModuleProcessor
             final String id = extension.id().replaceAll("\\.", "_");
             methodSuffix = id+"_Set";
         }
-        final String fullQualifiedName = "provide_" + q(interfaceName) + "_" + q(defaultImplClassName);
-        //if (isSingleton)
-//            moduleWriter.println("@Singleton");
-        //moduleWriter.println("public " + interfaceName + " " + fullQualifiedName + "_" + methodSuffix + "(" + createString(parameters, true) + ") {");
+        final String fullQualifiedName = "provide_" + toJavaName(interfaceName) + "_" + toJavaName(defaultImplClassName);
         moduleWriter.println("public " + interfaceName + " " + fullQualifiedName + "_" + methodSuffix + "(" + defaultImplClassName.getQualifiedName().toString() + " impl) {");
         moduleWriter.indent();
-//        moduleWriter.println("try {");
-        //moduleWriter.indent();
-//        if (isSingleton)
-//        {
-//            moduleWriter.println("if (" + fullQualifiedName + "!=null) {");
-//            moduleWriter.indent();
-//            moduleWriter.println("return " + fullQualifiedName + ";");
-//            moduleWriter.outdent();
-//            moduleWriter.println("}");
-//        }
-//        String variable = "result";
-//        moduleWriter.println(qualifiedName + " " + variable + " = new " + qualifiedName + "(" + createString(parameters, false) + ");");
-//        if (isSingleton)
-//        {
-//            moduleWriter.println(fullQualifiedName + "=" + variable + ";");
-//        }
-  //      moduleWriter.println("return " + variable + ";");
-//        moduleWriter.outdent();
-//        moduleWriter.println("} catch (Exception e) {");
-//        moduleWriter.indent();
-//        moduleWriter.println("throw new RuntimeException(e.getMessage(), e);");
-//        moduleWriter.outdent();
-//        moduleWriter.println("}");
         moduleWriter.println("return impl;");
         moduleWriter.outdent();
         moduleWriter.println("}");
     }
-//
-//    private static String extractNameWithoutPackage(String className)
-//    {
-//        final int lastIndexOf = className.lastIndexOf(".");
-//        if (lastIndexOf >= 0)
-//        {
-//            return className.substring(lastIndexOf + 1);
-//        }
-//        return className;
-//    }
 
     private TypeElement getProvides(Extension annotation)
     {
