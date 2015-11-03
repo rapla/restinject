@@ -1,12 +1,9 @@
 package org.rapla.server;
 
-import com.google.gwt.i18n.client.Messages;
 import org.rapla.gwtjsonrpc.RemoteJsonMethod;
-import org.rapla.gwtjsonrpc.annotation.AnnotationProcessingTest;
-import org.rapla.gwtjsonrpc.annotation.AnnotationProcessingTestImpl;
-import org.rapla.gwtjsonrpc.annotation.ExampleWithParameterArray;
 import org.rapla.gwtjsonrpc.server.JsonServlet;
 
+import javax.inject.Provider;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -23,24 +20,29 @@ public class TestServlet extends HttpServlet
 {
     Map<String,JsonServlet> servletMap = new HashMap<String, JsonServlet>();
 
+    ServerComponent serverComponent;
     @Override public void init() throws ServletException
     {
         super.init();
         System.out.println("Init done ");
+        serverComponent = DaggerServerComponent.create();
     }
 
     @Override protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
-        System.out.println("Request " +request.toString());
+
+
+        System.out.println("Request " + request.toString());
         String serviceAndMethodName = getServiceAndMethodName(request);
 
         try
         {
             final JsonServlet servlet = getJsonServlet(request, serviceAndMethodName);
             Class<?> role = servlet.getInterfaceClass();
-            Object impl = createWebservice(role, request);
+            Provider<Object> requestComponent = serverComponent.getWebservice().getList().find(request, response,role.getCanonicalName());
             ServletContext servletContext = getServletContext();
-            servlet.service(request, response, servletContext, impl);
+            final Object service = requestComponent.get();//get().getObject(role.getCanonicalName());
+            servlet.service(request, response, servletContext, service);
         }
         catch (Exception e)
         {

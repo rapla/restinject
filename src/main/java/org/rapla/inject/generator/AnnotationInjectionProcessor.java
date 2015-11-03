@@ -3,8 +3,9 @@ package org.rapla.inject.generator;
 import org.rapla.dagger.DaggerModuleProcessor;
 import org.rapla.gwtjsonrpc.RemoteJsonMethod;
 import org.rapla.gwtjsonrpc.annotation.ProxyCreator;
-import org.rapla.gwtjsonrpc.annotation.SwingProxyCreator;
+import org.rapla.gwtjsonrpc.annotation.JavaClientProxyCreator;
 import org.rapla.inject.*;
+import org.rapla.inject.server.RequestScoped;
 
 import javax.annotation.Generated;
 import javax.annotation.processing.AbstractProcessor;
@@ -98,7 +99,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             ProxyCreator proxyCreator = new ProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
             String proxyClassName = proxyCreator.create(proxyLogger);
 
-            SwingProxyCreator swingProxyCreator = new SwingProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
+            JavaClientProxyCreator swingProxyCreator = new JavaClientProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
             String swingproxyClassName = swingProxyCreator.create(proxyLogger);
 
             final String qualifiedName = interfaceElement.getQualifiedName().toString();
@@ -111,6 +112,20 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 found = true;
             }
         }
+/*
+        for (Element elem : roundEnv.getElementsAnnotatedWith(RequestScoped.class))
+        {
+            TypeElement implementationElement = (TypeElement) elem;
+            TypeElement interfaceElement = processingEnv.getElementUtils().getTypeElement(RequestScoped.class.getCanonicalName());
+            final String qualifiedName = interfaceElement.getQualifiedName().toString();
+            appendToServiceList(f, qualifiedName);
+            addServiceFile(interfaceElement, implementationElement, f);
+            if (implementationElement.getAnnotation(Generated.class) == null)
+            {
+                found = true;
+            }
+        }
+        */
 
         //        List<InjectionContext> gwtContexts = Arrays.asList(new InjectionContext[] { InjectionContext.gwt, InjectionContext.gwt });
         for (Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementation.class))
@@ -209,7 +224,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             
             // Dagger
             processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Dagger Modules");
-            final DaggerModuleProcessor daggerModuleProcessor = new DaggerModuleProcessor(processingEnv);
+            final DaggerModuleProcessor daggerModuleProcessor = new DaggerModuleProcessor(processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
             daggerModuleProcessor.process();
         }
 

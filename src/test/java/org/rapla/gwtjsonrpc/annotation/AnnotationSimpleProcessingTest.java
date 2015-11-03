@@ -8,9 +8,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-//@RemoteJsonMethod
+@RemoteJsonMethod
 public interface AnnotationSimpleProcessingTest
 {
-    @ResultType(String.class)
     FutureResult<String> sayHello(String param);
 }

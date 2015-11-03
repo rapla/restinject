@@ -2,12 +2,27 @@ package org.rapla.gwtjsonrpc.annotation;
 
 import org.rapla.gwtjsonrpc.common.FutureResult;
 import org.rapla.gwtjsonrpc.common.ResultImpl;
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.InjectionContext;
+import org.rapla.server.RemoteSession;
+import org.rapla.inject.server.RequestScoped;
+import org.rapla.server.TestServer;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
+
+
+@RequestScoped
+@DefaultImplementation(of=AnnotationProcessingTest.class,context = InjectionContext.server)
 public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
 {
+    @Inject
+    public AnnotationProcessingTestImpl()
+    {
+    }
+
     @Override public FutureResult<List<Result>> sayHello(Parameter param)
     {
         List<Result> list = sayHello3(param);

@@ -3,6 +3,7 @@ package org.rapla.client.swing;
 import junit.framework.TestCase;
 import org.eclipse.jetty.server.Server;
 import org.rapla.gwtjsonrpc.annotation.AnnotationProcessingTest;
+import org.rapla.gwtjsonrpc.annotation.AnnotationSimpleProcessingTest;
 import org.rapla.gwtjsonrpc.client.impl.EntryPointFactory;
 import org.rapla.gwtjsonrpc.common.FutureResult;
 import org.rapla.rest.client.BasicRaplaHTTPConnector;
@@ -99,5 +100,16 @@ public class MySwingTest extends TestCase
         assertEquals("2", ids.get(1));
         test.sayHello2(p);
         test.sayHello3(p);
+    }
+
+    public void test3() throws Exception
+    {
+        AnnotationSimpleProcessingTest test = new org.rapla.gwtjsonrpc.annotation.AnnotationSimpleProcessingTest_JavaJsonProxy( connector );
+        final String message = "hello";
+        final FutureResult<String> resultFutureResult = test.sayHello(message);
+        final String result = resultFutureResult.get();
+        System.out.println("result");
+        assertTrue(result.startsWith(message));
+
     }
 }

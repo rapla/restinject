@@ -12,7 +12,6 @@ import java.util.Set;
 @RemoteJsonMethod
 public interface AnnotationProcessingTest
 {
-
     FutureResult<List<Result>> sayHello(Parameter param);
     Result sayHello2(Parameter param);
     List<Result> sayHello3(Parameter param);

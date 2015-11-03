@@ -26,9 +26,9 @@ import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.util.*;
 
-public class SwingProxyCreator implements SerializerClasses
+public class JavaClientProxyCreator implements SerializerClasses
 {
-    private static final String PROXY_SUFFIX = "_JavaJsonProxy";
+    public static final String PROXY_SUFFIX = "_JavaJsonProxy";
     private TypeElement svcInf;
     String futureResultClassName;
     private SerializerCreator serializerCreator;
@@ -38,7 +38,7 @@ public class SwingProxyCreator implements SerializerClasses
     private final NameFactory nameFactory = new NameFactory();
     String generatorName;
 
-    public SwingProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName)
+    public JavaClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName)
     {
         svcInf = remoteService;
         this.generatorName = generatorName;
