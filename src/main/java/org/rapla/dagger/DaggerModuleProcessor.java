@@ -10,7 +10,6 @@ import org.rapla.gwtjsonrpc.annotation.ProxyCreator;
 import org.rapla.gwtjsonrpc.annotation.SourceWriter;
 import org.rapla.inject.*;
 import org.rapla.inject.generator.AnnotationInjectionProcessor;
-import org.rapla.inject.server.RequestModule;
 import org.rapla.inject.server.RequestScoped;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -87,8 +86,9 @@ public class DaggerModuleProcessor
     private static final int JAVA_CLIENT_SOURCE_WRITER = 1;
     private static final int GWT_SOURCE_WRITER = 2;
     private static final int WEBSERVICE_COMPONENT_WRITER = 3;
-    private final Set<Generated>[] alreadyGenerated = new LinkedHashSet[4];
-    private final SourceWriter[] sourceWriters = new SourceWriter[4];
+    private static final int REQUEST_WRITER = 4;
+    private final Set<Generated>[] alreadyGenerated = new LinkedHashSet[5];
+    private final SourceWriter[] sourceWriters = new SourceWriter[5];
     private final ProcessingEnvironment processingEnvironment;
     private final String generatorName;
     public DaggerModuleProcessor(ProcessingEnvironment processingEnvironment, String generatorName)
@@ -114,6 +114,8 @@ public class DaggerModuleProcessor
         sourceWriters[JAVA_CLIENT_SOURCE_WRITER] = createSourceWriter("JavaClient");
         sourceWriters[GWT_SOURCE_WRITER] = createSourceWriter("Gwt");
         sourceWriters[WEBSERVICE_COMPONENT_WRITER] = createComponentSourceWriter("Webservice");
+        sourceWriters[REQUEST_WRITER] = createRequestModuleSourceWriter();
+
         Set<String> interfaces = new LinkedHashSet<String>();
         final File allserviceList = AnnotationInjectionProcessor.readInterfacesInto(interfaces, processingEnvironment);
         for (String interfaceName : interfaces)
@@ -128,6 +130,7 @@ public class DaggerModuleProcessor
             moduleWriter.close();
         }
     }
+
 
     private void writeWebserviceList(String type)
     {
@@ -147,7 +150,7 @@ public class DaggerModuleProcessor
         writer.println("}");
         writer.println("public Provider<Object> find(HttpServletRequest request, HttpServletResponse response,String servicename) {");
         writer.indent();
-        writer.println("RequestModule requestModule = new RequestModule(request, response);");
+        writer.println("DaggerRequestModule requestModule = new DaggerRequestModule(request, response);");
         writer.println("switch (servicename) {");
         writer.indent();
         for ( TypeElement method:remoteMethods)
@@ -196,6 +199,11 @@ public class DaggerModuleProcessor
         final SourceWriter moduleWriter = new SourceWriter(source.openOutputStream());
         moduleWriter.println("package org.rapla.dagger;");
         moduleWriter.println();
+        if ( type.toLowerCase().contains("request"))
+        {
+            moduleWriter.println("import " + HttpServletRequest.class.getCanonicalName() + ";");
+            moduleWriter.println("import " + HttpServletResponse.class.getCanonicalName() + ";");
+        }
         moduleWriter.println("import " + Provides.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Provides.Type.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Module.class.getCanonicalName() + ";");
@@ -208,6 +216,25 @@ public class DaggerModuleProcessor
         moduleWriter.indent();
         return moduleWriter;
     }
+
+    private SourceWriter createRequestModuleSourceWriter() throws IOException
+    {
+        String name = "Request";
+        final SourceWriter writer = createSourceWriter(name);
+
+        writer.println("HttpServletRequest request;");
+        writer.println("HttpServletResponse response;");
+        writer.println("public Dagger"+name+"Module(HttpServletRequest request, HttpServletResponse response){");
+        writer.indent();
+        writer.println("this.request = request;this.response = response;");
+        writer.outdent();
+        writer.println("};");
+        writer.println("@Provides public HttpServletRequest provideRequest()  {  return request;    }");
+        writer.println("@Provides public HttpServletResponse provideResponse(){ return response;     }");
+        return writer;
+    }
+
+
 
     private SourceWriter createComponentSourceWriter(String type) throws IOException
     {
@@ -224,7 +251,6 @@ public class DaggerModuleProcessor
         moduleWriter.println("import " + Provides.Type.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Subcomponent.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Module.class.getCanonicalName() + ";");
-        moduleWriter.println("import " + RequestModule.class.getCanonicalName() + ";");
         moduleWriter.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
         moduleWriter.println("import " + RequestScoped.class.getCanonicalName() + ";");
         moduleWriter.println();
@@ -417,9 +443,9 @@ public class DaggerModuleProcessor
         final String methodName = toJavaName(interfaceName).toLowerCase();
         // it is important that the first char is a Uppercase latter otherwise dagger fails with IllegalArgumentException
         final String serviceComponentName = firstCharUp(toJavaName(interfaceName)) +"Service";
-        moduleWriter.println(serviceComponentName + " " + methodName + "(RequestModule module);");
+        moduleWriter.println(serviceComponentName + " " + methodName + "(DaggerRequestModule module);");
         moduleWriter.println("@RequestScoped");
-        moduleWriter.println("@Subcomponent(modules=RequestModule.class)");
+        moduleWriter.println("@Subcomponent(modules=DaggerRequestModule.class)");
 
         String implementingName = implementingClassTypeElement.getQualifiedName().toString();
         remoteMethods.add( interfaceName);
