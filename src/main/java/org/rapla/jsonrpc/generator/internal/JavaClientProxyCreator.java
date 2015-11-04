@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.rapla.inject.jsonrpc.proxy;
+package org.rapla.jsonrpc.generator.internal;
 
 import org.rapla.jsonrpc.common.RemoteJsonMethod;
 import org.rapla.inject.generator.internal.SourceWriter;

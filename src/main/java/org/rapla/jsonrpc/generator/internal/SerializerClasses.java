@@ -1,4 +1,4 @@
-package org.rapla.inject.jsonrpc.proxy;
+package org.rapla.jsonrpc.generator.internal;
 
 import org.rapla.jsonrpc.client.swing.BasicRaplaHTTPConnector;
 

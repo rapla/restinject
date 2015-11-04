@@ -1,4 +1,4 @@
-package org.rapla.inject.jsonrpc.proxy;
+package org.rapla.jsonrpc.generator.internal;
 
 import java.util.Collection;
 import java.util.HashSet;

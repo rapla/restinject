@@ -30,11 +30,8 @@ public class TestServlet extends HttpServlet
 
     @Override protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
-
-
         System.out.println("Request " + request.toString());
         String serviceAndMethodName = getServiceAndMethodName(request);
-
         try
         {
             final JsonServlet servlet = getJsonServlet(request, serviceAndMethodName);
@@ -50,21 +47,6 @@ public class TestServlet extends HttpServlet
             throw new ServletException( e);
         }
     }
-
-    private Object createWebservice(Class role, HttpServletRequest request) throws Exception
-    {
-        final String implClass = role.getCanonicalName() + "Impl";
-        try
-        {
-            final Object instance = Class.forName(implClass).newInstance();
-            return instance;
-        }
-        catch (ClassNotFoundException ex)
-        {
-            throw new Exception("Service " + role + " not supported. No implementation found. Looking for " + implClass);
-        }
-    }
-
 
     protected String getServiceAndMethodName(HttpServletRequest request) {
         String requestURI =request.getPathInfo();

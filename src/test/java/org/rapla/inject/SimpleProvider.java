@@ -1,4 +1,4 @@
-package org.rapla.jsonrpc.client.gwt.internal.impl.ser;
+package org.rapla.inject;
 
 import javax.inject.Provider;
 
@@ -7,7 +7,11 @@ public class SimpleProvider<T> implements Provider<T> {
     public SimpleProvider(T t) {
         this.t = t;
     }
-    
+    public SimpleProvider(Provider<T> t) {
+        this.t = t.get();
+    }
+
+
     public T get()
     {
         return t;

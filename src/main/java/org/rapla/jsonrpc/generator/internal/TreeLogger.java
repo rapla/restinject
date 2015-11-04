@@ -1,4 +1,4 @@
-package org.rapla.inject.jsonrpc.proxy;
+package org.rapla.jsonrpc.generator.internal;
 
 /**
  * Created by Christopher on 13.10.2015.

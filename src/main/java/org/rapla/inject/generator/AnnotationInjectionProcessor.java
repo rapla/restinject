@@ -2,9 +2,9 @@ package org.rapla.inject.generator;
 
 import org.rapla.inject.*;
 import org.rapla.inject.generator.internal.DaggerModuleCreator;
-import org.rapla.inject.jsonrpc.proxy.GwtProxyCreator;
-import org.rapla.inject.jsonrpc.proxy.JavaClientProxyCreator;
-import org.rapla.inject.jsonrpc.proxy.TreeLogger;
+import org.rapla.jsonrpc.generator.internal.GwtProxyCreator;
+import org.rapla.jsonrpc.generator.internal.JavaClientProxyCreator;
+import org.rapla.jsonrpc.generator.internal.TreeLogger;
 import org.rapla.jsonrpc.common.RemoteJsonMethod;
 
 import javax.annotation.Generated;
