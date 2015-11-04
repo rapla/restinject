@@ -1,7 +1,7 @@
 package org.rapla.client.gwt;
 
-import org.rapla.gwtjsonrpc.annotation.AnnotationProcessingTest;
-import org.rapla.gwtjsonrpc.common.FutureResult;
+import org.rapla.common.AnnotationProcessingTest;
+import org.rapla.jsonrpc.common.FutureResult;
 
 import javax.inject.Inject;
 import java.util.List;

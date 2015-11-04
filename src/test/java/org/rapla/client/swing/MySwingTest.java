@@ -2,18 +2,19 @@ package org.rapla.client.swing;
 
 import junit.framework.TestCase;
 import org.eclipse.jetty.server.Server;
-import org.rapla.gwtjsonrpc.annotation.AnnotationProcessingTest;
-import org.rapla.gwtjsonrpc.annotation.AnnotationSimpleProcessingTest;
-import org.rapla.gwtjsonrpc.client.impl.EntryPointFactory;
-import org.rapla.gwtjsonrpc.common.FutureResult;
-import org.rapla.rest.client.BasicRaplaHTTPConnector;
-import org.rapla.rest.client.RaplaConnectException;
+import org.rapla.common.AnnotationProcessingTest;
+import org.rapla.common.AnnotationProcessingTest_JavaJsonProxy;
+import org.rapla.common.AnnotationSimpleProcessingTest;
+import org.rapla.common.AnnotationSimpleProcessingTest_JavaJsonProxy;
+import org.rapla.jsonrpc.client.EntryPointFactory;
+import org.rapla.jsonrpc.client.swing.BasicRaplaHTTPConnector;
+import org.rapla.jsonrpc.client.swing.RaplaConnectException;
+import org.rapla.jsonrpc.common.FutureResult;
 import org.rapla.server.ServletTestContainer;
 import org.rapla.server.TestServlet;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Executor;
 
 public class MySwingTest extends TestCase
@@ -75,7 +76,7 @@ public class MySwingTest extends TestCase
         {
             @Override public String getEntryPoint(String interfaceName, String relativePath)
             {
-                return "http://localhost:8052/"+ "rapla/json/" + (relativePath != null ? relativePath : interfaceName);
+                return "http://localhost:8052/" + "rapla/json/" + (relativePath != null ? relativePath : interfaceName);
             }
         });
     }
@@ -88,7 +89,7 @@ public class MySwingTest extends TestCase
 
     public void test() throws Exception
     {
-        AnnotationProcessingTest test = new org.rapla.gwtjsonrpc.annotation.AnnotationProcessingTest_JavaJsonProxy( connector );
+        AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy( connector );
         AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
         final FutureResult<List<AnnotationProcessingTest.Result>> resultFutureResult = test.sayHello(p);
@@ -104,12 +105,23 @@ public class MySwingTest extends TestCase
 
     public void test3() throws Exception
     {
-        AnnotationSimpleProcessingTest test = new org.rapla.gwtjsonrpc.annotation.AnnotationSimpleProcessingTest_JavaJsonProxy( connector );
+        AnnotationSimpleProcessingTest test = new AnnotationSimpleProcessingTest_JavaJsonProxy( connector );
         final String message = "hello";
         final FutureResult<String> resultFutureResult = test.sayHello(message);
         final String result = resultFutureResult.get();
         System.out.println("result");
         assertTrue(result.startsWith(message));
+    }
 
+    public void test4() throws Exception
+    {
+        AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy( connector );
+        final FutureResult<Map<String,Set<String>>> resultFutureResult = test.complex();
+        final StringBuilder builder = new StringBuilder();
+        final Set<String> greeting = resultFutureResult.get().get("greeting");
+        assertEquals(2,greeting.size());
+        final Iterator<String> iterator = greeting.iterator();
+        assertEquals("Hello",iterator.next());
+        assertEquals("World", iterator.next());
     }
 }

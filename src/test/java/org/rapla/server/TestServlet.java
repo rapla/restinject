@@ -1,7 +1,7 @@
 package org.rapla.server;
 
-import org.rapla.gwtjsonrpc.RemoteJsonMethod;
-import org.rapla.gwtjsonrpc.server.JsonServlet;
+import org.rapla.jsonrpc.common.RemoteJsonMethod;
+import org.rapla.jsonrpc.server.JsonServlet;
 
 import javax.inject.Provider;
 import javax.servlet.ServletContext;
@@ -25,7 +25,7 @@ public class TestServlet extends HttpServlet
     {
         super.init();
         System.out.println("Init done ");
-        serverComponent = DaggerServerComponent.create();
+        serverComponent = org.rapla.server.DaggerServerComponent.create();
     }
 
     @Override protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
@@ -105,7 +105,7 @@ public class TestServlet extends HttpServlet
             final Class webserviceAnnotation = RemoteJsonMethod.class;
             if (interfaceClass.getAnnotation(webserviceAnnotation) == null)
             {
-                throw new Exception(interfaceName + " is not a webservice. Did you forget the annotation " + webserviceAnnotation.getName() + "?");
+                throw new Exception(interfaceName + " is not a webservice. Did you forget the proxy " + webserviceAnnotation.getName() + "?");
             }
             // Test if service is found
             servlet = new JsonServlet( interfaceClass);

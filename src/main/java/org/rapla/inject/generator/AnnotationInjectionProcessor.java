@@ -1,11 +1,11 @@
 package org.rapla.inject.generator;
 
-import org.rapla.dagger.DaggerModuleProcessor;
-import org.rapla.gwtjsonrpc.RemoteJsonMethod;
-import org.rapla.gwtjsonrpc.annotation.ProxyCreator;
-import org.rapla.gwtjsonrpc.annotation.JavaClientProxyCreator;
 import org.rapla.inject.*;
-import org.rapla.inject.server.RequestScoped;
+import org.rapla.inject.generator.internal.DaggerModuleCreator;
+import org.rapla.inject.jsonrpc.proxy.GwtProxyCreator;
+import org.rapla.inject.jsonrpc.proxy.JavaClientProxyCreator;
+import org.rapla.inject.jsonrpc.proxy.TreeLogger;
+import org.rapla.jsonrpc.common.RemoteJsonMethod;
 
 import javax.annotation.Generated;
 import javax.annotation.processing.AbstractProcessor;
@@ -86,7 +86,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 
         File f = getFile(processingEnv.getFiler());
         boolean found = false;
-        org.rapla.gwtjsonrpc.annotation.TreeLogger proxyLogger = new org.rapla.gwtjsonrpc.annotation.TreeLogger();
+        TreeLogger proxyLogger = new TreeLogger();
         final Set<? extends Element> remoteMethods = roundEnv.getElementsAnnotatedWith(RemoteJsonMethod.class);
         for ( Element element : remoteMethods)
         {
@@ -96,7 +96,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 continue;
             }
 
-            ProxyCreator proxyCreator = new ProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
+            GwtProxyCreator proxyCreator = new GwtProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
             String proxyClassName = proxyCreator.create(proxyLogger);
 
             JavaClientProxyCreator swingProxyCreator = new JavaClientProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
@@ -224,7 +224,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             
             // Dagger
             processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Dagger Modules");
-            final DaggerModuleProcessor daggerModuleProcessor = new DaggerModuleProcessor(processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
+            final DaggerModuleCreator daggerModuleProcessor = new DaggerModuleCreator(processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
             daggerModuleProcessor.process();
         }
 

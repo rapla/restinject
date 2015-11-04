@@ -101,7 +101,7 @@ import static java.lang.annotation.ElementType.FIELD;
  *
  * <p>A method annotated with {@code @Inject} that overrides another method
  * annotated with {@code @Inject} will only be injected once per injection
- * request per instance. A method with <i>no</i> {@code @Inject} annotation
+ * request per instance. A method with <i>no</i> {@code @Inject} proxy
  * that overrides a method annotated with {@code @Inject} will not be
  * injected.
  *

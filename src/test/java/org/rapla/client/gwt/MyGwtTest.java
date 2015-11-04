@@ -3,11 +3,10 @@ package org.rapla.client.gwt;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.junit.client.GWTTestCase;
 import dagger.Component;
-import org.rapla.gwtjsonrpc.annotation.AnnotationProcessingTest;
-import org.rapla.gwtjsonrpc.annotation.AnnotationProcessingTestImpl;
-import org.rapla.gwtjsonrpc.client.impl.AbstractJsonProxy;
-import org.rapla.gwtjsonrpc.client.impl.EntryPointFactory;
-import org.rapla.gwtjsonrpc.common.FutureResult;
+import org.rapla.common.AnnotationProcessingTest;
+import org.rapla.dagger.DaggerGwtModule;
+import org.rapla.jsonrpc.client.EntryPointFactory;
+import org.rapla.jsonrpc.client.gwt.AbstractJsonProxy;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,7 +25,7 @@ public class MyGwtTest extends GWTTestCase
         return "org.rapla.GwtTest";
     }
     
-    @Component(modules=org.rapla.dagger.DaggerGwtModule.class)
+    @Component(modules= DaggerGwtModule.class)
     public interface BootstrapInterface {
         Bootstrap getBootstrap();
     }

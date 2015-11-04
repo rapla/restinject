@@ -24,7 +24,7 @@ import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 
 /**
  * Identifies qualifier annotations. Anyone can define a new qualifier. A
- * qualifier annotation:
+ * qualifier proxy:
  *
  * <ul>
  *   <li>is annotated with {@code @Qualifier}, {@code @Retention(RUNTIME)},
@@ -42,8 +42,8 @@ import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
  * <p>For example:
  *
  * <pre>
- *   &#064;java.lang.annotation.Documented
- *   &#064;java.lang.annotation.Retention(RUNTIME)
+ *   &#064;java.lang.proxy.Documented
+ *   &#064;java.lang.proxy.Retention(RUNTIME)
  *   &#064;javax.inject.Qualifier
  *   public @interface Leather {
  *     Color color() default Color.TAN;

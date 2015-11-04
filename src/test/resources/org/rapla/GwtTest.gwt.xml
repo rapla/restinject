@@ -3,11 +3,11 @@
 <module>
     <inherits name='com.google.gwt.core.Core'/>
     <inherits name='com.google.gwt.user.User'/>
-    <inherits name='org.rapla.gwtjsonrpc.gwtjsonrpc'/>
+    <inherits name='org.rapla.jsonrpc.jsonrpc'/>
     <inherits name='org.rapla.inject.inject'/>
-    <source path='client' />
-    <source path='gwtjsonrpc/annotation'/>
+    <source path='client/gwt' />
     <source path='inject'/>
+    <source path='common'/>
     <source path='dagger'/>
     <servlet path='/rapla/*' class='org.rapla.server.TestServlet'/>
 </module>

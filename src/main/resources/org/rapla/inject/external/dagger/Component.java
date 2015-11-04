@@ -47,7 +47,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * </a>
  *
  * <p>Provision methods have no parameters and return an {@link Inject injected} or
- * {@link Provides provided} type. Each method may have a {@link Qualifier} annotation as well. The
+ * {@link Provides provided} type. Each method may have a {@link Qualifier} proxy as well. The
  * following are all valid provision method declarations: <pre><code>
  *   SomeType getSomeType();
  *   {@literal Set<SomeType>} getSomeTypes();
@@ -140,7 +140,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * </a>
  *
  * <p>Each Dagger component can be associated with a scope by annotating it with the
- * {@linkplain Scope scope annotation}. The component implementation ensures that there is only one
+ * {@linkplain Scope scope proxy}. The component implementation ensures that there is only one
  * provision of each scoped binding per instance of the component. If the component declares a
  * scope, it may only contain unscoped bindings or bindings of that scope anywhere in the graph. For
  * example: <pre><code>
@@ -150,7 +150,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *   }
  * </code></pre>
  *
- * <p>In order to get the proper behavior associated with a scope annotation, it is the caller's
+ * <p>In order to get the proper behavior associated with a scope proxy, it is the caller's
  * responsibility to instantiate new component instances when appropriate. A {@link Singleton}
  * component, for instance, should only be instantiated once per application, while a
  * {@code RequestScoped} component should be instantiated once per request. Because components are

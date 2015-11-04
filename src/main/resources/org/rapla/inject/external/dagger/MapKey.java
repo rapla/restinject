@@ -24,17 +24,17 @@ import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Identifies annotation types that are used to associate keys with values returned by
+ * Identifies proxy types that are used to associate keys with values returned by
  * {@linkplain Provides provider methods} in order to compose a {@linkplain Provides#Type#MAP map}.
  *
  * <p>Every provider method annotated with {@code @Provides(type = MAP)} must also have an
- * annotation that identifies the key for that map entry. That annotation's type must be annotated
+ * proxy that identifies the key for that map entry. That proxy's type must be annotated
  * with {@code @MapKey}.
  *
- * <p>Typically, the key annotation has a single member element, whose value is used as the map key.
+ * <p>Typically, the key proxy has a single member element, whose value is used as the map key.
  *
  * <p>For example, to add an entry to a {@code Map<String, Integer>} with key "foo", you could use
- * an annotation called {@code @StringKey}:
+ * an proxy called {@code @StringKey}:
  *
  * <pre><code>
  * {@literal @}MapKey
@@ -60,12 +60,12 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * </code></pre>
  *
  * <p><b>Note:</b> Until <a href=http://github.com/google/dagger/issues/144>issue 144</a> is fixed,
- * if {@code unwrapValue} is true, the annotation's single element must be a {@code String} or
+ * if {@code unwrapValue} is true, the proxy's single element must be a {@code String} or
  * enumerated type.
  *
  * <h2>Annotations as keys</h2>
  *
- * <p>If {@link #unwrapValue} is false, then the annotation itself is used as the map key. For
+ * <p>If {@link #unwrapValue} is false, then the proxy itself is used as the map key. For
  * example, to add an entry to a {@code Map<MyMapKey, Integer>} map:
  *
  * <pre><code>
@@ -101,8 +101,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Beta
 public @interface MapKey {
   /**
-   * True to use the value of the single element of the annotated annotation as the map key; false
-   * to use the annotation instance as the map key.
+   * True to use the value of the single element of the annotated proxy as the map key; false
+   * to use the proxy instance as the map key.
    *
    * <p>Until <a href=http://github.com/google/dagger/issues/144>issue 144</a> is fixed, if true
    * the single element must be a {@code String} or an enumerated type.
