@@ -2,7 +2,6 @@ package org.rapla.gwtjsonrpc.annotation;
 
 import org.rapla.gwtjsonrpc.RemoteJsonMethod;
 import org.rapla.gwtjsonrpc.common.FutureResult;
-import org.rapla.gwtjsonrpc.common.ResultType;
 
 import java.util.Date;
 import java.util.List;

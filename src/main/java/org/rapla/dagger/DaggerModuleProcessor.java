@@ -22,6 +22,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.io.File;
 import java.io.IOException;
@@ -42,8 +43,7 @@ public class DaggerModuleProcessor
             this.className = className;
         }
 
-        @Override
-        public int hashCode()
+        @Override public int hashCode()
         {
             final int prime = 31;
             int result = 1;
@@ -52,8 +52,7 @@ public class DaggerModuleProcessor
             return result;
         }
 
-        @Override
-        public boolean equals(Object obj)
+        @Override public boolean equals(Object obj)
         {
             if (this == obj)
                 return true;
@@ -86,11 +85,12 @@ public class DaggerModuleProcessor
     private static final int JAVA_CLIENT_SOURCE_WRITER = 1;
     private static final int GWT_SOURCE_WRITER = 2;
     private static final int WEBSERVICE_COMPONENT_WRITER = 3;
-    private static final int REQUEST_WRITER = 4;
+    private static final int REQUEST_SOURCE_WRITER = 4;
     private final Set<Generated>[] alreadyGenerated = new LinkedHashSet[5];
     private final SourceWriter[] sourceWriters = new SourceWriter[5];
     private final ProcessingEnvironment processingEnvironment;
     private final String generatorName;
+
     public DaggerModuleProcessor(ProcessingEnvironment processingEnvironment, String generatorName)
     {
         super();
@@ -109,12 +109,13 @@ public class DaggerModuleProcessor
 
     private void generateModuleClass() throws Exception
     {
-        remoteMethods.clear();;
+        remoteMethods.clear();
+        ;
         sourceWriters[SERVER_SOURCE_WRITER] = createSourceWriter("Server");
         sourceWriters[JAVA_CLIENT_SOURCE_WRITER] = createSourceWriter("JavaClient");
         sourceWriters[GWT_SOURCE_WRITER] = createSourceWriter("Gwt");
         sourceWriters[WEBSERVICE_COMPONENT_WRITER] = createComponentSourceWriter("Webservice");
-        sourceWriters[REQUEST_WRITER] = createRequestModuleSourceWriter();
+        sourceWriters[REQUEST_SOURCE_WRITER] = createRequestModuleSourceWriter();
 
         Set<String> interfaces = new LinkedHashSet<String>();
         final File allserviceList = AnnotationInjectionProcessor.readInterfacesInto(interfaces, processingEnvironment);
@@ -130,7 +131,6 @@ public class DaggerModuleProcessor
             moduleWriter.close();
         }
     }
-
 
     private void writeWebserviceList(String type)
     {
@@ -153,11 +153,11 @@ public class DaggerModuleProcessor
         writer.println("DaggerRequestModule requestModule = new DaggerRequestModule(request, response);");
         writer.println("switch (servicename) {");
         writer.indent();
-        for ( TypeElement method:remoteMethods)
+        for (TypeElement method : remoteMethods)
         {
             String interfaceName = method.getQualifiedName().toString();
             String methodName = toJavaName(method).toLowerCase();
-            writer.println("case \"" +interfaceName + "\": return component." + methodName +"(requestModule);");
+            writer.println("case \"" + interfaceName + "\": return component." + methodName + "(requestModule);");
         }
         writer.println("default: return null;");
         writer.outdent();
@@ -190,7 +190,6 @@ public class DaggerModuleProcessor
         }
         */
 
-
     }
 
     private SourceWriter createSourceWriter(String type) throws IOException
@@ -199,7 +198,7 @@ public class DaggerModuleProcessor
         final SourceWriter moduleWriter = new SourceWriter(source.openOutputStream());
         moduleWriter.println("package org.rapla.dagger;");
         moduleWriter.println();
-        if ( type.toLowerCase().contains("request"))
+        if (type.toLowerCase().contains("request"))
         {
             moduleWriter.println("import " + HttpServletRequest.class.getCanonicalName() + ";");
             moduleWriter.println("import " + HttpServletResponse.class.getCanonicalName() + ";");
@@ -224,7 +223,7 @@ public class DaggerModuleProcessor
 
         writer.println("HttpServletRequest request;");
         writer.println("HttpServletResponse response;");
-        writer.println("public Dagger"+name+"Module(HttpServletRequest request, HttpServletResponse response){");
+        writer.println("public Dagger" + name + "Module(HttpServletRequest request, HttpServletResponse response){");
         writer.indent();
         writer.println("this.request = request;this.response = response;");
         writer.outdent();
@@ -233,8 +232,6 @@ public class DaggerModuleProcessor
         writer.println("@Provides public HttpServletResponse provideResponse(){ return response;     }");
         return writer;
     }
-
-
 
     private SourceWriter createComponentSourceWriter(String type) throws IOException
     {
@@ -270,15 +267,15 @@ public class DaggerModuleProcessor
     private void createMethods(String interfaceName, File allserviceList) throws Exception
     {
         final Set<String> implementingClasses = AnnotationInjectionProcessor.readFileContent(interfaceName, allserviceList);
+        final TypeElement interfaceClassTypeElement = processingEnvironment.getElementUtils().getTypeElement(interfaceName);
         for (String implementingClass : implementingClasses)
         {
             final TypeElement implementingClassTypeElement = processingEnvironment.getElementUtils().getTypeElement(implementingClass);
-            final TypeElement interfaceClassTypeElement = processingEnvironment.getElementUtils().getTypeElement(interfaceName);
-            if (implementingClass.endsWith(ProxyCreator.PROXY_SUFFIX) )
+            if (implementingClass.endsWith(ProxyCreator.PROXY_SUFFIX))
             {
                 generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, GWT_SOURCE_WRITER);
             }
-            else if (implementingClass.endsWith(JavaClientProxyCreator.PROXY_SUFFIX) )
+            else if (implementingClass.endsWith(JavaClientProxyCreator.PROXY_SUFFIX))
             {
                 generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, JAVA_CLIENT_SOURCE_WRITER);
             }
@@ -291,13 +288,13 @@ public class DaggerModuleProcessor
                     final DefaultImplementation[] defaultImplementations = defaultImplementationRepeatable.value();
                     for (DefaultImplementation defaultImplementation : defaultImplementations)
                     {
-                        generate(implementingClassTypeElement, interfaceClassTypeElement, defaultImplementation);
+                        generateDefaultImplementation(implementingClassTypeElement, interfaceClassTypeElement, defaultImplementation);
                     }
                 }
                 final DefaultImplementation defaultImplementation = implementingClassTypeElement.getAnnotation(DefaultImplementation.class);
                 if (defaultImplementation != null)
                 {
-                    generate(implementingClassTypeElement, interfaceClassTypeElement, defaultImplementation);
+                    generateDefaultImplementation(implementingClassTypeElement, interfaceClassTypeElement, defaultImplementation);
                 }
                 final ExtensionRepeatable extensionRepeatable = implementingClassTypeElement.getAnnotation(ExtensionRepeatable.class);
                 if (extensionRepeatable != null)
@@ -305,14 +302,22 @@ public class DaggerModuleProcessor
                     final Extension[] extensions = extensionRepeatable.value();
                     for (Extension extension : extensions)
                     {
-                        generate(implementingClassTypeElement, interfaceClassTypeElement, extension);
+                        generateExtension(implementingClassTypeElement, interfaceClassTypeElement, extension);
                     }
                 }
                 final Extension extension = implementingClassTypeElement.getAnnotation(Extension.class);
                 if (extension != null)
                 {
-                    generate(implementingClassTypeElement, interfaceClassTypeElement, extension);
+                    generateExtension(implementingClassTypeElement, interfaceClassTypeElement, extension);
                 }
+            }
+        }
+        if (interfaceClassTypeElement != null)
+        {
+            final ExtensionPoint annotation = interfaceClassTypeElement.getAnnotation(ExtensionPoint.class);
+            if (annotation != null)
+            {
+                generateDefaultImplementation(interfaceClassTypeElement, annotation);
             }
         }
     }
@@ -331,8 +336,8 @@ public class DaggerModuleProcessor
             sourceWriters[sourceWriterIndex].println();
             sourceWriters[sourceWriterIndex].println("@Provides");
             sourceWriters[sourceWriterIndex].println(
-                    "public " + interfaceName + " provide_" + toJavaName(interfaceClassTypeElement) + "_" + implementingClass.replaceAll("\\.", "_")
-                            + "(" + implementingClass + " result) {");
+                    "public " + interfaceName + " provide_" + toJavaName(interfaceClassTypeElement) + "_" + implementingClass.replaceAll("\\.", "_") + "("
+                            + implementingClass + " result) {");
             sourceWriters[sourceWriterIndex].indent();
             sourceWriters[sourceWriterIndex].println("return result;");
             sourceWriters[sourceWriterIndex].outdent();
@@ -348,11 +353,11 @@ public class DaggerModuleProcessor
 
     private String firstCharUp(String s)
     {
-        if ( s == null)
+        if (s == null)
         {
             return null;
         }
-        if ( s.length() <1)
+        if (s.length() < 1)
         {
             return s;
         }
@@ -360,16 +365,88 @@ public class DaggerModuleProcessor
         return result;
     }
 
+    private void generateDefaultImplementation(TypeElement interfaceTypeElement, ExtensionPoint annotation)
+    {
+        final InjectionContext[] context = annotation.context();
+        final Types typeUtils = processingEnvironment.getTypeUtils();
+        final Generated generated = new Generated(interfaceTypeElement.getQualifiedName().toString(), "emtpy");
+        //final TypeMirror asTypeImpl = typeUtils.erasure(implementingClassTypeElement.asType());
+        //final TypeMirror asTypeOf = typeUtils.erasure(defaultImplementationOf.asType());
+        //boolean assignable = typeUtils.isAssignable(asTypeImpl, asTypeOf);
+        if (InjectionContext.isInjectableOnGwt(context))
+        {
+            if (!alreadyGenerated[GWT_SOURCE_WRITER].contains(generated))
+            {
+                alreadyGenerated[GWT_SOURCE_WRITER].add(generated);
+                SourceWriter moduleWriter = sourceWriters[GWT_SOURCE_WRITER];
+                generateEmptyExtensionMethods( interfaceTypeElement,  moduleWriter);
+            }
+        }
+        if (InjectionContext.isInjectableOnServer(context))
+        {
+            if (!alreadyGenerated[SERVER_SOURCE_WRITER].contains(generated))
+            {
+                alreadyGenerated[SERVER_SOURCE_WRITER].add(generated);
+                SourceWriter moduleWriter = sourceWriters[SERVER_SOURCE_WRITER];
+                generateEmptyExtensionMethods( interfaceTypeElement,  moduleWriter);
+            }
+        }
+        if (InjectionContext.isInjectableOnSwing(context))
+        {
+            if (!alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].contains(generated))
+            {
+                alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].add(generated);
+                SourceWriter moduleWriter = sourceWriters[JAVA_CLIENT_SOURCE_WRITER];
+                generateEmptyExtensionMethods( interfaceTypeElement,  moduleWriter);
+            }
+        }
 
-    private void generate(TypeElement implementingClassTypeElement, TypeElement interfaceTypeElement, DefaultImplementation defaultImplementation)
+    }
+
+    private void generateEmptyExtensionMethods( final TypeElement interfaceName,
+            SourceWriter moduleWriter)
+    {
+        moduleWriter.println();
+        //        if (isSingleton)
+        //        {
+        //            final String fullQualifiedName = "provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName;
+        //            moduleWriter.println("private " + qualifiedName + " " + fullQualifiedName + "=null;");
+        //        }
+        writeEmptyMethod(interfaceName, moduleWriter );
+    }
+
+    private void writeEmptyMethod(TypeElement interfaceName, SourceWriter moduleWriter )
+    {
+        final String collectionTypeString;
+            moduleWriter.println();
+            moduleWriter.println("@Provides(type=Type.SET_VALUES)");
+            collectionTypeString = "Set";
+        final String fullQualifiedName = "provide_" + toJavaName(interfaceName) + "_empty";
+        moduleWriter.println("public java.util.Set<" + interfaceName.getQualifiedName().toString() + "> " + fullQualifiedName + "_" + collectionTypeString + "() {");
+        moduleWriter.indent();
+        moduleWriter.println("return java.util.Collections.emptySet();");
+        moduleWriter.outdent();
+        moduleWriter.println("}");
+    }
+
+
+
+    private void generateDefaultImplementation(TypeElement implementingClassTypeElement, TypeElement interfaceTypeElement,
+            DefaultImplementation defaultImplementation)
     {
         final InjectionContext[] context = defaultImplementation.context();
         final Types typeUtils = processingEnvironment.getTypeUtils();
-        final Generated generated = new Generated(interfaceTypeElement.getQualifiedName().toString(), implementingClassTypeElement.getQualifiedName().toString());
+        final Generated generated = new Generated(interfaceTypeElement.getQualifiedName().toString(),
+                implementingClassTypeElement.getQualifiedName().toString());
         final TypeElement defaultImplementationOf = getDefaultImplementationOf(defaultImplementation);
+        boolean requestScoped = implementingClassTypeElement.getAnnotation(RequestScoped.class) != null;
         final TypeMirror asTypeImpl = typeUtils.erasure(implementingClassTypeElement.asType());
         final TypeMirror asTypeOf = typeUtils.erasure(defaultImplementationOf.asType());
-        final boolean assignable = typeUtils.isAssignable(asTypeImpl, asTypeOf);
+        boolean assignable = typeUtils.isAssignable(asTypeImpl, asTypeOf);
+        if (!assignable)
+        {
+            processingEnvironment.getMessager().printMessage(Diagnostic.Kind.WARNING, asTypeImpl.toString() + " can't be assigned to " + asTypeOf);
+        }
         if (defaultImplementation != null && assignable)
         {
             if (InjectionContext.isInjectableOnGwt(context))
@@ -383,7 +460,7 @@ public class DaggerModuleProcessor
             }
             if (InjectionContext.isInjectableOnServer(context))
             {
-                if ( interfaceTypeElement.getAnnotation(RemoteJsonMethod.class) != null)
+                if (interfaceTypeElement.getAnnotation(RemoteJsonMethod.class) != null)
                 {
                     if (!alreadyGenerated[WEBSERVICE_COMPONENT_WRITER].contains(generated))
                     {
@@ -395,7 +472,7 @@ public class DaggerModuleProcessor
                 if (!alreadyGenerated[SERVER_SOURCE_WRITER].contains(generated))
                 {
                     alreadyGenerated[SERVER_SOURCE_WRITER].add(generated);
-                    SourceWriter moduleWriter = sourceWriters[SERVER_SOURCE_WRITER];
+                    SourceWriter moduleWriter = sourceWriters[requestScoped ?  REQUEST_SOURCE_WRITER: SERVER_SOURCE_WRITER];
                     generateDefaultImplementation(implementingClassTypeElement, interfaceTypeElement, moduleWriter);
                 }
             }
@@ -412,15 +489,15 @@ public class DaggerModuleProcessor
         }
     }
 
-    private void generateDefaultImplementation(TypeElement implementingClassTypeElement, TypeElement interfaceName,
-            SourceWriter moduleWriter)
+    private void generateDefaultImplementation(TypeElement implementingClassTypeElement, TypeElement interfaceName, SourceWriter moduleWriter)
     {
         moduleWriter.println();
         moduleWriter.println("@Provides");
 
         String implementingName = implementingClassTypeElement.getQualifiedName().toString();
-        moduleWriter.println("public " + interfaceName + " provide_" + toJavaName(interfaceName) + "_" + toJavaName(implementingClassTypeElement) + "("
-                + implementingName + " result) {");
+        moduleWriter.println(
+                "public " + interfaceName + " provide_" + toJavaName(interfaceName) + "_" + toJavaName(implementingClassTypeElement) + "(" + implementingName
+                        + " result) {");
         moduleWriter.indent();
         moduleWriter.println("return result;");
         moduleWriter.outdent();
@@ -435,20 +512,19 @@ public class DaggerModuleProcessor
     {
         AnnotationSimpleProcessingTestImpl get();
      */
-    private void generateWebserviceComponent(TypeElement implementingClassTypeElement, TypeElement interfaceName,
-            SourceWriter moduleWriter)
+    private void generateWebserviceComponent(TypeElement implementingClassTypeElement, TypeElement interfaceName, SourceWriter moduleWriter)
     {
         moduleWriter.println();
         //final String simpleName = interfaceName.getQualifiedName().toString();
         final String methodName = toJavaName(interfaceName).toLowerCase();
         // it is important that the first char is a Uppercase latter otherwise dagger fails with IllegalArgumentException
-        final String serviceComponentName = firstCharUp(toJavaName(interfaceName)) +"Service";
+        final String serviceComponentName = firstCharUp(toJavaName(interfaceName)) + "Service";
         moduleWriter.println(serviceComponentName + " " + methodName + "(DaggerRequestModule module);");
         moduleWriter.println("@RequestScoped");
         moduleWriter.println("@Subcomponent(modules=DaggerRequestModule.class)");
 
         String implementingName = implementingClassTypeElement.getQualifiedName().toString();
-        remoteMethods.add( interfaceName);
+        remoteMethods.add(interfaceName);
         moduleWriter.println("interface " + serviceComponentName + " extends Provider<Object> {");
         moduleWriter.indent();
         moduleWriter.println(implementingName + " get();");
@@ -456,7 +532,7 @@ public class DaggerModuleProcessor
         moduleWriter.println("}");
     }
 
-    private void generate(TypeElement implementingClassTypeElement, TypeElement interfaceElementType, Extension extension)
+    private void generateExtension(TypeElement implementingClassTypeElement, TypeElement interfaceElementType, Extension extension)
     {
         if (extension == null)
         {
@@ -464,6 +540,7 @@ public class DaggerModuleProcessor
         }
         final TypeElement interfaceProvided = getProvides(extension);
         final ExtensionPoint extensionPoint = interfaceProvided.getAnnotation(ExtensionPoint.class);
+
         if (extensionPoint == null)
         {
             return;
@@ -476,8 +553,13 @@ public class DaggerModuleProcessor
         {
             return;
         }
+        if (implementingClassTypeElement.getAnnotation(RequestScoped.class) != null)
+        {
+            processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR,"No requestscope allowed on Extensions but used in " + implementingClassTypeElement.toString());
+            return;
+        }
         final InjectionContext[] context = extensionPoint.context();
-        final TypeElement defaultImpl =(( TypeElement)typeUtils.asElement(typeUtils.erasure(implementingClassTypeElement.asType())));
+        final TypeElement defaultImpl = ((TypeElement) typeUtils.asElement(typeUtils.erasure(implementingClassTypeElement.asType())));
         final Generated generated = new Generated(interfaceElementType.getQualifiedName().toString(), defaultImpl.getQualifiedName().toString());
         if (InjectionContext.isInjectableOnGwt(context))
         {
@@ -485,7 +567,7 @@ public class DaggerModuleProcessor
             {
                 alreadyGenerated[GWT_SOURCE_WRITER].add(generated);
                 SourceWriter moduleWriter = sourceWriters[GWT_SOURCE_WRITER];
-                generateExtensionMethods(extension,interfaceElementType , defaultImpl,moduleWriter);
+                generateExtensionMethods(extension, interfaceElementType, defaultImpl, moduleWriter);
             }
         }
         if (InjectionContext.isInjectableOnServer(context))
@@ -494,7 +576,7 @@ public class DaggerModuleProcessor
             {
                 alreadyGenerated[SERVER_SOURCE_WRITER].add(generated);
                 SourceWriter moduleWriter = sourceWriters[SERVER_SOURCE_WRITER];
-                generateExtensionMethods(extension,interfaceElementType , defaultImpl,moduleWriter);
+                generateExtensionMethods(extension, interfaceElementType, defaultImpl, moduleWriter);
             }
         }
         if (InjectionContext.isInjectableOnSwing(context))
@@ -503,44 +585,45 @@ public class DaggerModuleProcessor
             {
                 alreadyGenerated[JAVA_CLIENT_SOURCE_WRITER].add(generated);
                 SourceWriter moduleWriter = sourceWriters[JAVA_CLIENT_SOURCE_WRITER];
-                generateExtensionMethods(extension,interfaceElementType , defaultImpl,moduleWriter);
+                generateExtensionMethods(extension, interfaceElementType, defaultImpl, moduleWriter);
             }
         }
     }
 
-    private void generateExtensionMethods(Extension extension, final TypeElement interfaceName,final TypeElement defaultImplClassName,
+    private void generateExtensionMethods(Extension extension, final TypeElement interfaceName, final TypeElement defaultImplClassName,
             SourceWriter moduleWriter)
     {
         moduleWriter.println();
-//        if (isSingleton)
-//        {
-//            final String fullQualifiedName = "provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName;
-//            moduleWriter.println("private " + qualifiedName + " " + fullQualifiedName + "=null;");
-//        }
-        writeMethod(interfaceName, moduleWriter,  defaultImplClassName,  true, extension);
-        writeMethod(interfaceName, moduleWriter, defaultImplClassName,   false, extension);
+        //        if (isSingleton)
+        //        {
+        //            final String fullQualifiedName = "provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName;
+        //            moduleWriter.println("private " + qualifiedName + " " + fullQualifiedName + "=null;");
+        //        }
+        writeMethod(interfaceName, moduleWriter, defaultImplClassName, true, extension);
+        writeMethod(interfaceName, moduleWriter, defaultImplClassName, false, extension);
     }
 
-    private void writeMethod(TypeElement interfaceName, SourceWriter moduleWriter,  final TypeElement defaultImplClassName,
-              final boolean isMap, final Extension extension)
+    private void writeMethod(TypeElement interfaceName, SourceWriter moduleWriter, final TypeElement defaultImplClassName, final boolean isMap,
+            final Extension extension)
     {
         final String methodSuffix;
-        if(isMap)
+        if (isMap)
         {
             moduleWriter.println("@Provides(type=Type.MAP)");
             moduleWriter.println("@" + DaggerMapKey.class.getSimpleName() + "(\"" + extension.id() + "\")");
             final String id = extension.id().replaceAll("\\.", "_");
-            methodSuffix = id+"_Map";
+            methodSuffix = id + "_Map";
         }
         else
         {
             moduleWriter.println();
             moduleWriter.println("@Provides(type=Type.SET)");
             final String id = extension.id().replaceAll("\\.", "_");
-            methodSuffix = id+"_Set";
+            methodSuffix = id + "_Set";
         }
         final String fullQualifiedName = "provide_" + toJavaName(interfaceName) + "_" + toJavaName(defaultImplClassName);
-        moduleWriter.println("public " + interfaceName + " " + fullQualifiedName + "_" + methodSuffix + "(" + defaultImplClassName.getQualifiedName().toString() + " impl) {");
+        moduleWriter.println("public " + interfaceName + " " + fullQualifiedName + "_" + methodSuffix + "(" + defaultImplClassName.getQualifiedName().toString()
+                + " impl) {");
         moduleWriter.indent();
         moduleWriter.println("return impl;");
         moduleWriter.outdent();
@@ -578,6 +661,5 @@ public class DaggerModuleProcessor
         Types TypeUtils = processingEnvironment.getTypeUtils();
         return (TypeElement) TypeUtils.asElement(typeMirror);
     }
-
 
 }

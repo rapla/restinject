@@ -6,17 +6,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 
 @RequestScoped
-public class RemoteSession
+public interface RemoteSession
 {
-    String text;
-    @Inject
-    public RemoteSession(HttpServletRequest request, TestServer server)
-    {
-        text = server.getTest() + request.getRequestURL();
-    }
-
-    @Override public String toString()
-    {
-        return text;
-    }
+    public String toString();
 }
