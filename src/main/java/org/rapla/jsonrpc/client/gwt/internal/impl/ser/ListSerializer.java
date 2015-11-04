@@ -34,7 +34,7 @@ public class ListSerializer<T> extends JsonSerializer<java.util.List<T>>
   private final Provider<JsonSerializer<T>> serializer;
 
   public ListSerializer(final JsonSerializer<T> s) {
-      serializer = new SimpleProvider<JsonSerializer<T>>(s);    
+      serializer = new SimpleGwtProvider<JsonSerializer<T>>(s);
   }
   
   public ListSerializer(final Provider<JsonSerializer<T>> s) {

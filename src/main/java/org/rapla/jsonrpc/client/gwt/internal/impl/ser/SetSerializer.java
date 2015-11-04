@@ -34,7 +34,7 @@ public class SetSerializer<T> extends JsonSerializer<java.util.Set<T>>
   private final Provider<JsonSerializer<T>> serializer;
   
   public SetSerializer(final JsonSerializer<T> s) {
-      serializer = new SimpleProvider<JsonSerializer<T>>(s);    
+      serializer = new SimpleGwtProvider<JsonSerializer<T>>(s);
   }
 
   public SetSerializer(final Provider<JsonSerializer<T>> s) {

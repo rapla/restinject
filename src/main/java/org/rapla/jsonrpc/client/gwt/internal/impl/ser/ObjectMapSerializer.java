@@ -43,8 +43,8 @@ public class ObjectMapSerializer<K, V> extends
 
   public ObjectMapSerializer(final JsonSerializer<K> k,
           final JsonSerializer<V> v) {
-      keySerializer = new SimpleProvider<JsonSerializer<K>>(k);
-      valueSerializer = new SimpleProvider<JsonSerializer<V>>(v);
+      keySerializer = new SimpleGwtProvider<JsonSerializer<K>>(k);
+      valueSerializer = new SimpleGwtProvider<JsonSerializer<V>>(v);
   }
 
   

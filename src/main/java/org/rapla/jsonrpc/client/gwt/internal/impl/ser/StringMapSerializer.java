@@ -41,7 +41,7 @@ public class StringMapSerializer<V> extends
   private final Provider<JsonSerializer<V>> valueSerializer;
 
   public StringMapSerializer(final JsonSerializer<V> v) {
-    valueSerializer = new SimpleProvider<JsonSerializer<V>>(v);
+    valueSerializer = new SimpleGwtProvider<JsonSerializer<V>>(v);
   }
   
   public StringMapSerializer(final Provider<JsonSerializer<V>> v) {
