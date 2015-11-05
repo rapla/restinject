@@ -2,7 +2,6 @@ package org.rapla.client.gwt.test;
 
 import dagger.Component;
 import junit.framework.TestCase;
-import org.rapla.dagger.DaggerGwtModule;
 import org.rapla.inject.EmptyInjectionTest;
 import org.rapla.inject.OtherInterface;
 import org.rapla.inject.extension.ExampleExtensionPoint;
@@ -14,7 +13,7 @@ import java.util.Set;
 
 public class MyAppTest extends TestCase
 {
-    @Component(modules = { DaggerGwtModule.class })
+    @Component(modules = { org.rapla.dagger.DaggerRaplaGwtModule.class })
     @Singleton
     public interface GwtInjectionTest
     {

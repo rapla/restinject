@@ -29,9 +29,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-/**
- * Created by Christopher on 07.09.2015.
- */
 public class AnnotationInjectionProcessor extends AbstractProcessor
 {
     public static final String GWT_MODULE_LIST = "META-INF/org.rapla.servicelist";
@@ -83,7 +80,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 
     private boolean processGwt( RoundEnvironment roundEnv) throws Exception
     {
-
         File f = getFile(processingEnv.getFiler());
         boolean found = false;
         TreeLogger proxyLogger = new TreeLogger();
@@ -306,21 +302,22 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
      * Reads the interfaces defined in META-INF/org.rapla.servicelist into the provided set
      * and returns the File.
      */
-    public static File readInterfacesInto(Set<String> interfaces, ProcessingEnvironment processingEnvironment) throws IOException, FileNotFoundException
+    public static File readInterfacesInto(Set<String> interfaces, ProcessingEnvironment processingEnvironment) throws IOException
     {
         File f = AnnotationInjectionProcessor.getFile(processingEnvironment.getFiler());
         readInto(interfaces, f);
         return f;
     }
 
-    private static void readInto(Set<String> interfaces, File f) throws FileNotFoundException, IOException
+    private static void readInto(Set<String> interfaces, File f) throws IOException
     {
-        BufferedReader reader = new BufferedReader(new FileReader(f));
-        for (String line = reader.readLine(); line != null;line = reader.readLine() )
+        try (final BufferedReader reader = new BufferedReader(new FileReader(f)))
         {
-            interfaces.add(line);
+            for (String line = reader.readLine(); line != null; line = reader.readLine())
+            {
+                interfaces.add(line);
+            }
         }
-        reader.close();
     }
 
     public static File getFile(Filer filer) throws IOException
