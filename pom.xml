@@ -166,9 +166,6 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.18.1</version>
 				<configuration>
-					<includes>
-						<include>**/bootstrap/*.*</include>
-					</includes>
 					<excludes>
 						<exclude>**/bootstrap/*.png</exclude>
 						<exclude>**/*GwtTest.java</exclude>
