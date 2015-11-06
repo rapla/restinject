@@ -4,7 +4,7 @@ import javax.inject.Provider;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public interface WebserviceCreator
+public interface WebserviceCreator<T>
 {
-    Object create(HttpServletRequest request,HttpServletResponse response);
+    T create(HttpServletRequest request,HttpServletResponse response);
 }

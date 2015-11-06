@@ -10,8 +10,8 @@ import org.rapla.jsonrpc.client.EntryPointFactory;
 import org.rapla.jsonrpc.client.swing.BasicRaplaHTTPConnector;
 import org.rapla.jsonrpc.client.swing.RaplaConnectException;
 import org.rapla.jsonrpc.common.FutureResult;
-import org.rapla.inject.server.ServletTestContainer;
-import org.rapla.inject.server.TestServlet;
+import org.rapla.server.ServletTestContainer;
+import org.rapla.server.TestServlet;
 
 import java.io.IOException;
 import java.util.*;
