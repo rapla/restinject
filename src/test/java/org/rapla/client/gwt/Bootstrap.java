@@ -1,10 +1,11 @@
 package org.rapla.client.gwt;
 
-import org.rapla.common.AnnotationProcessingTest;
-import org.rapla.jsonrpc.common.FutureResult;
+import java.util.List;
 
 import javax.inject.Inject;
-import java.util.List;
+
+import org.rapla.common.AnnotationProcessingTest;
+import org.rapla.jsonrpc.common.FutureResult;
 
 public class Bootstrap
 {

@@ -1,14 +1,16 @@
 package org.rapla.client.gwt;
 
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.junit.client.GWTTestCase;
-import dagger.Component;
+import java.util.Arrays;
+import java.util.List;
+
 import org.rapla.common.AnnotationProcessingTest;
 import org.rapla.jsonrpc.client.EntryPointFactory;
 import org.rapla.jsonrpc.client.gwt.AbstractJsonProxy;
 
-import java.util.Arrays;
-import java.util.List;
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.junit.client.GWTTestCase;
+
+import dagger.Component;
 
 public class MyGwtTest extends GWTTestCase
 {

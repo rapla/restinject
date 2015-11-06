@@ -35,6 +35,7 @@ import org.rapla.inject.Extension;
 import org.rapla.inject.ExtensionPoint;
 import org.rapla.inject.ExtensionRepeatable;
 import org.rapla.inject.InjectionContext;
+import org.rapla.inject.ComponentStarter;
 import org.rapla.inject.generator.AnnotationInjectionProcessor;
 import org.rapla.inject.internal.DaggerMapKey;
 import org.rapla.inject.server.RequestScoped;
@@ -180,8 +181,8 @@ public class DaggerModuleCreator
     }
 
     /**
-     * Generates the dagger component interfaces for Server and Swing.
-     * </br> An example:</br>
+     * Generates the dagger component interfaces for Server, Swing and GWT.</br> 
+     * An example for a server component:</br>
      * <code>package org.rapla.server.internal.dagger;</br>
      * import javax.inject.Singleton;</br>
      * import org.rapla.dagger.DaggerServerModule;</br>
@@ -190,27 +191,67 @@ public class DaggerModuleCreator
      * <code>@Singleton @dagger.Component(modules = { DaggerServerModule.class, MyModule.class })</br>
      * public interface ServerComponent</br>
      * {</br>
-     *   DaggerWebserviceComponent getWebservices();</br>
-     *   ServerServiceImpl getServer();</br>
+     *   DaggerWebserviceComponent getWebservices0();</br>
+     *   Starter getStarter();</br>
      * }</code></br>
+     * </br>An example for swing:</br>
+     * <code>@Singleton @dagger.Component(modules = { DaggerJavaClientModule.class, MyClientModule.class })</br>
+     * public interface ClientComponent</br>
+     * {</br>
+     *    RaplaClientServiceImpl getClient();</br>
+     * }</br>
+     * </code>
      */
     private void generateComponents() throws Exception
     {
-        SourceWriter sourceWriter = createComponentSourceWriter("org.rapla.server.dagger", "Server");
-        
-        sourceWriter.outdent();
-        sourceWriter.println("}");
-        sourceWriter.close();
+        {
+            SourceWriter sourceWriter = createComponentSourceWriter("org.rapla.server.dagger", "Server");
+            {// create dagger webservice components
+                int i = 0;
+                final List<String> webserviceComponents = findModules("DaggerWebserviceComponent", "org.rapla.DaggerWebserviceComponents");
+                for (String webserviceComponent : webserviceComponents)
+                {
+                    sourceWriter.println(webserviceComponent + " getWebservices" + i + "();");
+                    i++;
+                }
+            }
+            {// create starter
+                sourceWriter.println(ComponentStarter.class.getSimpleName()+" getStarter();");
+            }
+            sourceWriter.outdent();
+            sourceWriter.println("}");
+            sourceWriter.close();
+        }
+        {
+            SourceWriter sourceWriter = createComponentSourceWriter("org.rapla.client.swing.dagger", "JavaClient");
+            {// create starter
+                sourceWriter.println(ComponentStarter.class.getSimpleName()+" getStarter();");
+            }
+            sourceWriter.outdent();
+            sourceWriter.println("}");
+            sourceWriter.close();
+        }
+        {
+            SourceWriter sourceWriter = createComponentSourceWriter("org.rapla.client.gwt.dagger", "Gwt");
+            {// create starter
+                sourceWriter.println(ComponentStarter.class.getSimpleName()+" getStarter();");
+            }
+            sourceWriter.outdent();
+            sourceWriter.println("}");
+            sourceWriter.close();
+        }
     }
 
     private SourceWriter createComponentSourceWriter(String interfacePackage, String interfaceName) throws Exception
     {
-        final JavaFileObject sourceFile = processingEnvironment.getFiler().createSourceFile(interfacePackage+"."+interfaceName+"Component");
+        final JavaFileObject sourceFile = processingEnvironment.getFiler().createSourceFile(interfacePackage + "." + interfaceName + "Component");
         final SourceWriter sourceWriter = new SourceWriter(sourceFile.openOutputStream());
-        sourceWriter.println("package org.rapla.server.dagger;");
+        sourceWriter.println("package " + interfacePackage + ";");
         sourceWriter.println();
-        sourceWriter.print("@"+Singleton.class.getCanonicalName());
-        sourceWriter.print(" @"+Component.class.getCanonicalName());
+        sourceWriter.println("import " + ComponentStarter.class.getCanonicalName() + ";");
+        sourceWriter.println();
+        sourceWriter.print("@" + Singleton.class.getCanonicalName());
+        sourceWriter.print(" @" + Component.class.getCanonicalName());
         sourceWriter.print("(modules = {");
         final String modulesName = "org.rapla.Dagger" + interfaceName + "Module";
         final List<String> modules = findModules(interfaceName, modulesName);
