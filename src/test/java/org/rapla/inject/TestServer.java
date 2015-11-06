@@ -1,4 +1,4 @@
-package org.rapla.server;
+package org.rapla.inject;
 
 /**
  * Created by Christopher on 02.11.2015.

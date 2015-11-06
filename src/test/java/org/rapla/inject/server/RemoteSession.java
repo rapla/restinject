@@ -1,4 +1,4 @@
-package org.rapla.server;
+package org.rapla.inject.server;
 
 import org.rapla.inject.server.RequestScoped;
 

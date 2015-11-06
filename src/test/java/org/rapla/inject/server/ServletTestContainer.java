@@ -1,4 +1,4 @@
-package org.rapla.server;
+package org.rapla.inject.server;
 
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;

@@ -1,4 +1,4 @@
-package org.rapla.inject;
+package org.rapla.inject.server;
 
 import javax.inject.Singleton;
 
@@ -7,6 +7,9 @@ import org.rapla.dagger.DaggerRaplaServerModule;
 
 import dagger.Component;
 import junit.framework.TestCase;
+import org.rapla.inject.DefaultImplFor2Interfaces;
+import org.rapla.inject.ImplInterfaceUser;
+import org.rapla.inject.OtherInterfaceUser;
 
 public class ServerInjectionTest extends TestCase
 {
@@ -21,7 +24,7 @@ public class ServerInjectionTest extends TestCase
     public void testServerInjection()
     {
         ServerInterface si = DaggerServerInjectionTest_ServerInterface.create();
-        Assert.assertTrue(si.getImplInterfaceUser().isImplInterfaceClass(DefaultImplTest.class));
-        Assert.assertTrue(si.getOtherInterfaceUser().isOtherInterfaceClass(DefaultImplTest.class));
+        Assert.assertTrue(si.getImplInterfaceUser().isImplInterfaceClass(DefaultImplFor2Interfaces.class));
+        Assert.assertTrue(si.getOtherInterfaceUser().isOtherInterfaceClass(DefaultImplFor2Interfaces.class));
     }
 }

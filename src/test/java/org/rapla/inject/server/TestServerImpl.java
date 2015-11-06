@@ -1,7 +1,8 @@
-package org.rapla.server;
+package org.rapla.inject.server;
 
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
+import org.rapla.inject.TestServer;
 import org.rapla.inject.extension.ExampleExtensionPoint;
 
 import javax.inject.Inject;

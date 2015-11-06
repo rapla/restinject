@@ -1,4 +1,8 @@
-package org.rapla.inject;
+package org.rapla.inject.gwt;
+
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.InjectionContext;
+import org.rapla.inject.OtherInterface;
 
 import javax.inject.Inject;
 

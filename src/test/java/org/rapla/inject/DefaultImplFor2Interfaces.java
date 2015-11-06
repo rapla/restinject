@@ -6,10 +6,10 @@ import javax.inject.Inject;
 @DefaultImplementation(of=ImplInterface.class,context = InjectionContext.all),
 @DefaultImplementation(of=OtherInterface.class,context = InjectionContext.server)
 })
-public class DefaultImplTest implements  ImplInterface, OtherInterface
+public class DefaultImplFor2Interfaces implements  ImplInterface, OtherInterface
 {
     @Inject
-    public DefaultImplTest()
+    public DefaultImplFor2Interfaces()
     {
 
     }

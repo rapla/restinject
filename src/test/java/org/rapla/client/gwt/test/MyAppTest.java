@@ -2,7 +2,7 @@ package org.rapla.client.gwt.test;
 
 import dagger.Component;
 import junit.framework.TestCase;
-import org.rapla.inject.EmptyInjectionTest;
+import org.rapla.inject.EmptyInjectionTestInterface;
 import org.rapla.inject.OtherInterface;
 import org.rapla.inject.extension.ExampleExtensionPoint;
 
@@ -31,7 +31,7 @@ public class MyAppTest extends TestCase
         private Set<ExampleExtensionPoint> exampleSet;
 
         @Inject
-        public Rapla(Map<String, ExampleExtensionPoint> exampleMap, Set<ExampleExtensionPoint> exampleSet, OtherInterface test, Set<EmptyInjectionTest> emptySet)
+        public Rapla(Map<String, ExampleExtensionPoint> exampleMap, Set<ExampleExtensionPoint> exampleSet, OtherInterface test, Set<EmptyInjectionTestInterface> emptySet)
         {
             this.exampelMap = exampleMap;
             this.exampleSet = exampleSet;
