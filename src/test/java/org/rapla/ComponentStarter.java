@@ -1,6 +1,5 @@
-package org.rapla.inject;
+package org.rapla;
 
 public interface ComponentStarter
 {
-
 }

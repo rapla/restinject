@@ -1,12 +1,12 @@
 package org.rapla.inject.component.server;
 
-import javax.inject.Inject;
-
-import org.rapla.inject.ComponentStarter;
+import org.rapla.ComponentStarter;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
 
-@DefaultImplementation(context=InjectionContext.server, of=ComponentStarter.class)
+import javax.inject.Inject;
+
+@DefaultImplementation(context=InjectionContext.server, of=ComponentStarter.class,export = true)
 public class ServerStarter implements ComponentStarter
 {
     @Inject

@@ -16,4 +16,5 @@ public @interface DefaultImplementation
 {
     Class of();
     InjectionContext[] context() default {};
+    boolean export() default false;
 }

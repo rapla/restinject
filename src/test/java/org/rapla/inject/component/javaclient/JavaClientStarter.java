@@ -1,15 +1,14 @@
 package org.rapla.inject.component.javaclient;
 
-import javax.inject.Inject;
-
-import org.rapla.inject.ComponentStarter;
+import org.rapla.ComponentStarter;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
 
-@DefaultImplementation(context=InjectionContext.swing, of=ComponentStarter.class)
+import javax.inject.Inject;
+
+@DefaultImplementation(context=InjectionContext.swing, of=ComponentStarter.class,export = true)
 public class JavaClientStarter implements ComponentStarter
 {
-
     @Inject
     public JavaClientStarter()
     {

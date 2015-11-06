@@ -2,11 +2,11 @@ package org.rapla.inject.component.gwt;
 
 import javax.inject.Inject;
 
-import org.rapla.inject.ComponentStarter;
+import org.rapla.ComponentStarter;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
 
-@DefaultImplementation(context=InjectionContext.gwt, of=ComponentStarter.class)
+@DefaultImplementation(context=InjectionContext.gwt, of=ComponentStarter.class,export = true)
 public class GwtStarter implements ComponentStarter
 {
 
