@@ -25,7 +25,7 @@ public class TestServlet extends HttpServlet
     {
         super.init();
         System.out.println("Init done ");
-        serverComponent = org.rapla.server.DaggerServerComponent.create();
+        serverComponent = org.rapla.inject.server.DaggerServerComponent.create();
     }
 
     @Override protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException

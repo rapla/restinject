@@ -198,7 +198,7 @@ public class DaggerModuleCreator
      * <code>@Singleton @dagger.Component(modules = { DaggerJavaClientModule.class, MyClientModule.class })</br>
      * public interface ClientComponent</br>
      * {</br>
-     *    RaplaClientServiceImpl getClient();</br>
+     *    Starter getStarter();</br>
      * }</br>
      * </code>
      */
