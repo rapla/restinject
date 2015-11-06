@@ -1,22 +1,12 @@
 package org.rapla.inject.generator.internal;
 
-import dagger.Module;
-import dagger.Provides;
-import dagger.Subcomponent;
-import dagger.internal.Factory;
-import org.rapla.inject.DefaultImplementation;
-import org.rapla.inject.DefaultImplementationRepeatable;
-import org.rapla.inject.Extension;
-import org.rapla.inject.ExtensionPoint;
-import org.rapla.inject.ExtensionRepeatable;
-import org.rapla.inject.InjectionContext;
-import org.rapla.inject.generator.AnnotationInjectionProcessor;
-import org.rapla.inject.internal.DaggerMapKey;
-import org.rapla.inject.server.RequestScoped;
-import org.rapla.jsonrpc.common.RemoteJsonMethod;
-import org.rapla.jsonrpc.generator.internal.GwtProxyCreator;
-import org.rapla.jsonrpc.generator.internal.JavaClientProxyCreator;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
+import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -32,11 +22,24 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.util.LinkedHashSet;
-import java.util.Set;
+
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.DefaultImplementationRepeatable;
+import org.rapla.inject.Extension;
+import org.rapla.inject.ExtensionPoint;
+import org.rapla.inject.ExtensionRepeatable;
+import org.rapla.inject.InjectionContext;
+import org.rapla.inject.generator.AnnotationInjectionProcessor;
+import org.rapla.inject.internal.DaggerMapKey;
+import org.rapla.inject.server.RequestScoped;
+import org.rapla.jsonrpc.common.RemoteJsonMethod;
+import org.rapla.jsonrpc.generator.internal.GwtProxyCreator;
+import org.rapla.jsonrpc.generator.internal.JavaClientProxyCreator;
+
+import dagger.Module;
+import dagger.Provides;
+import dagger.Subcomponent;
+import dagger.internal.Factory;
 
 public class DaggerModuleCreator
 {
@@ -148,11 +151,11 @@ public class DaggerModuleCreator
         packageName+= (packageName.length() == 0 ? "" :".") + "dagger";
         String artifactName = firstCharUp(i >=0 ? moduleName.substring(i+1) : moduleName);
         remoteMethods.clear();
-        sourceWriters[SERVER_SOURCE_WRITER] = createSourceWriter(packageName,artifactName + "Server");
-        sourceWriters[JAVA_CLIENT_SOURCE_WRITER] = createSourceWriter(packageName,artifactName + "JavaClient");
-        sourceWriters[GWT_SOURCE_WRITER] = createSourceWriter(packageName,artifactName + "Gwt");
-        sourceWriters[WEBSERVICE_COMPONENT_WRITER] = createWebserviceComponentSourceWriter(packageName, artifactName );
-        sourceWriters[REQUEST_SOURCE_WRITER] = createRequestModuleSourceWriter(packageName,artifactName);
+        sourceWriters[SERVER_SOURCE_WRITER] = createSourceWriter(packageName, artifactName, "Server");
+        sourceWriters[JAVA_CLIENT_SOURCE_WRITER] = createSourceWriter(packageName, artifactName, "JavaClient");
+        sourceWriters[GWT_SOURCE_WRITER] = createSourceWriter(packageName, artifactName, "Gwt");
+        sourceWriters[WEBSERVICE_COMPONENT_WRITER] = createWebserviceComponentSourceWriter(packageName, artifactName);
+        sourceWriters[REQUEST_SOURCE_WRITER] = createRequestModuleSourceWriter(packageName, artifactName);
 
         Set<String> interfaces = new LinkedHashSet<String>();
         final File allserviceList = AnnotationInjectionProcessor.readInterfacesInto(interfaces, processingEnvironment);
@@ -230,9 +233,16 @@ public class DaggerModuleCreator
 
     }
 
-    private SourceWriter createSourceWriter(String packageName,String type) throws IOException
+    private SourceWriter createSourceWriter(String packageName, String prefix, String type) throws IOException
     {
-        final JavaFileObject source = processingEnvironment.getFiler().createSourceFile(packageName + ".Dagger" + type + "Module");
+        final Filer filer = processingEnvironment.getFiler();
+        final String className = packageName + ".Dagger" + prefix + type + "Module";
+        if (type != null && !type.isEmpty())
+        {
+            final File allserviceList = AnnotationInjectionProcessor.getFile(processingEnvironment.getFiler());
+            AnnotationInjectionProcessor.addServiceFile("org.rapla.Dagger" + type + "Module", allserviceList, className);
+        }
+        final JavaFileObject source = filer.createSourceFile(className);
         final SourceWriter moduleWriter = new SourceWriter(source.openOutputStream());
         moduleWriter.println("package " + packageName + ";");
         moduleWriter.println();
@@ -244,12 +254,12 @@ public class DaggerModuleCreator
         moduleWriter.println("import " + Provides.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Provides.Type.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Module.class.getCanonicalName() + ";");
-        moduleWriter.println("import " + Factory.class.getCanonicalName() + ";");
+//        moduleWriter.println("import " + Factory.class.getCanonicalName() + ";");
         moduleWriter.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
         moduleWriter.println();
         moduleWriter.println(getGeneratorString());
         moduleWriter.println("@Module");
-        moduleWriter.println("public class Dagger" + type + "Module {");
+        moduleWriter.println("public class Dagger" + prefix + type + "Module {");
         moduleWriter.indent();
         return moduleWriter;
     }
@@ -257,7 +267,7 @@ public class DaggerModuleCreator
     private SourceWriter createRequestModuleSourceWriter(String packageName,String artifactName) throws IOException
     {
         String type = artifactName + "Request";
-        final SourceWriter writer = createSourceWriter(packageName,type);
+        final SourceWriter writer = createSourceWriter(packageName, artifactName, "Request");
 
         writer.println("HttpServletRequest request;");
         writer.println("HttpServletResponse response;");
@@ -274,7 +284,14 @@ public class DaggerModuleCreator
     private SourceWriter createWebserviceComponentSourceWriter(String packageName,String artifcatName) throws IOException
     {
         String type = artifcatName+ "Webservice";
-        final JavaFileObject source = processingEnvironment.getFiler().createSourceFile(getComponentName(packageName,type));
+        final String componentName = getComponentName(packageName,type);
+        final Filer filer = processingEnvironment.getFiler();
+        {// serviceFile filling
+            final String serviceFileName = "org.rapla.DaggerWebservice";
+            final File allserviceList = AnnotationInjectionProcessor.getFile(processingEnvironment.getFiler());
+            AnnotationInjectionProcessor.addServiceFile(serviceFileName, allserviceList, componentName);
+        }
+        final JavaFileObject source = filer.createSourceFile(componentName);
         final SourceWriter moduleWriter = new SourceWriter(source.openOutputStream());
         moduleWriter.println("package "+ packageName + ";");
         moduleWriter.println();

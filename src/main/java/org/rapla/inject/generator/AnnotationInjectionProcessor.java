@@ -240,9 +240,14 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     }
     private void addServiceFile(String serviceFileName, TypeElement implementationElement, File allserviceList) throws IOException
     {
-        final File serviceFile = getFile(serviceFileName, allserviceList);
         String implementationName = implementationElement != null ? implementationElement.getQualifiedName().toString() : null;
-        if (implementationElement == null)
+        addServiceFile(serviceFileName, allserviceList, implementationName);
+    }
+
+    public static void addServiceFile(String serviceFileName, File allserviceList, String implementationName) throws IOException
+    {
+        final File serviceFile = getFile(serviceFileName, allserviceList);
+        if (implementationName == null)
         {
             appendToFile(serviceFile, null);
         }
@@ -268,7 +273,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return serviceFile;
     }
 
-    private void appendToFile(File file, String className) throws IOException
+    private static void appendToFile(File file, String className) throws IOException
     {
         if (className != null && file.exists())
         {
