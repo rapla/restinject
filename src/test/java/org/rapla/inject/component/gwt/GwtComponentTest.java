@@ -13,7 +13,7 @@ public class GwtComponentTest
     @Test
     public void startGeneratedServerComponent()
     {
-        ComponentStarter starter = org.rapla.client.gwt.dagger.DaggerGwtComponent.create().getStarter();
+        ComponentStarter starter = org.rapla.client.gwt.dagger.DaggerRaplaGwtComponent.create().getStarter();
         Assert.assertEquals(GwtStarter.class, starter.getClass());
     }
 

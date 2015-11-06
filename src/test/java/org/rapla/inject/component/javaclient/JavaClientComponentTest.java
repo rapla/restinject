@@ -13,7 +13,7 @@ public class JavaClientComponentTest
     @Test
     public void startGeneratedServerComponent()
     {
-        ComponentStarter starter = org.rapla.client.swing.dagger.DaggerJavaClientComponent.create().getStarter();
+        ComponentStarter starter = org.rapla.client.swing.dagger.DaggerRaplaJavaClientComponent.create().getStarter();
         Assert.assertEquals(JavaClientStarter.class, starter.getClass());
     }
 

@@ -154,15 +154,15 @@ public class DaggerModuleCreator
     private void generateModuleClass(String moduleName) throws Exception
     {
         final int i = moduleName.lastIndexOf(".");
-        String packageName = (i >=0 ? moduleName.substring(0, i) : "" ) ;
-        packageName+= (packageName.length() == 0 ? "" :".") + "dagger";
+        final String packageName = (i >=0 ? moduleName.substring(0, i) : "" ) ;
+        final String packageNameWithDagger = packageName + (packageName.length() == 0 ? "" :".") + "dagger";
         String artifactName = firstCharUp(i >=0 ? moduleName.substring(i+1) : moduleName);
         remoteMethods.clear();
-        sourceWriters[SERVER_SOURCE_WRITER] = createSourceWriter(packageName, artifactName, "Server");
-        sourceWriters[JAVA_CLIENT_SOURCE_WRITER] = createSourceWriter(packageName, artifactName, "JavaClient");
-        sourceWriters[GWT_SOURCE_WRITER] = createSourceWriter(packageName, artifactName, "Gwt");
-        sourceWriters[WEBSERVICE_COMPONENT_WRITER] = createWebserviceComponentSourceWriter(packageName, artifactName);
-        sourceWriters[REQUEST_SOURCE_WRITER] = createRequestModuleSourceWriter(packageName, artifactName);
+        sourceWriters[SERVER_SOURCE_WRITER] = createSourceWriter(packageNameWithDagger, artifactName, "Server");
+        sourceWriters[JAVA_CLIENT_SOURCE_WRITER] = createSourceWriter(packageNameWithDagger, artifactName, "JavaClient");
+        sourceWriters[GWT_SOURCE_WRITER] = createSourceWriter(packageNameWithDagger, artifactName, "Gwt");
+        sourceWriters[WEBSERVICE_COMPONENT_WRITER] = createWebserviceComponentSourceWriter(packageNameWithDagger, artifactName);
+        sourceWriters[REQUEST_SOURCE_WRITER] = createRequestModuleSourceWriter(packageNameWithDagger, artifactName);
 
         Set<String> interfaces = new LinkedHashSet<String>();
         final File allserviceList = AnnotationInjectionProcessor.readInterfacesInto(interfaces, processingEnvironment);
@@ -177,7 +177,7 @@ public class DaggerModuleCreator
             moduleWriter.println("}");
             moduleWriter.close();
         }
-        generateComponents();
+        generateComponents(artifactName, packageName);
     }
 
     /**
@@ -201,11 +201,13 @@ public class DaggerModuleCreator
      *    Starter getStarter();</br>
      * }</br>
      * </code>
+     * @param artifactName 
+     * @param packageName 
      */
-    private void generateComponents() throws Exception
+    private void generateComponents(String artifactName, String packageName) throws Exception
     {
         {
-            SourceWriter sourceWriter = createComponentSourceWriter("org.rapla.server.dagger", "Server");
+            SourceWriter sourceWriter = createComponentSourceWriter(packageName + ".server.dagger", artifactName, "Server");
             {// create dagger webservice components
                 int i = 0;
                 final List<String> webserviceComponents = findModules("DaggerWebserviceComponent", "org.rapla.DaggerWebserviceComponents");
@@ -216,25 +218,25 @@ public class DaggerModuleCreator
                 }
             }
             {// create starter
-                sourceWriter.println(ComponentStarter.class.getSimpleName()+" getStarter();");
+                sourceWriter.println(ComponentStarter.class.getSimpleName() + " getStarter();");
             }
             sourceWriter.outdent();
             sourceWriter.println("}");
             sourceWriter.close();
         }
         {
-            SourceWriter sourceWriter = createComponentSourceWriter("org.rapla.client.swing.dagger", "JavaClient");
+            SourceWriter sourceWriter = createComponentSourceWriter(packageName + ".client.swing.dagger", artifactName, "JavaClient");
             {// create starter
-                sourceWriter.println(ComponentStarter.class.getSimpleName()+" getStarter();");
+                sourceWriter.println(ComponentStarter.class.getSimpleName() + " getStarter();");
             }
             sourceWriter.outdent();
             sourceWriter.println("}");
             sourceWriter.close();
         }
         {
-            SourceWriter sourceWriter = createComponentSourceWriter("org.rapla.client.gwt.dagger", "Gwt");
+            SourceWriter sourceWriter = createComponentSourceWriter(packageName + ".client.gwt.dagger", artifactName, "Gwt");
             {// create starter
-                sourceWriter.println(ComponentStarter.class.getSimpleName()+" getStarter();");
+                sourceWriter.println(ComponentStarter.class.getSimpleName() + " getStarter();");
             }
             sourceWriter.outdent();
             sourceWriter.println("}");
@@ -242,9 +244,9 @@ public class DaggerModuleCreator
         }
     }
 
-    private SourceWriter createComponentSourceWriter(String interfacePackage, String interfaceName) throws Exception
+    private SourceWriter createComponentSourceWriter(String interfacePackage, String prefix, String interfaceName) throws Exception
     {
-        final JavaFileObject sourceFile = processingEnvironment.getFiler().createSourceFile(interfacePackage + "." + interfaceName + "Component");
+        final JavaFileObject sourceFile = processingEnvironment.getFiler().createSourceFile(interfacePackage + "." + prefix + interfaceName + "Component");
         final SourceWriter sourceWriter = new SourceWriter(sourceFile.openOutputStream());
         sourceWriter.println("package " + interfacePackage + ";");
         sourceWriter.println();
@@ -261,7 +263,7 @@ public class DaggerModuleCreator
             sourceWriter.print(".class, ");
         }
         sourceWriter.println("})");
-        sourceWriter.println("public interface " + interfaceName + "Component {");
+        sourceWriter.println("public interface " + prefix + interfaceName + "Component {");
         sourceWriter.indent();
         return sourceWriter;
     }

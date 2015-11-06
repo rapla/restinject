@@ -13,7 +13,7 @@ public class ServerComponentTest
     @Test
     public void startGeneratedServerComponent()
     {
-        ComponentStarter starter = org.rapla.server.dagger.DaggerServerComponent.create().getStarter();
+        ComponentStarter starter = org.rapla.server.dagger.DaggerRaplaServerComponent.create().getStarter();
         Assert.assertEquals(ServerStarter.class, starter.getClass());
     }
 
