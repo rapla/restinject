@@ -3,7 +3,13 @@ package org.rapla.inject.generator.internal;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.annotation.processing.Filer;
@@ -36,10 +42,10 @@ import org.rapla.jsonrpc.common.RemoteJsonMethod;
 import org.rapla.jsonrpc.generator.internal.GwtProxyCreator;
 import org.rapla.jsonrpc.generator.internal.JavaClientProxyCreator;
 
+import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
 import dagger.Subcomponent;
-import dagger.internal.Factory;
 
 public class DaggerModuleCreator
 {
@@ -170,6 +176,93 @@ public class DaggerModuleCreator
             moduleWriter.println("}");
             moduleWriter.close();
         }
+        generateComponents();
+    }
+
+    /**
+     * Generates the dagger component interfaces for Server and Swing.
+     * </br> An example:</br>
+     * <code>package org.rapla.server.internal.dagger;</br>
+     * import javax.inject.Singleton;</br>
+     * import org.rapla.dagger.DaggerServerModule;</br>
+     * import org.rapla.dagger.DaggerWebserviceComponent;</br>
+     * import org.rapla.server.internal.ServerServiceImpl;</br></code>
+     * <code>@Singleton @dagger.Component(modules = { DaggerServerModule.class, MyModule.class })</br>
+     * public interface ServerComponent</br>
+     * {</br>
+     *   DaggerWebserviceComponent getWebservices();</br>
+     *   ServerServiceImpl getServer();</br>
+     * }</code></br>
+     */
+    private void generateComponents() throws Exception
+    {
+        SourceWriter sourceWriter = createComponentSourceWriter("org.rapla.server.dagger", "Server");
+        
+        sourceWriter.outdent();
+        sourceWriter.println("}");
+        sourceWriter.close();
+    }
+
+    private SourceWriter createComponentSourceWriter(String interfacePackage, String interfaceName) throws Exception
+    {
+        final JavaFileObject sourceFile = processingEnvironment.getFiler().createSourceFile(interfacePackage+"."+interfaceName+"Component");
+        final SourceWriter sourceWriter = new SourceWriter(sourceFile.openOutputStream());
+        sourceWriter.println("package org.rapla.server.dagger;");
+        sourceWriter.println();
+        sourceWriter.print("@"+Singleton.class.getCanonicalName());
+        sourceWriter.print(" @"+Component.class.getCanonicalName());
+        sourceWriter.print("(modules = {");
+        final String modulesName = "org.rapla.Dagger" + interfaceName + "Module";
+        final List<String> modules = findModules(interfaceName, modulesName);
+        for (String module : modules)
+        {
+            sourceWriter.print(module);
+            sourceWriter.print(".class, ");
+        }
+        sourceWriter.println("})");
+        sourceWriter.println("public interface " + interfaceName + "Component {");
+        sourceWriter.indent();
+        return sourceWriter;
+    }
+
+    private List<String> findModules(String interfaceName, final String modulesName) throws IOException, UnsupportedEncodingException
+    {
+        List<String> foundModules = new ArrayList<String>();
+        boolean found = false;
+        final String file = "META-INF/services/" + modulesName;
+        final FileObject resource = processingEnvironment.getFiler().getResource(StandardLocation.SOURCE_OUTPUT, "", file);
+        if (resource != null)
+        {
+            found = true;
+            BufferedReader reader = new BufferedReader(new InputStreamReader(resource.openInputStream(), "UTF-8"));
+            String line = null;
+            while ((line = reader.readLine()) != null)
+            {
+                foundModules.add(line);
+            }
+            reader.close();
+        }
+        final Enumeration<URL> resources = DaggerModuleCreator.class.getClassLoader().getResources(file);
+        if(!found)
+        {
+            found =resources.hasMoreElements();
+        }
+        if(!found)
+        {
+            throw new IllegalStateException("Tried to generate ComponentInterface for "+interfaceName+" but no modules found for "+modulesName);
+        }
+        while (resources.hasMoreElements())
+        {
+            final URL nextElement = resources.nextElement();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(nextElement.openStream(), "UTF-8"));
+            String line = null;
+            while ((line = reader.readLine()) != null)
+            {
+                foundModules.add(line);
+            }
+            reader.close();
+        }
+        return foundModules;
     }
 
     private void writeWebserviceList(String artifact)
@@ -287,7 +380,7 @@ public class DaggerModuleCreator
         final String componentName = getComponentName(packageName,type);
         final Filer filer = processingEnvironment.getFiler();
         {// serviceFile filling
-            final String serviceFileName = "org.rapla.DaggerWebservice";
+            final String serviceFileName = "org.rapla.DaggerWebserviceComponents";
             final File allserviceList = AnnotationInjectionProcessor.getFile(processingEnvironment.getFiler());
             AnnotationInjectionProcessor.addServiceFile(serviceFileName, allserviceList, componentName);
         }
