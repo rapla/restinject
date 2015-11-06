@@ -490,6 +490,10 @@ public class DaggerModuleCreator
     private void generateDefaultImplementation(String artifactName,TypeElement implementingClassTypeElement, TypeElement interfaceTypeElement,
             DefaultImplementation defaultImplementation)
     {
+        if(!getDefaultImplementationOf(defaultImplementation).equals(interfaceTypeElement))
+        {
+            return;
+        }
         final InjectionContext[] context = defaultImplementation.context();
         final Types typeUtils = processingEnvironment.getTypeUtils();
         final Generated generated = new Generated(interfaceTypeElement.getQualifiedName().toString(),
