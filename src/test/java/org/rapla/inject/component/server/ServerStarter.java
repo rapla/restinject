@@ -1,6 +1,6 @@
 package org.rapla.inject.component.server;
 
-import org.rapla.ComponentStarter;
+import org.rapla.common.ComponentStarter;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
 
@@ -12,5 +12,10 @@ public class ServerStarter implements ComponentStarter
     @Inject
     public ServerStarter()
     {
+    }
+
+    public String start()
+    {
+       return "server";
     }
 }

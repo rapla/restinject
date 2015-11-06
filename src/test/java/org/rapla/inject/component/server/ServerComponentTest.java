@@ -4,7 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.rapla.ComponentStarter;
+import org.rapla.common.ComponentStarter;
 
 @RunWith(JUnit4.class)
 public class ServerComponentTest
@@ -13,7 +13,7 @@ public class ServerComponentTest
     public void startGeneratedServerComponent()
     {
         ComponentStarter starter = org.rapla.server.dagger.DaggerRaplaServerComponent.create().getComponentStarter();
-        Assert.assertEquals(ServerStarter.class, starter.getClass());
+        Assert.assertEquals("server",starter.start());
     }
 
 }

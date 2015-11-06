@@ -1,6 +1,6 @@
 package org.rapla.inject.component.javaclient;
 
-import org.rapla.ComponentStarter;
+import org.rapla.common.ComponentStarter;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
 
@@ -12,5 +12,10 @@ public class JavaClientStarter implements ComponentStarter
     @Inject
     public JavaClientStarter()
     {
+    }
+
+    public String start()
+    {
+        return "swing";
     }
 }

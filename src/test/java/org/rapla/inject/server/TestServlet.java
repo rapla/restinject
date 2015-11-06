@@ -8,12 +8,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-/**
- * Created by Christopher on 15.10.2015.
- */
 public class TestServlet extends HttpServlet
 {
-    org.rapla.server.dagger.RaplaServerComponent serverComponent;
+    transient org.rapla.server.dagger.RaplaServerComponent serverComponent;
     @Override public void init() throws ServletException
     {
         super.init();

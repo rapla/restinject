@@ -12,6 +12,7 @@ import org.rapla.inject.ExtensionRepeatable;
 import org.rapla.inject.InjectionContext;
 import org.rapla.inject.generator.AnnotationInjectionProcessor;
 import org.rapla.inject.internal.DaggerMapKey;
+import org.rapla.inject.internal.server.BasicRequestModule;
 import org.rapla.inject.server.RequestScoped;
 import org.rapla.jsonrpc.common.RemoteJsonMethod;
 import org.rapla.jsonrpc.generator.internal.GwtProxyCreator;
@@ -359,7 +360,8 @@ public class DaggerModuleCreator
         writer.println("final " + componentName + " component;");
         writer.println("@Inject ServiceMap(final " + componentName + " component) { ");
         writer.indent();
-        final String requestModuleName = "Dagger" + artifact + "RequestModule";
+        //final String requestModuleName = "Dagger" + artifact + "RequestModule";
+        final String requestModuleName = "BasicRequestModule";
         writer.println("this.component = component;");
         for (TypeElement method : remoteMethods)
         {
@@ -454,18 +456,19 @@ public class DaggerModuleCreator
 
     private SourceWriter createRequestModuleSourceWriter(String packageName, String artifactName) throws IOException
     {
-        String type = artifactName + "Request";
         final SourceWriter writer = createSourceWriter(packageName, artifactName, "Request");
-
+        final String requestModuleName = "Dagger" + artifactName + "RequestModule";
+        /*
         writer.println("HttpServletRequest request;");
         writer.println("HttpServletResponse response;");
-        writer.println("public Dagger" + type + "Module(HttpServletRequest request, HttpServletResponse response){");
+        writer.println("public " + requestModuleName + "(HttpServletRequest request, HttpServletResponse response){");
         writer.indent();
         writer.println("this.request = request;this.response = response;");
         writer.outdent();
         writer.println("};");
         writer.println("@Provides public HttpServletRequest provideRequest()  {  return request;    }");
         writer.println("@Provides public HttpServletResponse provideResponse(){ return response;     }");
+        */
         return writer;
     }
 
@@ -485,6 +488,7 @@ public class DaggerModuleCreator
         moduleWriter.println();
         moduleWriter.println("import " + HttpServletRequest.class.getCanonicalName() + ";");
         moduleWriter.println("import " + HttpServletResponse.class.getCanonicalName() + ";");
+        moduleWriter.println("import " + BasicRequestModule.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Provides.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Inject.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Provider.class.getCanonicalName() + ";");
@@ -497,6 +501,7 @@ public class DaggerModuleCreator
         moduleWriter.println();
         moduleWriter.println(getGeneratorString());
         moduleWriter.println("@Singleton");
+        //String basicRequestModuleName = BasicRequestModule.class.getSimpleName();
         moduleWriter.println("@Subcomponent");
         moduleWriter.println("public interface Dagger" + type + "Component {");
         moduleWriter.indent();
@@ -780,23 +785,45 @@ public class DaggerModuleCreator
     private void generateWebserviceComponent(String artifactName, TypeElement implementingClassTypeElement, TypeElement interfaceName,
             SourceWriter moduleWriter)
     {
-        moduleWriter.println();
+        remoteMethods.add(interfaceName);
+
         //final String simpleName = interfaceName.getQualifiedName().toString();
         final String methodName = toJavaName(interfaceName).toLowerCase();
         // it is important that the first char is a Uppercase latter otherwise dagger fails with IllegalArgumentException
         final String serviceComponentName = firstCharUp(toJavaName(interfaceName)) + "Service";
-        final String daggerRequestModuleName = "Dagger" + artifactName + "RequestModule";
-        moduleWriter.println(serviceComponentName + " " + methodName + "(" + daggerRequestModuleName + " module);");
-        moduleWriter.println("@RequestScoped");
-        moduleWriter.println("@Subcomponent(modules={" + daggerRequestModuleName + ".class})");
-
+        //final String daggerRequestModuleName = "Dagger" + artifactName + "RequestModule";
+        String basicRequestModuleName = BasicRequestModule.class.getSimpleName();
         String implementingName = implementingClassTypeElement.getQualifiedName().toString();
-        remoteMethods.add(interfaceName);
+        Set<String> requestModuleList = new LinkedHashSet<String>();
+        requestModuleList.add(basicRequestModuleName);
+        final String daggerRequestModuleName = "Dagger" + artifactName + "RequestModule";
+        requestModuleList.add(daggerRequestModuleName);
+
+        moduleWriter.println();
+        moduleWriter.println(serviceComponentName + " " + methodName + "(" + basicRequestModuleName + " module);");
+        moduleWriter.print("@RequestScoped @Subcomponent(modules={");
+        boolean first = true;
+        for ( String name: requestModuleList)
+        {
+            if ( first)
+            {
+                first = false;
+            }
+            else
+            {
+                moduleWriter.print(",");
+            }
+            moduleWriter.print(name + ".class");
+        }
+        moduleWriter.println("})");
         moduleWriter.println("interface " + serviceComponentName + " extends Provider<Object> {");
         moduleWriter.indent();
         moduleWriter.println(implementingName + " get();");
         moduleWriter.outdent();
         moduleWriter.println("}");
+
+
+
     }
 
     private void generateExtension(TypeElement implementingClassTypeElement, TypeElement interfaceElementType, Extension extension)

@@ -15,14 +15,32 @@
 package org.rapla.jsonrpc.generator.internal;
 
 import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.JsonUtils;
 import org.rapla.inject.generator.internal.SourceWriter;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.*;
-import javax.lang.model.type.*;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 class SerializerCreator implements SerializerClasses
 {
@@ -636,7 +654,7 @@ class SerializerCreator implements SerializerClasses
                 w.indent();
                 w.println(docomma);
                 w.println(doname);
-                w.println("sb.append(" + JsonSerializer_simple + ".escapeString(" + doget + "));");
+                w.println("sb.append(" + JsonUtils.class.getCanonicalName() + ".escapeValue(" + doget + "));");
                 w.outdent();
                 w.println("}");
                 w.println();
@@ -998,6 +1016,7 @@ class SerializerCreator implements SerializerClasses
 
         pw.println("package " + pkgName + ";");
         pw.println();
+        addImport(pw, JavaScriptObject.class.getCanonicalName());
         addImport(pw, JavaScriptObject.class.getCanonicalName());
         addImport(pw, JsonSerializer);
         String superclass;

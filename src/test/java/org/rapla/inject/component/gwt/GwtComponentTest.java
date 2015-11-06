@@ -4,7 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.rapla.ComponentStarter;
+import org.rapla.common.ComponentStarter;
 
 @RunWith(JUnit4.class)
 public class GwtComponentTest
@@ -14,7 +14,7 @@ public class GwtComponentTest
     public void startGeneratedServerComponent()
     {
         ComponentStarter starter = org.rapla.client.gwt.dagger.DaggerRaplaGwtComponent.create().getComponentStarter();
-        Assert.assertEquals(GwtStarter.class, starter.getClass());
+        Assert.assertEquals("gwt", starter.start());
     }
 
 }
