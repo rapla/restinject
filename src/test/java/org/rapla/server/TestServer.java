@@ -8,5 +8,5 @@ import java.util.Map;
 
 public interface TestServer
 {
-    void service(HttpServletRequest request, HttpServletResponse response, Map<String,WebserviceCreator> webserviceMap) throws Exception;
+    void service(HttpServletRequest request, HttpServletResponse response) throws Exception;
 }

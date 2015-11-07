@@ -25,8 +25,9 @@ import javax.tools.JavaFileManager;
 import javax.tools.StandardLocation;
 import javax.ws.rs.Path;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 public class AnnotationInjectionProcessor extends AbstractProcessor
@@ -60,7 +61,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     }
 
     @Override
-    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
+    synchronized public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
     {
         if (roundEnv.processingOver() || annotations.isEmpty())
         {
@@ -80,7 +81,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 
     private boolean processGwt( RoundEnvironment roundEnv) throws Exception
     {
-        File f = getFile(processingEnv.getFiler());
+        File f = getInterfaceList(processingEnv.getFiler());
+        File folder = f.getParentFile();
         boolean found = false;
         TreeLogger proxyLogger = new TreeLogger();
         final Set<? extends Element> remoteMethods = roundEnv.getElementsAnnotatedWith(RemoteJsonMethod.class);
@@ -100,7 +102,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 
             final String qualifiedName = interfaceElement.getQualifiedName().toString();
             appendToServiceList(f, qualifiedName);
-            final File serviceFile = getFile(qualifiedName, f);
+            final File serviceFile = getFile(f.getParentFile(), "services/" + qualifiedName);
             appendToFile(serviceFile, proxyClassName);
             appendToFile(serviceFile, swingproxyClassName );
             if (interfaceElement.getAnnotation(Generated.class) == null)
@@ -115,7 +117,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             TypeElement interfaceElement = processingEnv.getElementUtils().getTypeElement(RequestScoped.class.getCanonicalName());
             final String qualifiedName = interfaceElement.getQualifiedName().toString();
             appendToServiceList(f, qualifiedName);
-            addServiceFile(interfaceElement, implementationElement, f);
+            appendToFile(interfaceElement, implementationElement, f);
             if (implementationElement.getAnnotation(Generated.class) == null)
             {
                 found = true;
@@ -131,7 +133,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             TypeElement interfaceElement = getDefaultImplementationOf(annotation);
             final String qualifiedName = interfaceElement.getQualifiedName().toString();
             appendToServiceList(f, qualifiedName);
-            addServiceFile(interfaceElement, implementationElement, f);
+            addServiceFile(interfaceElement, implementationElement, folder);
             if (implementationElement.getAnnotation(Generated.class) == null)
             {
                 found = true;
@@ -147,7 +149,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 TypeElement interfaceElement = getDefaultImplementationOf(defaultImplementation);
                 final String qualifiedName = interfaceElement.getQualifiedName().toString();
                 appendToServiceList(f, qualifiedName);
-                addServiceFile(interfaceElement, implementationElement, f);
+                addServiceFile(interfaceElement, implementationElement, folder);
                 if (implementationElement.getAnnotation(Generated.class) == null)
                 {
                     found = true;
@@ -161,7 +163,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             TypeElement typeElement = (TypeElement) elem;
             final String qualifiedName = typeElement.getQualifiedName().toString();
             appendToServiceList(f, qualifiedName);
-            addServiceFile(typeElement, null, f);
+            addServiceFile(typeElement, null, folder);
             found = true;
         }
 
@@ -170,7 +172,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             TypeElement typeElement = (TypeElement) elem;
             final Extension annotation = typeElement.getAnnotation(Extension.class);
             TypeElement provider = getProvides(annotation);
-            addServiceFile(provider, typeElement, f);
+            addServiceFile(provider, typeElement, folder);
             if (typeElement.getAnnotation(Generated.class) == null)
             {
                 found = true;
@@ -185,7 +187,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             for (Extension extension : value)
             {
                 TypeElement provider = getProvides(extension);
-                addServiceFile(provider, typeElement, f);
+                addServiceFile(provider, typeElement, folder);
             }
             if (typeElement.getAnnotation(Generated.class) == null)
             {
@@ -200,7 +202,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             if(elem instanceof TypeElement)
             {
                 TypeElement typeElement = (TypeElement) elem;
-                addServiceFile(Path.class.getCanonicalName(), typeElement, f);
+                addServiceFile(Path.class.getCanonicalName(), typeElement, folder);
                 append = true;
             }
         }
@@ -232,43 +234,34 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         appendToFile(serviceListFile, interfaceName);
     }
 
-    private void addServiceFile(TypeElement interfaceElement, TypeElement implementationElement, File allserviceList) throws IOException
+    private void addServiceFile(TypeElement interfaceElement, TypeElement implementationElement, File folder) throws IOException
     {
         final String serviceFileName = interfaceElement.getQualifiedName().toString();
-        addServiceFile(serviceFileName, implementationElement, allserviceList);
+        addServiceFile(serviceFileName, implementationElement, folder);
         
     }
-    private void addServiceFile(String serviceFileName, TypeElement implementationElement, File allserviceList) throws IOException
+    private void addServiceFile(String serviceFileName, TypeElement implementationElement, File folder) throws IOException
     {
         String implementationName = implementationElement != null ? implementationElement.getQualifiedName().toString() : null;
-        addServiceFile(serviceFileName, allserviceList, implementationName);
+        appendToFile("services/" + serviceFileName, folder, implementationName);
     }
 
-    public static void addServiceFile(String serviceFileName, File allserviceList, String implementationName) throws IOException
+    public static void appendToFile(String serviceFileName, File folder, String line) throws IOException
     {
-        final File serviceFile = getFile(serviceFileName, allserviceList);
-        if (implementationName == null)
+        final File serviceFile = getFile(folder, serviceFileName);
+        if (line == null)
         {
             appendToFile(serviceFile, null);
         }
         else
         {
-            appendToFile(serviceFile, implementationName);
+            appendToFile(serviceFile, line);
         }
     }
     
-    public static Set<String> readFileContent(String serviceFileName, File allserviceList) throws FileNotFoundException, IOException
+    static public File getFile(File folder, String filename)
     {
-        final File file = getFile(serviceFileName, allserviceList);
-        Set<String> collection = new LinkedHashSet<String>();
-        readInto(collection , file);
-        return collection;
-    }
-
-    static public File getFile(String serviceFileName, File allserviceList)
-    {
-        final File folder = allserviceList.getParentFile();
-        final File serviceFile = new File(folder, "services/" + serviceFileName);
+        final File serviceFile = new File(folder, filename);
         serviceFile.getParentFile().mkdirs();
         return serviceFile;
     }
@@ -303,29 +296,21 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         w.close();
     }
 
-    /**
-     * Reads the interfaces defined in META-INF/org.rapla.servicelist into the provided set
-     * and returns the File.
-     */
-    public static File readInterfacesInto(Set<String> interfaces, ProcessingEnvironment processingEnvironment) throws IOException
-    {
-        File f = AnnotationInjectionProcessor.getFile(processingEnvironment.getFiler());
-        readInto(interfaces, f);
-        return f;
-    }
 
-    private static void readInto(Set<String> interfaces, File f) throws IOException
+    public static List<String> readLines( File f) throws IOException
     {
+        List<String> lines = new ArrayList<String>();
         try (final BufferedReader reader = new BufferedReader(new FileReader(f)))
         {
             for (String line = reader.readLine(); line != null; line = reader.readLine())
             {
-                interfaces.add(line);
+                lines.add(line);
             }
         }
+        return lines;
     }
 
-    public static File getFile(Filer filer) throws IOException
+    public static File getInterfaceList(Filer filer) throws IOException
     {
         CharSequence pkg = "";
         JavaFileManager.Location location = StandardLocation.SOURCE_OUTPUT;

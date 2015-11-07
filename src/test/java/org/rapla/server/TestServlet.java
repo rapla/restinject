@@ -10,20 +10,20 @@ import java.io.IOException;
 
 public class TestServlet extends HttpServlet
 {
-    transient org.rapla.server.dagger.RaplaServerComponent serverComponent;
+    TestServer testServer;
     @Override public void init() throws ServletException
     {
         super.init();
         System.out.println("Init done ");
         StartupParams params  = new StartupParams();
-        serverComponent = org.rapla.server.dagger.DaggerRaplaServerComponent.builder().daggerRaplaServerStartupModule(new DaggerRaplaServerStartupModule(params)).build();
+        testServer = org.rapla.server.dagger.DaggerRaplaServerComponent.builder().daggerRaplaServerStartupModule(new DaggerRaplaServerStartupModule(params)).build().getTestServer();
     }
 
     @Override protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         try
         {
-            serverComponent.getTestServer().service(request, response, serverComponent.getServiceMap());
+            testServer.service(request, response);
         }
         catch (Exception e)
         {

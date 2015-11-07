@@ -5,6 +5,7 @@ import org.rapla.inject.InjectionContext;
 import org.rapla.jsonrpc.common.RemoteJsonMethod;
 import org.rapla.jsonrpc.server.JsonServlet;
 import org.rapla.jsonrpc.server.WebserviceCreator;
+import org.rapla.jsonrpc.server.WebserviceCreatorMap;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -21,12 +22,14 @@ public class TestServerImpl implements  TestServer
 {
     Map<String,JsonServlet> servletMap = new HashMap<String, JsonServlet>();
     private final StartupParams params;
+    WebserviceCreatorMap webserviceMap;
     @Inject
-    public TestServerImpl(StartupParams params){
+    public TestServerImpl(StartupParams params,WebserviceCreatorMap webserviceMap){
         this.params = params;
+        this.webserviceMap = webserviceMap;
     }
 
-    public void service(HttpServletRequest request, HttpServletResponse response,Map<String,WebserviceCreator> webserviceMap) throws Exception
+    public void service(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         System.out.println("Request " + request.toString());
         String serviceAndMethodName = getServiceAndMethodName(request);
