@@ -292,7 +292,8 @@ public class DaggerModuleCreator
                 }
                 sourceWriter.outdent();
                 sourceWriter.println("}");
-                sourceWriter.println("public " + webserviceCreatorClass + " get(String name) {return super.get( name); }");
+                sourceWriter.println("public " + webserviceCreatorClass + " get(String serviceName) {return super.get( serviceName); }");
+                sourceWriter.println("public java.util.Map<String," + webserviceCreatorClass + "> asMap() {return java.util.Collections.unmodifiableMap(this); }");
                 sourceWriter.outdent();
                 sourceWriter.println("}");
 
