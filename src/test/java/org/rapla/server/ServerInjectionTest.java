@@ -3,7 +3,7 @@ package org.rapla.server;
 import javax.inject.Singleton;
 
 import org.junit.Assert;
-import org.rapla.dagger.DaggerRaplaServerModule;
+import org.rapla.server.dagger.DaggerRaplaServerModule;
 
 import dagger.Component;
 import junit.framework.TestCase;

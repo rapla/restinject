@@ -1,23 +1,20 @@
 package org.rapla.common.extension;
 
-import java.util.Map;
-import java.util.Set;
-
-import javax.inject.Singleton;
-
+import dagger.Component;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.rapla.dagger.DaggerRaplaServerModule;
 
-import dagger.Component;
+import javax.inject.Singleton;
+import java.util.Map;
+import java.util.Set;
 
 @RunWith(JUnit4.class)
 public class TestExtensionPointInjection
 {
 
-    @Component(modules=DaggerRaplaServerModule.class)
+    @Component(modules=org.rapla.server.dagger.DaggerRaplaServerModule.class)
     @Singleton
     public interface ExtensionContext{
         Set<ExampleExtensionPoint> getExtensionPointImpls(); 

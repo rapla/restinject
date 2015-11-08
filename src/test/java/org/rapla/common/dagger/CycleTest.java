@@ -1,4 +1,4 @@
-package org.rapla.inject.dagger;
+package org.rapla.common.dagger;
 
 import dagger.Module;
 import org.junit.runner.RunWith;

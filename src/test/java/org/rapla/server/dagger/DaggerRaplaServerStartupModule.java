@@ -1,4 +1,4 @@
-package org.rapla.dagger;
+package org.rapla.server.dagger;
 
 import dagger.Module;
 import dagger.Provides;

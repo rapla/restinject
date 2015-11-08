@@ -1,6 +1,6 @@
 package org.rapla.server;
 
-import org.rapla.dagger.DaggerRaplaServerStartupModule;
+import org.rapla.server.dagger.DaggerRaplaServerStartupModule;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;

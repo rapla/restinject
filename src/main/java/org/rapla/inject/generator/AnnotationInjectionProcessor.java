@@ -147,8 +147,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             for (DefaultImplementation defaultImplementation : annotation.value())
             {
                 TypeElement interfaceElement = getDefaultImplementationOf(defaultImplementation);
-                final String qualifiedName = interfaceElement.getQualifiedName().toString();
-                appendToServiceList(f, qualifiedName);
+                final String interfaceQualifiedName = interfaceElement.getQualifiedName().toString();
+                appendToServiceList(f, interfaceQualifiedName);
                 addServiceFile(interfaceElement, implementationElement, folder);
                 if (implementationElement.getAnnotation(Generated.class) == null)
                 {
@@ -171,8 +171,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         {
             TypeElement typeElement = (TypeElement) elem;
             final Extension annotation = typeElement.getAnnotation(Extension.class);
-            TypeElement provider = getProvides(annotation);
-            addServiceFile(provider, typeElement, folder);
+            TypeElement extensionPoint = getProvides(annotation);
+            final String interfaceQualifiedName = extensionPoint.getQualifiedName().toString();
+            appendToServiceList(f, interfaceQualifiedName);
+            addServiceFile(extensionPoint, typeElement, folder);
             if (typeElement.getAnnotation(Generated.class) == null)
             {
                 found = true;

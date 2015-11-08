@@ -26,7 +26,7 @@ public class MyGwtTest extends GWTTestCase
         return "org.rapla.GwtTest";
     }
     
-    @Component(modules= org.rapla.dagger.DaggerRaplaGwtModule.class)
+    @Component(modules= org.rapla.client.gwt.dagger.DaggerRaplaGwtModule.class)
     public interface BootstrapInterface {
         Bootstrap getBootstrap();
     }
@@ -42,7 +42,7 @@ public class MyGwtTest extends GWTTestCase
             }
         });
 
-        final Bootstrap bootstrap = org.rapla.client.gwt.DaggerMyGwtTest_BootstrapInterface.create().getBootstrap();
+        final Bootstrap bootstrap = DaggerMyGwtTest_BootstrapInterface.create().getBootstrap();
         AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
         final AnnotationProcessingTest.Result result = bootstrap.call(p);

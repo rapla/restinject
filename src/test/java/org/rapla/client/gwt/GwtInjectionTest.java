@@ -3,7 +3,7 @@ package org.rapla.client.gwt;
 import javax.inject.Singleton;
 
 import org.junit.Assert;
-import org.rapla.dagger.DaggerRaplaGwtModule;
+import org.rapla.client.gwt.dagger.DaggerRaplaGwtModule;
 
 import dagger.Component;
 import junit.framework.TestCase;
