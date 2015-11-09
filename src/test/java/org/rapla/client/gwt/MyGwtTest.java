@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.rapla.common.AnnotationProcessingTest;
+import org.rapla.common.ComponentStarter;
 import org.rapla.jsonrpc.client.EntryPointFactory;
 import org.rapla.jsonrpc.client.gwt.AbstractJsonProxy;
 
@@ -30,7 +31,7 @@ public class MyGwtTest extends GWTTestCase
     public interface BootstrapInterface {
         Bootstrap getBootstrap();
     }
-
+    
     public void testGwtCall() throws Exception
     {
         AbstractJsonProxy.setServiceEntryPointFactory(new EntryPointFactory()
@@ -52,6 +53,14 @@ public class MyGwtTest extends GWTTestCase
         assertEquals(2, ids.size());
         assertEquals("1", ids.get(0));
         assertEquals("2", ids.get(1));
-
     }
+    
+    public void testStartGeneratedServerComponent()
+    {
+        System.out.println("Before GWT create");
+        ComponentStarter starter = GWT.create(ComponentStarter.class);
+        System.out.println("After GWT create "+starter);
+        assertEquals("gwt", starter.start());
+    }
+
 }

@@ -5,7 +5,7 @@
     <inherits name='com.google.gwt.user.User'/>
     <inherits name='org.rapla.jsonrpc.jsonrpc'/>
     <inherits name='org.rapla.inject.inject'/>
-    <source path='client/gwt' />
+    <source path='client' />
     <source path='inject'/>
     <source path='common'/>
     <source path='dagger'/>

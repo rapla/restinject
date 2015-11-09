@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import org.rapla.inject.internal.GeneratorUtil;
+
 public class DaggerReflectionStarter
 {
     public enum Scope
@@ -54,7 +56,7 @@ public class DaggerReflectionStarter
 
         final int i = moduleName.lastIndexOf(".");
         final String packageName = (i > 0 ? moduleName.substring(0, i + 1) : "") + scope.subpackage +".dagger";
-        final String artifactName = firstCharUp(i >= 0 ? moduleName.substring(i + 1) : moduleName);
+        final String artifactName = GeneratorUtil.firstCharUp(i >= 0 ? moduleName.substring(i + 1) : moduleName);
         final String componentClassName = packageName + "." + artifactName + scope + "Component";
         final String daggerComponentClassNamme = packageName + ".Dagger" + artifactName + scope + "Component";
         final String starterMethod = "get" + starterClass.getSimpleName();
@@ -67,7 +69,7 @@ public class DaggerReflectionStarter
             if ( startupModule != null)
             {
                 Class startupModuleClass = startupModule.getClass();
-                final String paramMethod = firstCharLow(startupModuleClass.getSimpleName());
+                final String paramMethod = GeneratorUtil.firstCharLow(startupModuleClass.getSimpleName());
                 final Method method = builderClazz.getMethod(paramMethod, startupModuleClass);
                 builder = method.invoke(builder, startupModule);
             }
@@ -89,34 +91,6 @@ public class DaggerReflectionStarter
                 throw ex;
             }
         }
-    }
-
-    static private String firstCharUp(String s)
-    {
-        if (s == null)
-        {
-            return null;
-        }
-        if (s.length() < 1)
-        {
-            return s;
-        }
-        final String result = Character.toUpperCase(s.charAt(0)) + s.substring(1);
-        return result;
-    }
-
-    static private String firstCharLow(String s)
-    {
-        if (s == null)
-        {
-            return null;
-        }
-        if (s.length() < 1)
-        {
-            return s;
-        }
-        final String result = Character.toLowerCase(s.charAt(0)) + s.substring(1);
-        return result;
     }
 
 }

@@ -1,6 +1,8 @@
 package org.rapla.common;
 
-public interface ComponentStarter
+import org.rapla.inject.gwt.GwtComponentMarker;
+
+public interface ComponentStarter extends GwtComponentMarker
 {
     public String start();
 }

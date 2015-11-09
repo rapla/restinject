@@ -136,15 +136,11 @@
 				</executions>
 				<configuration>
 					<!--
-					<extraJvmArgs>-agentlib:jdwp=transport=dt_socket,server=n,address=192.168.0.102:5005,suspend=y</extraJvmArgs>
+					<extraJvmArgs>-agentlib:jdwp=transport=dt_socket,server=n,address=192.168.0.101:5050,suspend=y</extraJvmArgs>
 					-->
 					<includes>**/*GwtTest.java</includes>
 					<productionMode>${gwt.plugin.productionmode}</productionMode>
-					<module>org.rapla.client.GwtTestModule</module>
 					<testTimeOut>360</testTimeOut>
-					<!--
-					<gwtSdkFirstInClasspath>true</gwtSdkFirstInClasspath>
-					-->
 					<sourceLevel>1.7</sourceLevel>
 					<jsInteropMode>JS</jsInteropMode>
 					<generateDirectory>${project.build.testOutputDirectory}/generated-gwt-test-code</generateDirectory>
