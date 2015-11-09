@@ -73,7 +73,9 @@ public class GwtDaggerGenerator extends Generator
             {
                 sourceWriter.println();
                 final String methodName = jMethod.getName();
-                sourceWriter.print("public " + jMethod.getReturnType().getQualifiedSourceName()+ " " + methodName+"(");
+                final String qualifiedSourceName = jMethod.getReturnType().getQualifiedSourceName();
+                boolean isVoid = "void".equalsIgnoreCase(qualifiedSourceName);
+                sourceWriter.print("public " + qualifiedSourceName+ " " + methodName+"(");
                 final JParameter[] parameters = jMethod.getParameters();
                 final JType[] parameterTypes = jMethod.getParameterTypes();
                 boolean first = true;
@@ -93,7 +95,9 @@ public class GwtDaggerGenerator extends Generator
                 }
                 sourceWriter.println("){");
                 sourceWriter.indent();
-                sourceWriter.print("return dagger."+methodName+"(");
+                if(!isVoid)
+                    sourceWriter.print("return ");
+                sourceWriter.print("dagger."+methodName+"(");
                 for(int i = 0; i < parameters.length; i++)
                 {
                     if(first)
@@ -108,7 +112,7 @@ public class GwtDaggerGenerator extends Generator
                 }
                 sourceWriter.println(");");
                 sourceWriter.outdent();
-                sourceWriter.print("}");
+                sourceWriter.println("}");
             }
             sourceWriter.commit(logger);
             return generatedFileName;
