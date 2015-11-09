@@ -378,6 +378,7 @@ public class DaggerModuleCreator
         sourceWriter.println("import " + Singleton.class.getCanonicalName() + ";");
         sourceWriter.println("import " + Component.class.getCanonicalName() + ";");
         sourceWriter.println();
+        sourceWriter.println(getGeneratorString());
         sourceWriter.print("@Singleton @Component(modules = {");
         boolean first = true;
         for (String module : modules)
@@ -485,6 +486,7 @@ public class DaggerModuleCreator
             writer.println("package " + packageName + ";");
             writer.println("import " + HttpServletRequest.class.getCanonicalName() + ";");
             writer.println("import " + HttpServletResponse.class.getCanonicalName() + ";");
+            writer.println(getGeneratorString());
             writer.println("@javax.inject.Singleton public class "+ className + " extends java.util.LinkedHashMap<String," + webserviceCreatorClass + "> {");
             writer.indent();
             final String componentName = "Dagger" + artifactId + "WebserviceComponent";
@@ -869,7 +871,7 @@ public class DaggerModuleCreator
                 if (notGenerated(Scopes.Server, generated))
                 {
                     SourceWriter moduleWriter = getWriter(requestScoped ? Scopes.Request : Scopes.Server, generated);
-                    generateDefaultImplementation(implementingClassTypeElement, interfaceTypeElement, moduleWriter);
+                    generateDefaultImplementation(implementingClassTypeElement, interfaceTypeElement, moduleWriter, requestScoped ? RequestScoped.class.getCanonicalName() : null);
                     if (defaultImplementation.export())
                     {
                         exportedInterface.set(Scopes.Server.ordinal());
@@ -895,7 +897,15 @@ public class DaggerModuleCreator
 
     private void generateDefaultImplementation(TypeElement implementingClassTypeElement, TypeElement interfaceName, SourceWriter moduleWriter)
     {
+        generateDefaultImplementation(implementingClassTypeElement,interfaceName,moduleWriter, null);
+    }
+    private void generateDefaultImplementation(TypeElement implementingClassTypeElement, TypeElement interfaceName, SourceWriter moduleWriter,String scopeAnnotation)
+    {
         moduleWriter.println();
+        if (scopeAnnotation != null)
+        {
+            moduleWriter.println("@"+scopeAnnotation);
+        }
         moduleWriter.println("@Provides");
 
         String implementingName = implementingClassTypeElement.getQualifiedName().toString();
@@ -1033,7 +1043,7 @@ public class DaggerModuleCreator
         final String methodSuffix;
         if (isMap)
         {
-            moduleWriter.println("@Provides(type=Type.MAP)");
+            moduleWriter.println("@Provides(type=Type.MAP) @javax.inject.Singleton");
             moduleWriter.println("@" + DaggerMapKey.class.getSimpleName() + "(\"" + extension.id() + "\")");
             final String id = extension.id().replaceAll("\\.", "_");
             methodSuffix = id + "_Map";
@@ -1041,7 +1051,7 @@ public class DaggerModuleCreator
         else
         {
             moduleWriter.println();
-            moduleWriter.println("@Provides(type=Type.SET)");
+            moduleWriter.println("@Provides(type=Type.SET) @javax.inject.Singleton");
             final String id = extension.id().replaceAll("\\.", "_");
             methodSuffix = id + "_Set";
         }

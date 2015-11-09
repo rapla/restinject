@@ -9,7 +9,6 @@ import org.rapla.inject.InjectionContext;
 import javax.inject.Inject;
 import java.util.*;
 
-@RequestScoped
 @DefaultImplementation(of=AnnotationProcessingTest.class,context = InjectionContext.server)
 public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
 {
