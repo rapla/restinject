@@ -73,7 +73,9 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         }
         catch (Exception ioe)
         {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, ioe.getMessage());
+            StringWriter stringWriter = new StringWriter();
+            ioe.printStackTrace( new PrintWriter(stringWriter));
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, stringWriter.toString());
             return false;
         }
         return true;

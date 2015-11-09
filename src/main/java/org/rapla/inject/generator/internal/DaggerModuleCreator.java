@@ -40,6 +40,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.URL;
 import java.util.BitSet;
 import java.util.Enumeration;
@@ -291,7 +292,9 @@ public class DaggerModuleCreator
                 //                }
                 String webserviceCreatorClass = WebserviceCreator.class.getCanonicalName();
                 String webserviceCreatorMapClass = WebserviceCreatorMap.class.getCanonicalName();
-                sourceWriter.println("@Singleton public static class ServiceMap extends java.util.LinkedHashMap<String," + webserviceCreatorClass + ">  implements " + webserviceCreatorMapClass + " {");
+                sourceWriter.println(
+                        "@Singleton public static class ServiceMap extends java.util.LinkedHashMap<String," + webserviceCreatorClass + ">  implements "
+                                + webserviceCreatorMapClass + " {");
                 sourceWriter.indent();
                 sourceWriter.println("@Inject public ServiceMap(" + componentName + " component) {");
                 sourceWriter.indent();
@@ -303,7 +306,8 @@ public class DaggerModuleCreator
                 sourceWriter.outdent();
                 sourceWriter.println("}");
                 sourceWriter.println("public " + webserviceCreatorClass + " get(String serviceName) {return super.get( serviceName); }");
-                sourceWriter.println("public java.util.Map<String," + webserviceCreatorClass + "> asMap() {return java.util.Collections.unmodifiableMap(this); }");
+                sourceWriter.println(
+                        "public java.util.Map<String," + webserviceCreatorClass + "> asMap() {return java.util.Collections.unmodifiableMap(this); }");
                 sourceWriter.outdent();
                 sourceWriter.println("}");
 
@@ -431,7 +435,7 @@ public class DaggerModuleCreator
         return foundLines;
     }
 
-    private void writeWebserviceList(String packageName,String artifactId)
+    private void writeWebserviceList(String originalPackageName,String artifactId) throws IOException
     {
         // Example:
         //   ServiceMap getMap();
@@ -453,58 +457,79 @@ public class DaggerModuleCreator
         //                    }
         //                }
         //            });
+        String packageName = Scopes.WebserviceModule.getPackageName( originalPackageName);
         {
             SourceWriter writer = getWriter(Scopes.WebserviceModule);
-            String serviceMapClass = packageName + (packageName.length() == 0 ? "" : ".") +  "server.dagger." + artifactId + "ServerComponent.ServiceMap";
+            String serviceMapClass = packageName + "." + artifactId + "ServerComponent.ServiceMap";
             writer.println("@Provides " + WebserviceCreatorMap.class.getCanonicalName() + " getWebserviceList("+serviceMapClass+" impl) { return impl;}" );
         }
 
 
-        SourceWriter writer = getWriter(Scopes.Webservice);
-        writer.println("ServiceMap getMap();");
+
+        String className = "Dagger" + artifactId + "WebserviceMap";
+        {
+            SourceWriter writer = getWriter(Scopes.Webservice);
+            writer.println(className + " getMap();");
+        }
+
+
+
+        final Filer filer = processingEnvironment.getFiler();
+        String fullFilename = packageName + "." + className;
         String webserviceCreatorClass = WebserviceCreator.class.getCanonicalName();
-        writer.println("@Singleton public static class ServiceMap extends java.util.LinkedHashMap<String," + webserviceCreatorClass + "> {");
-        writer.indent();
-        final String componentName = "Dagger" + artifactId + "WebserviceComponent";
-        writer.println("final " + componentName + " component;");
-        writer.println("@Inject ServiceMap(final " + componentName + " component) { ");
-        writer.indent();
-        //final String requestModuleName = "Dagger" + artifact + "RequestModule";
-        final String requestModuleName = "BasicRequestModule";
-        writer.println("this.component = component;");
-        for (TypeElement method : remoteMethods)
+
+        final JavaFileObject source = filer.createSourceFile(fullFilename);
+        try (OutputStream out=source.openOutputStream())
         {
-            String interfaceName = method.getQualifiedName().toString();
-            writer.println("put(\"" + interfaceName + "\");");
+            final SourceWriter writer = new SourceWriter(out);
+            writer.println("package " + packageName + ";");
+            writer.println("import " + HttpServletRequest.class.getCanonicalName() + ";");
+            writer.println("import " + HttpServletResponse.class.getCanonicalName() + ";");
+            writer.println("@javax.inject.Singleton public class "+ className + " extends java.util.LinkedHashMap<String," + webserviceCreatorClass + "> {");
+            writer.indent();
+            final String componentName = "Dagger" + artifactId + "WebserviceComponent";
+            writer.println("final " + componentName + " component;");
+            writer.println("@javax.inject.Inject "+ className + "(final " + componentName + " component) { ");
+            writer.indent();
+            //final String requestModuleName = "Dagger" + artifact + "RequestModule";
+            final String requestModuleName = BasicRequestModule.class.getCanonicalName();
+            writer.println("this.component = component;");
+            for (TypeElement method : remoteMethods)
+            {
+                String interfaceName = method.getQualifiedName().toString();
+                writer.println("put(\"" + interfaceName + "\");");
+            }
+            writer.println("}");
+            writer.outdent();
+            writer.println("private void put(final String serviceName) { ");
+            writer.indent();
+            writer.println("put(serviceName,new " + webserviceCreatorClass + "()  {");
+            writer.indent();
+            writer.println("@Override public Object create(HttpServletRequest request, HttpServletResponse response) {");
+            writer.indent();
+            writer.println(requestModuleName + " requestModule = new " + requestModuleName + "(request, response);");
+            writer.println("switch (serviceName) {");
+            writer.indent();
+            for (TypeElement method : remoteMethods)
+            {
+                String interfaceName = method.getQualifiedName().toString();
+                String methodName = toJavaName(method).toLowerCase();
+                writer.println("case \"" + interfaceName + "\": return component." + methodName + "(requestModule).get();");
+            }
+            writer.println("default: return null;");
+            writer.outdent();
+            writer.println("}");
+            writer.outdent();
+            writer.println("}");
+            writer.outdent();
+            writer.println("});");
+            writer.outdent();
+            writer.println("}");
+            writer.outdent();
+            writer.println("}");
+            writer.close();
         }
-        writer.println("}");
-        writer.outdent();
-        writer.println("private void put(final String serviceName) { ");
-        writer.indent();
-        writer.println("put(serviceName,new " + webserviceCreatorClass + "()  {");
-        writer.indent();
-        writer.println("@Override public Object create(HttpServletRequest request, HttpServletResponse response) {");
-        writer.indent();
-        writer.println(requestModuleName + " requestModule = new " + requestModuleName + "(request, response);");
-        writer.println("switch (serviceName) {");
-        writer.indent();
-        for (TypeElement method : remoteMethods)
-        {
-            String interfaceName = method.getQualifiedName().toString();
-            String methodName = toJavaName(method).toLowerCase();
-            writer.println("case \"" + interfaceName + "\": return component." + methodName + "(requestModule).get();");
-        }
-        writer.println("default: return null;");
-        writer.outdent();
-        writer.println("}");
-        writer.outdent();
-        writer.println("}");
-        writer.outdent();
-        writer.println("});");
-        writer.outdent();
-        writer.println("}");
-        writer.outdent();
-        writer.println("}");
+
     }
 
     void appendLineToMetaInf(String filename, String line) throws IOException
@@ -578,8 +603,6 @@ public class DaggerModuleCreator
         final SourceWriter moduleWriter = new SourceWriter(source.openOutputStream());
         moduleWriter.println("package " + packageName + ";");
         moduleWriter.println();
-        moduleWriter.println("import " + HttpServletRequest.class.getCanonicalName() + ";");
-        moduleWriter.println("import " + HttpServletResponse.class.getCanonicalName() + ";");
         moduleWriter.println("import " + BasicRequestModule.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Provides.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Inject.class.getCanonicalName() + ";");

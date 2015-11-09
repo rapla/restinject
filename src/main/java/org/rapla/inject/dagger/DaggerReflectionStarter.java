@@ -57,7 +57,6 @@ public class DaggerReflectionStarter
         final String artifactName = firstCharUp(i >= 0 ? moduleName.substring(i + 1) : moduleName);
         final String componentClassName = packageName + "." + artifactName + scope + "Component";
         final String daggerComponentClassNamme = packageName + ".Dagger" + artifactName + scope + "Component";
-        final String paramMethod = "dagger" + artifactName + scope + "StartupModule";
         final String starterMethod = "get" + starterClass.getSimpleName();
         final Class<?> clazz = Class.forName(daggerComponentClassNamme);
         final Class<?> interfacClazz = Class.forName(componentClassName);
@@ -68,6 +67,7 @@ public class DaggerReflectionStarter
             if ( startupModule != null)
             {
                 Class startupModuleClass = startupModule.getClass();
+                final String paramMethod = firstCharLow(startupModuleClass.getSimpleName());
                 final Method method = builderClazz.getMethod(paramMethod, startupModuleClass);
                 builder = method.invoke(builder, startupModule);
             }
@@ -102,6 +102,20 @@ public class DaggerReflectionStarter
             return s;
         }
         final String result = Character.toUpperCase(s.charAt(0)) + s.substring(1);
+        return result;
+    }
+
+    static private String firstCharLow(String s)
+    {
+        if (s == null)
+        {
+            return null;
+        }
+        if (s.length() < 1)
+        {
+            return s;
+        }
+        final String result = Character.toLowerCase(s.charAt(0)) + s.substring(1);
         return result;
     }
 
