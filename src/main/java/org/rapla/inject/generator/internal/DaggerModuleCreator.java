@@ -1,9 +1,43 @@
 package org.rapla.inject.generator.internal;
 
-import dagger.Component;
-import dagger.Module;
-import dagger.Provides;
-import dagger.Subcomponent;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.URL;
+import java.util.BitSet;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.processing.Filer;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.MirroredTypeException;
+import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Types;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.tools.Diagnostic;
+import javax.tools.FileObject;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
+import javax.ws.rs.Path;
+
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.DefaultImplementationRepeatable;
 import org.rapla.inject.Extension;
@@ -20,36 +54,12 @@ import org.rapla.jsonrpc.server.WebserviceCreator;
 import org.rapla.jsonrpc.server.WebserviceCreatorMap;
 import org.rapla.server.RequestScoped;
 
-import javax.annotation.processing.Filer;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.MirroredTypeException;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Types;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.tools.Diagnostic;
-import javax.tools.FileObject;
-import javax.tools.JavaFileManager;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardLocation;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.URL;
-import java.util.BitSet;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import dagger.Component;
+import dagger.MembersInjector;
+import dagger.Module;
+import dagger.Provides;
+import dagger.Subcomponent;
+import dagger.internal.Factory;
 
 public class DaggerModuleCreator
 {
@@ -456,7 +466,7 @@ public class DaggerModuleCreator
         //                        case "org.rapla.common.AnnotationSimpleProcessingTest": return component.org_rapla_common_annotationsimpleprocessingtest(requestModule).get();
         //                        default: return null;
         //                    }
-        //                }
+        //                } 
         //            });
         String packageName = Scopes.WebserviceModule.getPackageName( originalPackageName);
         {
@@ -682,6 +692,11 @@ public class DaggerModuleCreator
                 {
                     generateExtension(implementingClassTypeElement, interfaceClassTypeElement, extension);
                 }
+                final Path path = implementingClassTypeElement.getAnnotation(Path.class);
+                if(path != null)
+                {
+                    generatePath(implementingClassTypeElement, path.value());
+                }
             }
         }
         if (interfaceClassTypeElement != null)
@@ -703,6 +718,42 @@ public class DaggerModuleCreator
     }
 
 
+
+    private void generatePath(TypeElement implementingClassTypeElement, String path)
+    {
+        final String qualifiedName = implementingClassTypeElement.getQualifiedName().toString();
+        final String qualifiedRestPage = qualifiedName.replaceAll("\\.", "_");
+        final Generated generated = new Generated("RestPage", qualifiedRestPage);
+        if(notGenerated(Scopes.Server, generated))
+        {
+            if(path.contains("/"))
+            {
+                path = path.substring(0, path.indexOf("/"));
+            }
+            final SourceWriter writer = getWriter(Scopes.Server, generated);
+            writer.println("@Provides(type=Type.MAP) @javax.inject.Singleton");
+            writer.println("@" + DaggerMapKey.class.getSimpleName() + "(\"" + path + "\")");
+            final ExecutableElement constructor = getConstructor(implementingClassTypeElement);
+            final List<? extends VariableElement> parameters = constructor.getParameters();
+            final String factoryName = qualifiedName + "_Factory";
+            boolean hasMemberInjector = implementingClassTypeElement.getSuperclass() != null;
+            writer.print("public " + Factory.class.getCanonicalName() + " provide_Rest_" + qualifiedRestPage + "_Factory(");
+            if (hasMemberInjector)
+            {
+                writer.print(MembersInjector.class.getCanonicalName() + "<" + qualifiedName + "> members, ");
+            }
+            writer.println(createString(parameters, true) + ") {");
+            writer.indent();
+            writer.print("return " + factoryName + ".create(");
+            if (hasMemberInjector)
+            {
+                writer.print("members, ");
+            }
+            writer.println(createString(parameters, false) + ");");
+            writer.outdent();
+            writer.println("}");
+        }
+    }
 
     private String getGeneratorString()
     {
@@ -1095,5 +1146,71 @@ public class DaggerModuleCreator
         Types TypeUtils = processingEnvironment.getTypeUtils();
         return (TypeElement) TypeUtils.asElement(typeMirror);
     }
+    
+    private String createString(List<? extends VariableElement> parameters, boolean withType)
+    {
+        final StringBuilder sb = new StringBuilder();
+        if (parameters != null)
+        {
+            boolean first = true;
+            for (VariableElement parameter : parameters)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    sb.append(", ");
+                }
+                if (withType)
+                {
+                    sb.append(Provider.class.getCanonicalName()+"<");
+                    final TypeMirror asType = parameter.asType();
+                    if (asType instanceof PrimitiveType)
+                    {
+                        final String string = asType.toString();
+                        if ("int".equalsIgnoreCase(string))
+                        {
+                            sb.append("java.lang.Integer");
+                        }
+                        else
+                        {
+                            sb.append("java.lang.");
+                            final char[] charArray = string.toCharArray();
+                            charArray[0] = Character.toUpperCase(charArray[0]);
+                            sb.append(charArray);
+                        }
+                    }
+                    else
+                    {
+                        sb.append(asType.toString());
+                    }
+                    sb.append("> ");
+                }
+                sb.append(parameter.getSimpleName().toString());
+            }
+        }
+        return sb.toString();
+    }
 
+    private ExecutableElement getConstructor(TypeElement element)
+    {
+        final List<? extends Element> allMembers = processingEnvironment.getElementUtils().getAllMembers(element);
+        final List<ExecutableElement> constructors = ElementFilter.constructorsIn(allMembers);
+        ExecutableElement foundConstructor = null;
+        if (constructors != null)
+        {
+            for (ExecutableElement constructor : constructors)
+            {
+                final boolean hasInjectAnnotation = constructor.getAnnotation(Inject.class) != null;
+                if (hasInjectAnnotation)
+                {
+                    foundConstructor = constructor;
+                    break;
+                }
+            }
+        }
+        return foundConstructor;
+    }
 }
