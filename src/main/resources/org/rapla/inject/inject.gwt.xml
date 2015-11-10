@@ -3,7 +3,7 @@
   "http://google-web-toolkit.googlecode.com/svn/tags/2.5.1/distro-source/core/src/gwt-module.dtd">
 <module>
   <source path='client' />
-  <source path='gwt' />
+  <source path='gwt' includes='GwtComponentMarker.java' />
   <super-source path="external"/>
 
 	<generate-with class="org.rapla.inject.gwt.GwtDaggerGenerator">
