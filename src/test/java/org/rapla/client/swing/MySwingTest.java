@@ -76,7 +76,7 @@ public class MySwingTest extends TestCase
         {
             @Override public String getEntryPoint(String interfaceName, String relativePath)
             {
-                return "http://localhost:8052/" + "rapla/json/" + (relativePath != null ? relativePath : interfaceName);
+                return "http://localhost:8052/" + "rapla/" + (relativePath != null ? relativePath : interfaceName);
             }
         });
     }

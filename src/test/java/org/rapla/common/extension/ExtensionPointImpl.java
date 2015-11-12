@@ -1,12 +1,14 @@
 package org.rapla.common.extension;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import org.rapla.inject.Extension;
 import org.rapla.common.util.Calculator;
 import org.rapla.common.util.SingletonCalculator;
 
 @Extension(id = "org.rapla.ExtensionPointImpl", provides = ExampleExtensionPoint.class)
+@Singleton
 public class ExtensionPointImpl implements ExampleExtensionPoint
 {
 

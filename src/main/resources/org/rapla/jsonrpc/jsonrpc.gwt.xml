@@ -19,9 +19,10 @@
  <inherits name="com.google.gwt.user.User"/>
  <inherits name='com.google.gwt.http.HTTP'/>
  <inherits name='com.google.gwt.json.JSON'/>
- <source path='client' >
- <exclude name="**/swing/**"/>
+ <source path='client/gwt'/>
+ <source path='client' includes='EntryPointFactory.java'/>
+ <source path='common'>
+    <exclude name='internal/JSONParserWrapper.java' />
  </source>
- <source path='common' />
 
 </module>

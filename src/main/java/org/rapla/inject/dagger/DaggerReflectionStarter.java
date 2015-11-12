@@ -1,5 +1,8 @@
 package org.rapla.inject.dagger;
 
+import com.google.gwt.core.client.GWT;
+import dagger.Component;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -21,7 +24,6 @@ public class DaggerReflectionStarter
             this.subpackage =subpackage;
         }
         String subpackage;
-
     }
 
     public static <T> T startWithReflection(Class<T> starterClass, Scope scope) throws Exception

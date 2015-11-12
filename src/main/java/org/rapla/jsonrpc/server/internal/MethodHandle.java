@@ -32,6 +32,7 @@ public class MethodHandle {
   private final Method method;
   private final Type[] parameterTypes;
   private String[] parameterNames;
+  private String pathparm;
  
   /**
    * Create a new handle for a specific service implementation and method.
@@ -60,6 +61,7 @@ public class MethodHandle {
 			else if (annotationType.equals(PathParam.class))
 			{
 			    paramterName = ((PathParam)a).value();
+                pathparm = paramterName;
 			}
 			else if (annotationType.equals(QueryParam.class))
 			{
@@ -74,6 +76,11 @@ public class MethodHandle {
     parameterTypes = new Type[args.length ];
    
     System.arraycopy(args, 0, parameterTypes, 0, parameterTypes.length);
+  }
+
+  public String getPathparm()
+  {
+      return pathparm;
   }
 
   /**

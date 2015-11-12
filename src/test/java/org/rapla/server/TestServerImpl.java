@@ -20,30 +20,50 @@ import java.util.Map;
 @Singleton
 public class TestServerImpl implements  TestServer
 {
-    Map<String,JsonServlet> servletMap = new HashMap<String, JsonServlet>();
+    Map<Class,JsonServlet> servletMap = new HashMap<Class, JsonServlet>();
     private final StartupParams params;
-    WebserviceCreatorMap webserviceMap;
+    Map<String,WebserviceCreator> webserviceMap;
     @Inject
     public TestServerImpl(StartupParams params,WebserviceCreatorMap webserviceMap){
         this.params = params;
-        this.webserviceMap = webserviceMap;
+        this.webserviceMap = webserviceMap.asMap();
     }
 
     public void service(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         System.out.println("Request " + request.toString());
-        String serviceAndMethodName = getServiceAndMethodName(request);
-        final JsonServlet servlet = getJsonServlet(request, serviceAndMethodName);
-        Class<?> role = servlet.getInterfaceClass();
-        final WebserviceCreator webserviceCreator = webserviceMap.get(role.getCanonicalName());
+        String path = null;
+        String appendix = null;
+        String requestURI =request.getPathInfo();
+        String subPath = requestURI.substring("/rapla/".length());
+        for (String key:webserviceMap.keySet())
+        {
+            if (subPath.startsWith(key))
+            {
+                path = key;
+                if (subPath.length() > key.length())
+                {
+                    appendix = subPath.substring(key.length() + 1);
+                }
+            }
+        }
+        if ( path == null)
+        {
+            throw new IllegalArgumentException("No webservice found for " + path);
+        }
+        final WebserviceCreator webserviceCreator = webserviceMap.get(path);
+        Class serviceClass = webserviceCreator.getServiceClass();
+        final JsonServlet servlet = getJsonServlet(request, serviceClass);
         final Object service = webserviceCreator.create(request, response);
         ServletContext servletContext = request.getServletContext();
-        servlet.service(request, response, servletContext, service);
+        servlet.service(request, response, servletContext, service, appendix);
     }
 
+    /*
     protected String getServiceAndMethodName(HttpServletRequest request) {
         String requestURI =request.getPathInfo();
-        String path = "/json/";
+        //String path = "/json/";
+        String path = "/rapla/";
         if ( requestURI != null)
         {
             int rpcIndex = requestURI.indexOf(path);
@@ -52,39 +72,22 @@ public class TestServerImpl implements  TestServer
         }
         return request.getRequestURI();
     }
+    */
 
-    private JsonServlet getJsonServlet(HttpServletRequest request,String serviceAndMethodName) throws Exception {
-        if  ( serviceAndMethodName == null || serviceAndMethodName.length() == 0) {
-            throw new Exception("Servicename missing in url");
-        }
-        int indexRole = serviceAndMethodName.indexOf( "/" );
-        String interfaceName;
-        if ( indexRole > 0 )
-        {
-            interfaceName= serviceAndMethodName.substring( 0, indexRole );
-            if ( serviceAndMethodName.length() >= interfaceName.length())
-            {
-                String methodName = serviceAndMethodName.substring( indexRole + 1 );
-                request.setAttribute(JsonServlet.JSON_METHOD, methodName);
-            }
-        }
-        else
-        {
-            interfaceName = serviceAndMethodName;
-        }
-        JsonServlet servlet = servletMap.get( interfaceName);
+    private JsonServlet getJsonServlet(HttpServletRequest request,Class interfaceClass) throws Exception {
+
+        JsonServlet servlet = servletMap.get( interfaceClass);
         if ( servlet == null)
         {
             // security check, we need to be sure a webservice with the name is provide before we load the class
-            Class<?> interfaceClass =  Class.forName(interfaceName, true, getClass().getClassLoader());
             final Class webserviceAnnotation = RemoteJsonMethod.class;
             if (interfaceClass.getAnnotation(webserviceAnnotation) == null)
             {
-                throw new Exception(interfaceName + " is not a webservice. Did you forget the proxy " + webserviceAnnotation.getName() + "?");
+                throw new Exception(interfaceClass + " is not a webservice. Did you forget the proxy " + webserviceAnnotation.getName() + "?");
             }
             // Test if service is found
             servlet = new JsonServlet( interfaceClass);
-            servletMap.put( interfaceName, servlet);
+            servletMap.put( interfaceClass, servlet);
         }
         return servlet;
     }

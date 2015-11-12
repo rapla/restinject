@@ -1,19 +1,24 @@
 package org.rapla.inject.generator.internal;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.URL;
-import java.util.BitSet;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import dagger.Component;
+import dagger.Module;
+import dagger.Provides;
+import dagger.Subcomponent;
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.DefaultImplementationRepeatable;
+import org.rapla.inject.Extension;
+import org.rapla.inject.ExtensionPoint;
+import org.rapla.inject.ExtensionRepeatable;
+import org.rapla.inject.InjectionContext;
+import org.rapla.inject.generator.AnnotationInjectionProcessor;
+import org.rapla.inject.internal.DaggerMapKey;
+import org.rapla.inject.internal.server.BasicRequestModule;
+import org.rapla.jsonrpc.common.RemoteJsonMethod;
+import org.rapla.jsonrpc.generator.internal.GwtProxyCreator;
+import org.rapla.jsonrpc.generator.internal.JavaClientProxyCreator;
+import org.rapla.jsonrpc.server.WebserviceCreator;
+import org.rapla.jsonrpc.server.WebserviceCreatorMap;
+import org.rapla.server.RequestScoped;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -37,29 +42,20 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import javax.ws.rs.Path;
-
-import org.rapla.inject.DefaultImplementation;
-import org.rapla.inject.DefaultImplementationRepeatable;
-import org.rapla.inject.Extension;
-import org.rapla.inject.ExtensionPoint;
-import org.rapla.inject.ExtensionRepeatable;
-import org.rapla.inject.InjectionContext;
-import org.rapla.inject.generator.AnnotationInjectionProcessor;
-import org.rapla.inject.internal.DaggerMapKey;
-import org.rapla.inject.internal.server.BasicRequestModule;
-import org.rapla.jsonrpc.common.RemoteJsonMethod;
-import org.rapla.jsonrpc.generator.internal.GwtProxyCreator;
-import org.rapla.jsonrpc.generator.internal.JavaClientProxyCreator;
-import org.rapla.jsonrpc.server.WebserviceCreator;
-import org.rapla.jsonrpc.server.WebserviceCreatorMap;
-import org.rapla.server.RequestScoped;
-
-import dagger.Component;
-import dagger.MembersInjector;
-import dagger.Module;
-import dagger.Provides;
-import dagger.Subcomponent;
-import dagger.internal.Factory;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.URL;
+import java.util.BitSet;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class DaggerModuleCreator
 {
@@ -508,8 +504,8 @@ public class DaggerModuleCreator
             writer.println("this.component = component;");
             for (TypeElement method : remoteMethods)
             {
-                String interfaceName = method.getQualifiedName().toString();
-                writer.println("put(\"" + interfaceName + "\");");
+                final String path = getPath(method);
+                writer.println("put(\"" + path + "\");");
             }
             writer.println("}");
             writer.outdent();
@@ -524,15 +520,32 @@ public class DaggerModuleCreator
             writer.indent();
             for (TypeElement method : remoteMethods)
             {
-                String interfaceName = method.getQualifiedName().toString();
+                final String path = getPath(method);
                 String methodName = toJavaName(method).toLowerCase();
-                writer.println("case \"" + interfaceName + "\": return component." + methodName + "(requestModule).get();");
+                writer.println("case \"" + path + "\": return component." + methodName + "(requestModule).get();");
             }
             writer.println("default: return null;");
             writer.outdent();
             writer.println("}");
             writer.outdent();
             writer.println("}");
+
+
+            writer.println("@Override public Class getServiceClass() {");
+            writer.indent();
+            writer.println("switch (serviceName) {");
+            writer.indent();
+            for (TypeElement method : remoteMethods)
+            {
+                final String path = getPath(method);
+                writer.println("case \"" + path + "\": return "+method.getQualifiedName().toString()+".class;");
+            }
+            writer.println("default: return null;");
+            writer.outdent();
+            writer.println("}");
+            writer.outdent();
+            writer.println("}");
+
             writer.outdent();
             writer.println("});");
             writer.outdent();
@@ -542,6 +555,21 @@ public class DaggerModuleCreator
             writer.close();
         }
 
+    }
+
+    private String getPath(TypeElement method)
+    {
+        final String path;
+        final Path pathAnnotation = method.getAnnotation(Path.class);
+        if ( pathAnnotation != null)
+        {
+            path = pathAnnotation.value();
+        }
+        else
+        {
+            path = method.getQualifiedName().toString();
+        }
+        return path;
     }
 
     void appendLineToMetaInf(String filename, String line) throws IOException
@@ -579,7 +607,6 @@ public class DaggerModuleCreator
         moduleWriter.println("import " + Provides.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Provides.Type.class.getCanonicalName() + ";");
         moduleWriter.println("import " + Module.class.getCanonicalName() + ";");
-        //        moduleWriter.println("import " + Factory.class.getCanonicalName() + ";");
         moduleWriter.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
         moduleWriter.println();
         moduleWriter.println(getGeneratorString());
@@ -695,7 +722,13 @@ public class DaggerModuleCreator
                 final Path path = implementingClassTypeElement.getAnnotation(Path.class);
                 if(path != null)
                 {
-                    generatePath(implementingClassTypeElement, path.value());
+                    TypeElement interfaceTypeElement = implementingClassTypeElement;
+                    final Generated generated = new Generated(interfaceTypeElement.getQualifiedName().toString(), implementingClassTypeElement.getQualifiedName().toString());
+                    if ( notGenerated( Scopes.Webservice, generated))
+                    {
+                        SourceWriter moduleWriter = getWriter(Scopes.Webservice, generated);
+                        generateWebserviceComponent(artifactName, implementingClassTypeElement, interfaceTypeElement, moduleWriter);
+                    }
                 }
             }
         }
@@ -719,6 +752,7 @@ public class DaggerModuleCreator
 
 
 
+    /*
     private void generatePath(TypeElement implementingClassTypeElement, String path)
     {
         final String qualifiedName = implementingClassTypeElement.getQualifiedName().toString();
@@ -753,7 +787,7 @@ public class DaggerModuleCreator
             writer.outdent();
             writer.println("}");
         }
-    }
+    }*/
 
     private String getGeneratorString()
     {
@@ -863,7 +897,7 @@ public class DaggerModuleCreator
     {
         final String collectionTypeString;
         moduleWriter.println();
-        moduleWriter.println("@Provides(type=Type.SET_VALUES)");
+        moduleWriter.println("@javax.inject.Singleton @Provides(type=Type.SET_VALUES)");
         collectionTypeString = "Set";
         final String fullQualifiedName = "provide_" + toJavaName(interfaceName) + "_empty";
         moduleWriter.println(

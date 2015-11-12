@@ -14,7 +14,6 @@ package org.rapla.jsonrpc.common.internal.isodate;
 
 import java.util.Date;
 import java.util.Locale;
-import java.util.TimeZone;
 
  /** Tools for manipulating dates.
   * At the moment of writing rapla internaly stores all appointments
@@ -145,14 +144,6 @@ import java.util.TimeZone;
          return new Date(cutDate(time));
      }
 
-     private static TimeZone timeZone =TimeZone.getTimeZone("GMT");
-     /** same as TimeZone.getTimeZone("GMT"). */
-     public static TimeZone getTimeZone() {
-         return timeZone;
-     }
-     /** sets time of day to 0:00 and increases day.
-         @see #fillDate(Date)
-      */
      public static long fillDate(long date) {
          // cut date
          long cuttedDate = (date - (date % MILLISECONDS_PER_DAY));

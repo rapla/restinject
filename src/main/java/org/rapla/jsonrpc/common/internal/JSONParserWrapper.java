@@ -1,6 +1,19 @@
 package org.rapla.jsonrpc.common.internal;
 
-import com.google.gson.*;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.FieldNamingStrategy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.InstanceCreator;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.TypeAdapter;
+import com.google.gson.TypeAdapterFactory;
 import com.google.gson.internal.ConstructorConstructor;
 import com.google.gson.internal.Excluder;
 import com.google.gson.internal.bind.MapTypeAdapterFactory;
@@ -9,8 +22,13 @@ import com.google.gson.reflect.TypeToken;
 import org.rapla.jsonrpc.common.internal.isodate.ISODateTimeFormat;
 
 import java.lang.reflect.Type;
-import java.util.*;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
+@com.google.gwt.core.shared.GwtIncompatible
 public class JSONParserWrapper {
 
 	/** Create a default GsonBuilder with some extra types defined. */
