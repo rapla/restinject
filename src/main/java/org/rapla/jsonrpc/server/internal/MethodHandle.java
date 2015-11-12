@@ -18,11 +18,17 @@ import org.rapla.jsonrpc.common.AsyncCallback;
 
 import javax.jws.WebParam;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Pairing of a specific implementation and method.
@@ -33,6 +39,7 @@ public class MethodHandle {
   private final Type[] parameterTypes;
   private String[] parameterNames;
   private String pathparm;
+  private Set<String> mediaTypes;
  
   /**
    * Create a new handle for a specific service implementation and method.
@@ -44,6 +51,18 @@ public class MethodHandle {
   public MethodHandle( final Method method) {
     //this.imp = imp;
     this.method = method;
+    final Produces[] producesList = method.getDeclaredAnnotationsByType(Produces.class);
+    if ( producesList.length > 0)
+    {
+        mediaTypes = new LinkedHashSet<>();
+    }
+    for ( Produces produces:producesList)
+    {
+      for ( String type:produces.value())
+      {
+          mediaTypes.add(type);
+      }
+    }
     final Type[] args = method.getGenericParameterTypes();
     Annotation[][] parameterAnnotations = method.getParameterAnnotations();
     parameterNames = new String[args.length ];
@@ -74,13 +93,21 @@ public class MethodHandle {
     	}
     }
     parameterTypes = new Type[args.length ];
-   
     System.arraycopy(args, 0, parameterTypes, 0, parameterTypes.length);
   }
 
   public String getPathparm()
   {
       return pathparm;
+  }
+
+  public Set<String> getMediaTypes()
+  {
+    if ( mediaTypes == null)
+    {
+      return Collections.emptySet();
+    }
+    return mediaTypes;
   }
 
   /**

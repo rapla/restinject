@@ -27,24 +27,6 @@ public class RestAPIExample {
     
     public void testRestApi(URL baseUrl, String username,String password) throws Exception
     {
-        HTTPJsonConnector connector = new HTTPJsonConnector();
-        
-        // first we login using the auth method
-        String authenticationToken = null;
-        {
-            URL methodURL =new URL(baseUrl,"auth/" + username + "?password="+ password);
-            //JsonObject callObj = new JsonObject();
-            JsonElement callObj = new JsonPrimitive(password);
-            //callObj.addProperty("username", username);
-            //callObj.addProperty("password", password);
-            String emptyAuthenticationToken = null;
-            JsonObject resultBody = connector.sendGet(methodURL,  emptyAuthenticationToken);
-            assertNoError(resultBody);
-            String resultObject = resultBody.get("result").getAsString();
-            //authenticationToken = resultObject.get("accessToken").getAsString();
-            //String validity = resultObject.get("validUntil").getAsString();
-            System.out.println("token valid until " + resultObject);
-        }
 
     }
 

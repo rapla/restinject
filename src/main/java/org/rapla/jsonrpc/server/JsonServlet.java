@@ -14,20 +14,32 @@
 
 package org.rapla.jsonrpc.server;
 
-import com.google.gson.*;
-import dagger.internal.Factory;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+import com.google.gson.JsonSyntaxException;
 import org.apache.commons.codec.binary.Base64;
-import org.rapla.jsonrpc.common.internal.JsonConstants;
-import org.rapla.jsonrpc.common.internal.JSONParserWrapper;
-import org.rapla.jsonrpc.common.internal.isodate.ISODateTimeFormat;
-import org.rapla.jsonrpc.server.internal.jsonpatch.JsonMergePatch;
 import org.rapla.jsonrpc.common.FutureResult;
 import org.rapla.jsonrpc.common.RemoteJsonMethod;
-import org.rapla.jsonrpc.server.internal.*;
+import org.rapla.jsonrpc.common.internal.JSONParserWrapper;
+import org.rapla.jsonrpc.common.internal.JsonConstants;
+import org.rapla.jsonrpc.common.internal.isodate.ISODateTimeFormat;
+import org.rapla.jsonrpc.server.internal.ActiveCall;
+import org.rapla.jsonrpc.server.internal.CallDeserializer;
+import org.rapla.jsonrpc.server.internal.MethodHandle;
+import org.rapla.jsonrpc.server.internal.NoPublicServiceMethodsException;
+import org.rapla.jsonrpc.server.internal.NoSuchRemoteMethodException;
+import org.rapla.jsonrpc.server.internal.RPCServletUtils;
+import org.rapla.jsonrpc.server.internal.jsonpatch.JsonMergePatch;
 
-import javax.jws.WebService;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -35,6 +47,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -56,6 +69,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
@@ -201,10 +215,17 @@ public class JsonServlet
                 else if (method.equals("PATCH") && getAnnotadedMethod(getMethods, request) != null && getAnnotadedMethod(updatetMethods, request) != null)
                 {
                     final String annotadedMethod = getAnnotadedMethod(getMethods, request);
-                    request.setAttribute("method", annotadedMethod);
-                    final String pathparm = myMethods.get(annotadedMethod).getPathparm();
-                    request.setAttribute(pathparm, pathparamValue);
-                    request.setAttribute("patchMethod", getAnnotadedMethod(updatetMethods, request));
+                    {
+                        request.setAttribute("method", annotadedMethod);
+                        final String pathparm = myMethods.get(annotadedMethod).getPathparm();
+                        request.setAttribute(pathparm, pathparamValue);
+                    }
+                    final String annotatedPatchMethod = getAnnotadedMethod(updatetMethods, request);
+                    {
+                        request.setAttribute("patchMethod", annotatedPatchMethod);
+                        final String pathparm = myMethods.get(annotatedPatchMethod).getPathparm();
+                        request.setAttribute(pathparm, pathparamValue);
+                    }
                 }
                 else if (method.equals("PUT") && getAnnotadedMethod(updatetMethods, request) != null)
                 {
@@ -268,14 +289,17 @@ public class JsonServlet
                 call.externalFailure = ex;
             }
         }
-        final String out = formatResult(call);
-        if (class1 != null && call.method != null)
+        if (!isHtmlTextRequest(call))
         {
-            String childLoggerName = class1.getName() + "." + call.method.getName() + ".result";
-            debug(childLoggerName, out);
+            final String out = formatResult(call);
+            if (class1 != null && call.method != null)
+            {
+                String childLoggerName = class1.getName() + "." + call.method.getName() + ".result";
+                debug(childLoggerName, out);
 
+            }
+            writeResponse(servletContext, call, out);
         }
-        writeResponse(servletContext, call, out);
     }
 
     protected void writeResponse(ServletContext servletContext, ActiveCall call, final String out) throws IOException
@@ -355,7 +379,6 @@ public class JsonServlet
                 else if ("POST".equals(httpMethod))
                 {
                     parsePostRequest(call);
-
                 }
                 else
                 {
@@ -595,8 +618,39 @@ public class JsonServlet
         return enc.toLowerCase().contains(JsonConstants.JSON_ENC.toLowerCase());
     }
 
+    private boolean isHtmlTextRequest(final ActiveCall call)
+    {
+        HttpServletRequest req = call.getHttpRequest();
+        final String header = req.getHeader("Accept");
+        if (!header.contains(MediaType.APPLICATION_JSON) && header.contains(MediaType.TEXT_HTML) )
+        {
+            MethodHandle method = call.method;
+            if ( method == null)
+            {
+                final String methodName = (String) req.getAttribute(JSON_METHOD);
+                if ( methodName != null)
+                {
+                    method = myMethods.get( methodName);
+                }
+            }
+            if ( method != null)
+            {
+                final Set<String> mediaTypes = method.getMediaTypes();
+                if (mediaTypes.contains(MediaType.TEXT_HTML))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     protected String readBody(final ActiveCall call) throws IOException
     {
+        if (isHtmlTextRequest(call))
+        {
+            return null;
+        }
         if (!isBodyJson(call))
         {
             throw new JsonParseException("Invalid Request Content-Type");
@@ -858,8 +912,6 @@ public class JsonServlet
     {
         return null;
     }
-
-    ;
 
     private static Map<String, MethodHandle> methods(Class class1)
     {

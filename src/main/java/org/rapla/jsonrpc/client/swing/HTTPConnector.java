@@ -10,8 +10,11 @@ import java.util.zip.InflaterInputStream;
 
 public class HTTPConnector
 {
-
     public String sendCallWithString(String requestMethod, URL methodURL,String body, String authenticationToken) throws IOException, ProtocolException, UnsupportedEncodingException {
+        return sendCallWithString(requestMethod,methodURL,body,authenticationToken,"application/json");
+    }
+
+    public String sendCallWithString(String requestMethod, URL methodURL,String body, String authenticationToken,String accept) throws IOException, ProtocolException, UnsupportedEncodingException {
         HttpURLConnection conn = (HttpURLConnection)methodURL.openConnection();
         if ( !requestMethod.equals("POST") && !requestMethod.equals("GET"))
         {
@@ -26,7 +29,7 @@ public class HTTPConnector
         conn.setUseCaches( false );
         conn.setRequestProperty("Accept-Encoding", "gzip, deflate");
         conn.setRequestProperty("Content-Type", "application/json" + ";charset=utf-8");
-        conn.setRequestProperty("Accept", "application/json");
+        conn.setRequestProperty("Accept", accept);
         if ( authenticationToken != null)
         {
             conn.setRequestProperty("Authorization", "Bearer "  + authenticationToken);
