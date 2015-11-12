@@ -196,15 +196,15 @@ public class JsonServlet
         return 100 * 1024 * 1024;
     }
 
-    public void service(final HttpServletRequest request, final HttpServletResponse resp, ServletContext servletContext, final Object service, String appendix)
+    public void service(final HttpServletRequest request, final HttpServletResponse resp, ServletContext servletContext, final Object service, String subpath)
             throws IOException
     {
         {
-            //int appendix = pathInfo != null ? pathInfo.indexOf("/", 1) : 0;
+            //int subpath = pathInfo != null ? pathInfo.indexOf("/", 1) : 0;
             String method = request.getMethod();
-            if (appendix != null && appendix.length() > 0)
+            if (subpath != null && subpath.length() > 0)
             {
-                String pathparamValue = appendix;
+                String pathparamValue = subpath;
                 if (method.equals("GET") && getAnnotadedMethod(getMethods, request) != null)
                 {
                     final String annotadedMethod = getAnnotadedMethod(getMethods, request);
@@ -236,7 +236,7 @@ public class JsonServlet
                 }
                 else
                 {
-                    request.setAttribute("method", appendix);
+                    request.setAttribute("method", subpath);
                 }
             }
             else
