@@ -302,6 +302,27 @@ public class JsonServlet
         }
     }
 
+    static public void writeException(HttpServletRequest request, HttpServletResponse response, Exception ex) throws IOException
+    {
+        String id = request.getParameter("id");
+        final JsonObject r = new JsonObject();
+        String versionName = "jsonrpc";
+        int code = -32603;
+        // we don't have any non primitive Classes in this error message
+        Class[] nonPrimitiveClasses = new Class[]{};
+        r.add(versionName, new JsonPrimitive("2.0"));
+        if (id != null)
+        {
+            r.add("id", new JsonPrimitive(id));
+        }
+        GsonBuilder gb = JSONParserWrapper.defaultGsonBuilder(nonPrimitiveClasses);
+        final JsonObject error = JsonServlet.getError(versionName, code, ex, null, gb);
+        r.add("error", error);
+        GsonBuilder builder = JSONParserWrapper.defaultGsonBuilder(nonPrimitiveClasses);
+        String out = builder.create().toJson(r);
+        RPCServletUtils.writeResponse(request.getServletContext(), response, out, false);
+    }
+
     protected void writeResponse(ServletContext servletContext, ActiveCall call, final String out) throws IOException
     {
         RPCServletUtils.writeResponse(servletContext, call.httpResponse, out, out.length() > 256 && RPCServletUtils.acceptsGzipEncoding(call.httpRequest));
