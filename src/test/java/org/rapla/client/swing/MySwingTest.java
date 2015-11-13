@@ -7,6 +7,7 @@ import org.rapla.common.AnnotationProcessingTest_JavaJsonProxy;
 import org.rapla.common.AnnotationSimpleProcessingTest;
 import org.rapla.common.AnnotationSimpleProcessingTest_JavaJsonProxy;
 import org.rapla.jsonrpc.client.EntryPointFactory;
+import org.rapla.jsonrpc.client.gwt.MockProxy;
 import org.rapla.jsonrpc.client.swing.BasicRaplaHTTPConnector;
 import org.rapla.jsonrpc.client.swing.RaplaConnectException;
 import org.rapla.jsonrpc.common.FutureResult;
@@ -64,7 +65,10 @@ public class MySwingTest extends TestCase
             return executor;
         }
 
-
+        @Override public MockProxy getMockProxy()
+        {
+            return null;
+        }
     };
 
 

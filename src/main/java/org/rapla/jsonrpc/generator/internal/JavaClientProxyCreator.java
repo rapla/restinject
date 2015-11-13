@@ -59,13 +59,16 @@ public class JavaClientProxyCreator implements SerializerClasses
         final List<ExecutableElement> methods = getMethods(processingEnvironment);
         checkMethods(logger, processingEnvironment);
 
-        final SourceWriter srcWriter = getSourceWriter(logger);
+        TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
+        String interfaceName = erasedType.getQualifiedName().toString();
+
+        final SourceWriter srcWriter = getSourceWriter(logger, interfaceName);
         if (srcWriter == null)
         {
             return getProxyQualifiedName();
         }
 
-        generateProxyConstructor(logger, srcWriter);
+        generateProxyConstructor(logger, srcWriter,interfaceName);
         //generateProxyCallCreator(logger, srcWriter);
         generateProxyMethods(logger, srcWriter);
         srcWriter.outdent();
@@ -171,7 +174,7 @@ public class JavaClientProxyCreator implements SerializerClasses
         throw new UnableToCompleteException(what);
     }
 
-    private SourceWriter getSourceWriter(final TreeLogger logger) throws UnableToCompleteException
+    private SourceWriter getSourceWriter(final TreeLogger logger, String interfaceName) throws UnableToCompleteException
     {
         final String pkgName = processingEnvironment.getElementUtils().getPackageOf(svcInf).getQualifiedName().toString();
         SourceWriter pw = null;
@@ -200,8 +203,7 @@ public class JavaClientProxyCreator implements SerializerClasses
         pw.println("import " + FutureResultImpl + ";");
 
         pw.println();
-        TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
-        String interfaceName = erasedType.getQualifiedName().toString();
+
         pw.println(getGeneratorString());
         //pw.println("@" + DefaultImplementation.class.getCanonicalName() + "(of=" + interfaceName + ".class, context=" + InjectionContext.class.getCanonicalName() + "." + InjectionContext.swing + ")");
         pw.println("public class " + className + " extends " + AbstractJsonJavaProxy + " implements " + interfaceName);
@@ -210,7 +212,7 @@ public class JavaClientProxyCreator implements SerializerClasses
         return pw;
     }
 
-    private void generateProxyConstructor(@SuppressWarnings("unused") final TreeLogger logger, final SourceWriter w)
+    private void generateProxyConstructor(@SuppressWarnings("unused") final TreeLogger logger, final SourceWriter w, String interfaceName)
     {
         final RemoteJsonMethod relPath = svcInf.getAnnotation(RemoteJsonMethod.class);
         if (relPath != null)
@@ -230,6 +232,13 @@ public class JavaClientProxyCreator implements SerializerClasses
             w.outdent();
             w.println("}");
         }
+
+        w.println(interfaceName +" createMock(){");
+        w.indent();
+        w.println("return getMockProxy().create("+ interfaceName +".class, getMockAccessToken());");
+        w.outdent();
+        w.println("}");
+
     }
 
     private String getJsonCallClassName(final TreeLogger logger) throws UnableToCompleteException
@@ -256,6 +265,7 @@ public class JavaClientProxyCreator implements SerializerClasses
         //        callback.isParameterized().getTypeArgs()[0];
         final String[] serializerFields = new String[params.size()];
         String resultField = "";
+
 
         w.println();
         //        for (int i = 0; i < params.size() /*- 1*/; i++)
@@ -390,8 +400,11 @@ public class JavaClientProxyCreator implements SerializerClasses
                 cast = resultClassname;
             }
         }
+        final boolean hasReturn = !"void".equals(resultClassname);
         w.println("try{");
         w.indent();
+        final String s = "return";
+        w.println("if ( isMock() ) {" + (hasReturn ?"return":"") +" createMock()."+methodName+"("+ argsBuilder.toString() + "); }");
         if (wrapFutureResult)
         {
             w.println("return new BasicRaplaHTTPConnector.MyFutureResult() {");
@@ -419,7 +432,7 @@ public class JavaClientProxyCreator implements SerializerClasses
         w.println("Class resultType = " + resultClassname + ".class;");
         w.println("Class containerClass = " + containerClass + ";");
         w.println("final Object result = getResult(resultMessage, resultType, containerClass);");
-        if ( !"void".equals(resultClassname))
+        if (hasReturn)
         {
             if ( wrapFutureResult)
             {

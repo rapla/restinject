@@ -1,6 +1,7 @@
 package org.rapla.jsonrpc.client.swing;
 
 import com.google.gson.*;
+import org.rapla.jsonrpc.client.gwt.MockProxy;
 import org.rapla.jsonrpc.common.internal.JSONParserWrapper;
 import org.rapla.jsonrpc.common.AsyncCallback;
 import org.rapla.jsonrpc.common.FutureResult;
@@ -20,9 +21,20 @@ import java.util.concurrent.Executor;
 public class BasicRaplaHTTPConnector extends HTTPJsonConnector
 {
     private static EntryPointFactory serviceEntryPointFactory;
+
     //private String clientVersion;
     //CommandScheduler scheduler;
     String path;
+
+    public boolean isMock()
+    {
+        return customConnector.getMockProxy() != null;
+    }
+
+    protected MockProxy getMockProxy()
+    {
+        return customConnector.getMockProxy();
+    }
 
     protected void setPath(String path)
     {
@@ -46,6 +58,11 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
 
     CustomConnector customConnector;
     protected Executor scheduler;
+
+    protected String getMockAccessToken()
+    {
+        return customConnector.getAccessToken();
+    }
 
     public BasicRaplaHTTPConnector(CustomConnector customConnector)
     {
@@ -120,6 +137,7 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         Exception getConnectError(IOException ex);
         Executor getScheduler();
         String getAccessToken();
+        MockProxy getMockProxy();
     }
 
     private Gson createJsonMapper()
