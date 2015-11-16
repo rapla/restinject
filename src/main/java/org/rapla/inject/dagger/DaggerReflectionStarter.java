@@ -1,9 +1,7 @@
 package org.rapla.inject.dagger;
 
-import com.google.gwt.core.client.GWT;
-import dagger.Component;
-
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
@@ -28,37 +26,15 @@ public class DaggerReflectionStarter
 
     public static <T> T startWithReflection(Class<T> starterClass, Scope scope) throws Exception
     {
-        return startWithReflectionAndStartupModule(starterClass,scope, null);
+        String moduleId = loadModuleId( starterClass.getClassLoader());
+        return startWithReflectionAndStartupModule(moduleId,starterClass,scope, null);
     }
 
-    public static <T> T startWithReflectionAndStartupModule(Class<T> starterClass, Scope scope, Object startupModule) throws Exception
+    public static <T> T startWithReflectionAndStartupModule(String moduleId,Class<T> starterClass, Scope scope, Object startupModule) throws Exception
     {
-
-        String moduleName;
-        String file = "moduleDescription";
-        ClassLoader classLoader = starterClass.getClassLoader();
-        final InputStream resourceAsStream = classLoader.getResourceAsStream(file);
-        if (resourceAsStream == null)
-        {
-            final String message = "Can't load module descritption file " + file;
-            throw new Exception(message);
-        }
-        else
-        {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(resourceAsStream)))
-            {
-                moduleName = reader.readLine();
-            }
-        }
-        if (moduleName == null || moduleName.trim().length() == 0)
-        {
-            final String message = "No module defined in " + file;
-            throw new Exception(message);
-        }
-
-        final int i = moduleName.lastIndexOf(".");
-        final String packageName = (i > 0 ? moduleName.substring(0, i + 1) : "") + scope.subpackage +".dagger";
-        final String artifactName = GeneratorUtil.firstCharUp(i >= 0 ? moduleName.substring(i + 1) : moduleName);
+        final int i = moduleId.lastIndexOf(".");
+        final String packageName = (i > 0 ? moduleId.substring(0, i + 1) : "") + scope.subpackage +".dagger";
+        final String artifactName = GeneratorUtil.firstCharUp(i >= 0 ? moduleId.substring(i + 1) : moduleId);
         final String componentClassName = packageName + "." + artifactName + scope + "Component";
         final String daggerComponentClassNamme = packageName + ".Dagger" + artifactName + scope + "Component";
         final String starterMethod = "get" + starterClass.getSimpleName();
@@ -93,6 +69,36 @@ public class DaggerReflectionStarter
                 throw ex;
             }
         }
+    }
+
+    public static String loadModuleId(ClassLoader classLoader) throws ModuleDescriptionNotFoundException
+    {
+        String moduleName;
+        String file = "moduleDescription";
+        final InputStream resourceAsStream = classLoader.getResourceAsStream(file);
+        if (resourceAsStream == null)
+        {
+            final String message = "Can't load module descritption file " + file;
+            throw new ModuleDescriptionNotFoundException(message);
+        }
+        else
+        {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(resourceAsStream)))
+            {
+                moduleName = reader.readLine();
+            } catch (IOException ex)
+            {
+                final String message = "module defined in " + file + " could not be loaded due to " + ex;
+                throw new ModuleDescriptionNotFoundException(message,ex);
+            }
+
+        }
+        if (moduleName == null || moduleName.trim().length() == 0)
+        {
+            final String message = "No module defined in " + file;
+            throw new ModuleDescriptionNotFoundException(message);
+        }
+        return moduleName;
     }
 
 }
