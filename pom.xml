@@ -8,8 +8,6 @@
 	<description>rapla </description>
 	<name>jsonrpc module for rapla forked from https://gerrit.googlesource.com/gwtjsonrpc/</name>
 	<inceptionYear>2015</inceptionYear>
-
-
 	<licenses>
 		<license>
 			<name>Apache 2.0</name>
@@ -38,8 +36,6 @@
 		<connection>scm:git:git://github.com/rapla/gwtjsonrpc.git</connection>
 		<url>https://github.com/rapla/gwtjsonrpc.git</url>
 	</scm>
-
-
 	<properties>
 		<gwt.plugin.productionmode>false</gwt.plugin.productionmode>
 		<gwt.version>2.7.0</gwt.version>

@@ -5,7 +5,7 @@
   <source path='gwt' includes='GwtComponentMarker.java' />
   <super-source path="external"/>
 
-	<generate-with class="org.rapla.inject.gwt.GwtDaggerGenerator">
+	<generate-with class="org.rapla.inject.generator.internal.gwt.GwtDaggerGenerator">
 		<when-type-assignable class="org.rapla.inject.gwt.GwtComponentMarker"/>
 	</generate-with>
 </module>

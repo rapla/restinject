@@ -2,9 +2,7 @@ package org.rapla.common.dagger;
 
 import dagger.Module;
 import dagger.Provides;
-import org.rapla.server.RequestScoped;
-
-import java.util.Set;
+import org.rapla.inject.server.RequestScoped;
 
 /**
  * Created by Christopher on 09.11.2015.

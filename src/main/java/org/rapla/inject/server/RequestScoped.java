@@ -1,4 +1,4 @@
-package org.rapla.server;
+package org.rapla.inject.server;
 
 import javax.inject.Scope;
 import java.lang.annotation.Retention;

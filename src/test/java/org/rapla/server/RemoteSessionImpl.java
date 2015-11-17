@@ -3,6 +3,7 @@ package org.rapla.server;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
 import org.rapla.common.TestSingleton;
+import org.rapla.inject.server.RequestScoped;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;

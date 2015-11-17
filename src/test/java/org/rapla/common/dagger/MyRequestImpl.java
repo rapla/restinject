@@ -1,9 +1,8 @@
 package org.rapla.common.dagger;
 
-import org.rapla.server.RequestScoped;
+import org.rapla.inject.server.RequestScoped;
 
 import javax.inject.Inject;
-import java.util.Set;
 
 @RequestScoped
 public class MyRequestImpl implements MyRequest

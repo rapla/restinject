@@ -2,7 +2,7 @@ package org.rapla.inject.internal.server;
 
 import dagger.Module;
 import dagger.Provides;
-import org.rapla.server.RequestScoped;
+import org.rapla.inject.server.RequestScoped;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

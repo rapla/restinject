@@ -2,7 +2,7 @@ package org.rapla.common.dagger;
 
 import dagger.Component;
 import dagger.Subcomponent;
-import org.rapla.server.RequestScoped;
+import org.rapla.inject.server.RequestScoped;
 
 import javax.inject.Singleton;
 

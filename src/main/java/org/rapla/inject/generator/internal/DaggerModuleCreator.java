@@ -18,7 +18,7 @@ import org.rapla.jsonrpc.generator.internal.GwtProxyCreator;
 import org.rapla.jsonrpc.generator.internal.JavaClientProxyCreator;
 import org.rapla.jsonrpc.server.WebserviceCreator;
 import org.rapla.jsonrpc.server.WebserviceCreatorMap;
-import org.rapla.server.RequestScoped;
+import org.rapla.inject.server.RequestScoped;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;

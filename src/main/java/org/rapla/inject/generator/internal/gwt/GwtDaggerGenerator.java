@@ -1,4 +1,4 @@
-package org.rapla.inject.gwt;
+package org.rapla.inject.generator.internal.gwt;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
