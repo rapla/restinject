@@ -173,11 +173,6 @@ public class DaggerModuleCreator
         String fileName = "moduleDescription";
         FileObject resource;
         {
-            JavaFileManager.Location loc = StandardLocation.SOURCE_OUTPUT;
-            resource = processingEnvironment.getFiler().getResource(loc, packageName, fileName);
-        }
-        if (!new File(resource.toUri()).exists())
-        {
             JavaFileManager.Location loc = StandardLocation.CLASS_PATH;
             resource = processingEnvironment.getFiler().getResource(loc, packageName, fileName);
         }

@@ -60,6 +60,28 @@
 		</snapshotRepository>
 	</distributionManagement>
 	<build>
+		<testResources>
+			<testResource>
+				<directory>${basedir}/src/test/resources</directory>
+				<filtering>true</filtering>
+				<includes>
+					<include>**/*.xml</include>
+					<include>**/*.txt</include>
+					<include>**/*.properties</include>
+					<include>**/moduleDescription</include>
+				</includes>
+			</testResource>
+			<testResource>
+				<directory>${basedir}/src/test/resources</directory>
+				<filtering>false</filtering>
+				<excludes>
+					<exclude>**/*.xml</exclude>
+					<exclude>**/*.txt</exclude>
+					<exclude>**/*.properties</exclude>
+					<exclude>**/moduleDescription</exclude>
+				</excludes>
+			</testResource>
+		</testResources>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
