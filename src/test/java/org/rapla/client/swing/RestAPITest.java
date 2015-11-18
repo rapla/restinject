@@ -34,6 +34,12 @@ public class RestAPITest extends  TestCase {
         });
     }
 
+    @Override protected void tearDown() throws Exception
+    {
+        super.tearDown();
+        server.stop();
+    }
+
     public void testRestApi() throws Exception
     {
         RestAPIExample example = new RestAPIExample()
