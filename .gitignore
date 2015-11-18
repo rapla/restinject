@@ -4,3 +4,4 @@ bin/
 .classpath
 .settings/
 war
+/gwt-unitCache

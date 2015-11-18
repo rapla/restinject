@@ -6,7 +6,7 @@
 	<version>1.0-SNAPSHOT</version>
 	<url>https://github.com/rapla/gwtjsonrpc</url>
 	<description>rapla </description>
-	<name>jsonrpc module for rapla forked from https://gerrit.googlesource.com/gwtjsonrpc/</name>
+	<name>Provides abstraction for dependency injection and a rest, json rpc services that work on java and gwt clients. The rpc part was orignally from https://gerrit.googlesource.com/gwtjsonrpc/</name>
 	<inceptionYear>2015</inceptionYear>
 	<licenses>
 		<license>
