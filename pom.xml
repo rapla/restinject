@@ -2,11 +2,11 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.rapla</groupId>
-	<artifactId>gwtjsonrpc</artifactId>
+	<artifactId>restinject</artifactId>
 	<version>1.0-SNAPSHOT</version>
-	<url>https://github.com/rapla/gwtjsonrpc</url>
-	<description>rapla </description>
-	<name>Provides abstraction for dependency injection and a rest, json rpc services that work on java and gwt clients. The rpc part was orignally from https://gerrit.googlesource.com/gwtjsonrpc/</name>
+	<url>https://github.com/rapla/restinject</url>
+	<description>Provides abstraction for dependency injection JSR 330.  Also supports json rest services that work on java and gwt clients. The rpc part was orignally from https://gerrit.googlesource.com/gwtjsonrpc/</description>
+	<name>restinject</name>
 	<inceptionYear>2015</inceptionYear>
 	<licenses>
 		<license>
@@ -33,8 +33,8 @@
 	</organization>
 	<packaging>jar</packaging>
 	<scm>
-		<connection>scm:git:git://github.com/rapla/gwtjsonrpc.git</connection>
-		<url>https://github.com/rapla/gwtjsonrpc.git</url>
+		<connection>scm:git:git://github.com/rapla/restinject.git</connection>
+		<url>https://github.com/rapla/restinject.git</url>
 	</scm>
 	<properties>
 		<gwt.plugin.productionmode>false</gwt.plugin.productionmode>
@@ -92,7 +92,7 @@
 						<configuration>
 							<outputDirectory>${project.build.directory}</outputDirectory>
 							<finalName>${project.build.finalName}</finalName>
-							<descriptor>${basedir}/src/assembly/gwtjsonrpc.jar.xml</descriptor>
+							<descriptor>${basedir}/src/assembly/restinject.jar.xml</descriptor>
 							<appendAssemblyId>false</appendAssemblyId>
 							<attach>true</attach>
 						</configuration>
