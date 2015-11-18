@@ -21,7 +21,7 @@ import com.google.gwt.core.client.JavaScriptObject;
 
 /** Base serializer for Enum types. */
 public abstract class EnumSerializer<T extends Enum<?>> extends
-    JsonSerializer<T> implements ResultDeserializer<Object> {
+    JsonSerializer<T> implements ResultDeserializer<T> {
   @Override
   public void printJson(final StringBuilder sb, final T o) {
     sb.append('"');
@@ -29,7 +29,7 @@ public abstract class EnumSerializer<T extends Enum<?>> extends
     sb.append('"');
   }
   @Override
-  public Object fromResult(JavaScriptObject responseObject) {
+  public T fromResult(JavaScriptObject responseObject) {
     return fromJson(responseObject.toString());
   }
 }

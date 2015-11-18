@@ -117,6 +117,17 @@ public class MySwingTest extends TestCase
         assertTrue(result.startsWith(message));
     }
 
+    public void testListOfStrings() throws Exception
+    {
+        AnnotationSimpleProcessingTest test = new AnnotationSimpleProcessingTest_JavaJsonProxy( connector );
+        final String message = "hello";
+        final List<String> resultFutureResult = test.translations(message);
+        assertEquals(3, resultFutureResult.size());
+        assertEquals(message, resultFutureResult.get(0));
+        assertEquals(message+"_de", resultFutureResult.get(1));
+        assertEquals(message+"_fr", resultFutureResult.get(2));
+    }
+    
     public void test4() throws Exception
     {
         AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy( connector );
