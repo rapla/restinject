@@ -29,6 +29,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.JavaFileObject;
@@ -409,11 +410,24 @@ public class GwtProxyCreator implements SerializerClasses
             w.println(reqData + ".append(']');");
             reqDataStr = reqData + ".toString()";
         }
-
-        String resultClass = futureResultClassName;
-        if (parameterizedResult != null)
+        String resultClass;
+        final boolean isReturnTypeFutureResult = processingEnvironment.getTypeUtils().isAssignable(resultType, processingEnvironment.getElementUtils().getTypeElement(FutureResult).asType());
+        final boolean isVoidReturnType = "void".equals(method.getReturnType().toString());
+        if(isReturnTypeFutureResult)
         {
-            resultClass += "<" + parameterizedResult.toString() + ">";
+            resultClass = futureResultClassName;
+            if (parameterizedResult != null)
+            {
+                resultClass += "<" + parameterizedResult.toString() + ">";
+            }
+        }
+        else
+        {
+            resultClass = futureResultClassName;
+            if(!SerializerCreator.isPrimitive(resultType) && !isVoidReturnType)
+            {
+                resultClass += "<" + resultType.toString() + ">";
+            }
         }
         w.println(resultClass + " result = new " + resultClass + "();");
         w.print("doInvoke(");
@@ -433,11 +447,11 @@ public class GwtProxyCreator implements SerializerClasses
         w.print(", result");
 
         w.println(");");
-        if("void".equals(method.getReturnType().toString()))
+        if(isVoidReturnType)
         {
             w.println("return;");
         }
-        else if (method.getReturnType().toString().startsWith(org.rapla.jsonrpc.common.FutureResult.class.getCanonicalName()))
+        else if (isReturnTypeFutureResult)
         {
             w.println("return result;");
         }
@@ -445,7 +459,7 @@ public class GwtProxyCreator implements SerializerClasses
         {
             w.println("try {");
             w.indent();
-            w.println("return (" +method.getReturnType().toString() +") result.get();");
+            w.print("return (" +method.getReturnType().toString() +") result.get();");
             w.outdent();
             w.println("} catch (java.lang.Exception e) {");
             w.indent();
