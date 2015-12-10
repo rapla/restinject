@@ -324,6 +324,7 @@ public class JavaClientProxyCreator implements SerializerClasses
             {
                 needsComma = true;
             }
+            w.print("final ");
             //final TypeElement paramType = (TypeElement) processingEnvironment.getTypeUtils().asElement(param.asType());
             w.print(param.asType().toString());
             w.print(" ");
