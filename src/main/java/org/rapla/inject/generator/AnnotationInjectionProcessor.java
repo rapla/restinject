@@ -69,7 +69,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         }
         try
         {
-            processGwt(roundEnv);
+            process(roundEnv);
         }
         catch (Exception ioe)
         {
@@ -81,7 +81,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return true;
     }
 
-    private boolean processGwt( RoundEnvironment roundEnv) throws Exception
+    private boolean process(RoundEnvironment roundEnv) throws Exception
     {
         File f = getInterfaceList(processingEnv.getFiler());
         File folder = f.getParentFile();
@@ -95,7 +95,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             {
                 continue;
             }
-
             GwtProxyCreator proxyCreator = new GwtProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
             String proxyClassName = proxyCreator.create(proxyLogger);
 
@@ -107,6 +106,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             final File serviceFile = getFile(f.getParentFile(), "services/" + qualifiedName);
             appendToFile(serviceFile, proxyClassName);
             appendToFile(serviceFile, swingproxyClassName );
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Proxies " + proxyClassName + ", " + swingproxyClassName);
             if (interfaceElement.getAnnotation(Generated.class) == null)
             {
                 found = true;
@@ -136,6 +136,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             final String qualifiedName = interfaceElement.getQualifiedName().toString();
             appendToServiceList(f, qualifiedName);
             addServiceFile(interfaceElement, implementationElement, folder);
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding DefaultImplemenation " + implementationElement);
             if (implementationElement.getAnnotation(Generated.class) == null)
             {
                 found = true;
@@ -152,6 +153,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 final String interfaceQualifiedName = interfaceElement.getQualifiedName().toString();
                 appendToServiceList(f, interfaceQualifiedName);
                 addServiceFile(interfaceElement, implementationElement, folder);
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding DefaultImplemenation " + implementationElement);
                 if (implementationElement.getAnnotation(Generated.class) == null)
                 {
                     found = true;
@@ -177,6 +179,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             final String interfaceQualifiedName = extensionPoint.getQualifiedName().toString();
             appendToServiceList(f, interfaceQualifiedName);
             addServiceFile(extensionPoint, typeElement, folder);
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding extension " + typeElement);
             if (typeElement.getAnnotation(Generated.class) == null)
             {
                 found = true;
@@ -190,8 +193,11 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             final Extension[] value = annotation.value();
             for (Extension extension : value)
             {
-                TypeElement provider = getProvides(extension);
-                addServiceFile(provider, typeElement, folder);
+                TypeElement extensionPoint = getProvides(extension);
+                final String interfaceQualifiedName = extensionPoint.getQualifiedName().toString();
+                appendToServiceList(f, interfaceQualifiedName);
+                addServiceFile(extensionPoint, typeElement, folder);
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding extension " + typeElement);
             }
             if (typeElement.getAnnotation(Generated.class) == null)
             {

@@ -17,6 +17,7 @@ package org.rapla.jsonrpc.client.gwt.internal.impl.ser;
 import com.google.gwt.core.client.JavaScriptObject;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 import javax.inject.Provider;
 
@@ -68,7 +69,7 @@ public class SetSerializer<T> extends JsonSerializer<java.util.Set<T>>
 
     final JavaScriptObject jso = (JavaScriptObject) o;
     final int n = size(jso);
-    final HashSet<T> r = new HashSet<T>(n);
+    final LinkedHashSet<T> r = new LinkedHashSet<T>(n);
     for (int i = 0; i < n; i++) {
       r.add(serializer.get().fromJson(get(jso, i)));
     }

@@ -14,12 +14,8 @@
 
 package org.rapla.jsonrpc.generator.internal;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import org.rapla.inject.generator.internal.SourceWriter;
+import org.rapla.jsonrpc.common.RemoteJsonMethod;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -29,17 +25,16 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.JavaFileObject;
 import javax.ws.rs.Produces;
-
-import org.rapla.jsonrpc.common.RemoteJsonMethod;
-
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.client.JavaScriptObject;
-import org.rapla.inject.generator.internal.SourceWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class GwtProxyCreator implements SerializerClasses
 {
@@ -204,10 +199,10 @@ public class GwtProxyCreator implements SerializerClasses
         pw.println("import " + FutureResult + ";");
         pw.println("import " + AbstractJsonProxy + ";");
         pw.println("import " + JsonSerializer + ";");
-        pw.println("import " + JavaScriptObject.class.getCanonicalName() + ";");
+        pw.println("import com.google.gwt.core.client.JavaScriptObject;");
         pw.println("import " + ResultDeserializer + ";");
         pw.println("import " + FutureResultImpl + ";");
-        pw.println("import " + GWT.class.getCanonicalName() + ";");
+        pw.println("import com.google.gwt.core.client.GWT;");
         pw.println();
         TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
         String interfaceName =  erasedType.getQualifiedName().toString();

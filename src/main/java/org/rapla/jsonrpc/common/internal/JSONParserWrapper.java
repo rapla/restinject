@@ -47,6 +47,11 @@ public class JSONParserWrapper {
                 return new LinkedHashMap();
             }
         });
+		  instanceCreators.put(Set.class, new InstanceCreator<Set>() {
+			  public Set createInstance(Type type) {
+				  return new LinkedHashSet();
+			  }
+		  });
 		ConstructorConstructor constructorConstructor = new ConstructorConstructor(instanceCreators);
 	    FieldNamingStrategy fieldNamingPolicy = FieldNamingPolicy.IDENTITY;
 	    Excluder excluder = Excluder.DEFAULT;
