@@ -223,8 +223,6 @@ public class JsonServlet
                     final String annotatedPatchMethod = getAnnotadedMethod(updatetMethods, request);
                     {
                         request.setAttribute("patchMethod", annotatedPatchMethod);
-                        final String pathparm = myMethods.get(annotatedPatchMethod).getPathparm();
-                        request.setAttribute(pathparm, pathparamValue);
                     }
                 }
                 else if (method.equals("PUT") && getAnnotadedMethod(updatetMethods, request) != null)
