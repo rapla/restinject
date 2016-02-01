@@ -67,6 +67,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -116,7 +118,7 @@ public class JsonServlet
 
     private static Map<String, String> getMethodNameWithAnnotations(Class<?> clazz, Class<? extends Annotation>... annotations)
     {
-        final HashMap<String, String> result = new HashMap<>();
+        final HashMap<String, String> result = new LinkedHashMap<String,String>();
         final Method[] methods = clazz.getMethods();
         for (Method method : methods)
         {
@@ -127,7 +129,10 @@ public class JsonServlet
                 annotationsWithProduces[annotations.length] = Produces.class;
                 if (containsOnlyThisAnnotatoins(method, annotations))
                 {
-                    result.put(ALL, method.getName());
+                    if ( !result.containsKey(ALL))
+                    {
+                        result.put(ALL, method.getName());
+                    }
                 }
                 else if (containsOnlyThisAnnotatoins(method, annotationsWithProduces))
                 {
@@ -506,7 +511,14 @@ public class JsonServlet
         call.method = lookupMethod(methodName);
         if (call.method == null)
         {
-            throw new NoSuchRemoteMethodException(getInterfaceClass() + "." + methodName);
+            if ( methodName == null)
+            {
+                throw new NoSuchRemoteMethodException("no matching method found in " + getInterfaceClass() + " for " + req.getMethod() +" request " + req.getRequestURI()  + " Accepts " + req.getHeader("Accept"));
+            }
+            else
+            {
+                throw new NoSuchRemoteMethodException(getInterfaceClass() + "." + methodName);
+            }
         }
         final Type[] paramTypes = call.method.getParamTypes();
         String[] paramNames = call.method.getParamNames();
@@ -958,7 +970,7 @@ public class JsonServlet
     {
         while (c != null)
         {
-            if (c.getAnnotation(RemoteJsonMethod.class) != null)
+            if (c.getAnnotation(RemoteJsonMethod.class) != null || c.getAnnotation(Path.class) != null)
             {
                 return c;
             }
@@ -1012,7 +1024,20 @@ public class JsonServlet
                     }
                 }
             }
-            return methods.get(ALL);
+            // if no produces method matches, try to find a method without produces annotations
+            final String method = methods.get(ALL);
+            if ( method != null)
+            {
+                return method;
+            }
+            // if still no method is found
+            // return the first found for the method type (GET/PUT/POT)
+            final Iterator<String> iterator = methods.values().iterator();
+            if ( iterator.hasNext())
+            {
+                return iterator.next();
+            }
+
         }
         return null;
     }
