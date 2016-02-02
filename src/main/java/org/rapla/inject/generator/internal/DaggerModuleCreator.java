@@ -1131,7 +1131,7 @@ public class DaggerModuleCreator
         final String methodSuffix;
         if (isMap)
         {
-            moduleWriter.println("@Provides(type=Type.MAP) @javax.inject.Singleton");
+            moduleWriter.println("@Provides(type=Type.MAP)");// @javax.inject.Singleton");
             moduleWriter.println("@" + DaggerMapKey.class.getSimpleName() + "(\"" + extension.id() + "\")");
             final String id = extension.id().replaceAll("\\.", "_");
             methodSuffix = id + "_Map";
@@ -1139,7 +1139,7 @@ public class DaggerModuleCreator
         else
         {
             moduleWriter.println();
-            moduleWriter.println("@Provides(type=Type.SET) @javax.inject.Singleton");
+            moduleWriter.println("@Provides(type=Type.SET)");//@javax.inject.Singleton");
             final String id = extension.id().replaceAll("\\.", "_");
             methodSuffix = id + "_Set";
         }
