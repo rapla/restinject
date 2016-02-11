@@ -35,7 +35,22 @@ public class TestServerImpl implements  TestServer
         String path = null;
         String appendix = null;
         String requestURI =request.getPathInfo();
-        String subPath = requestURI.substring("/rapla/".length());
+        String subPath;
+        if ( !requestURI.startsWith("/rapla/"))
+        {
+            if ( requestURI.startsWith("/"))
+            {
+                subPath = requestURI.substring(1);
+            }
+            else
+            {
+                subPath = requestURI;
+            }
+        }
+        else
+        {
+            subPath= requestURI.substring("/rapla/".length());
+        }
         for (String key:webserviceMap.keySet())
         {
             if (subPath.startsWith(key))
@@ -49,7 +64,7 @@ public class TestServerImpl implements  TestServer
         }
         if ( path == null)
         {
-            throw new IllegalArgumentException("No webservice found for " + path);
+            throw new IllegalArgumentException("No webservice found for " + path + " full request uri " + requestURI + " subpath " + subPath);
         }
         final WebserviceCreator webserviceCreator = webserviceMap.get(path);
         Class serviceClass = webserviceCreator.getServiceClass();

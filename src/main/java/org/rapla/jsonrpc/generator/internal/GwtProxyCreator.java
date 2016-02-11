@@ -27,6 +27,8 @@ import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.JavaFileObject;
 import javax.ws.rs.Produces;
 import java.io.IOException;
@@ -406,7 +408,11 @@ public class GwtProxyCreator implements SerializerClasses
             reqDataStr = reqData + ".toString()";
         }
         String resultClass;
-        final boolean isReturnTypeFutureResult = processingEnvironment.getTypeUtils().isAssignable(resultType, processingEnvironment.getElementUtils().getTypeElement(FutureResult).asType());
+        final Types typeUtils = processingEnvironment.getTypeUtils();
+        final Elements elementUtils = processingEnvironment.getElementUtils();
+        final TypeElement typeElement = elementUtils.getTypeElement(FutureResult);
+        final TypeMirror t2 = typeUtils.erasure(typeElement.asType());
+        final boolean isReturnTypeFutureResult = typeUtils.isAssignable(resultType, t2);
         final boolean isVoidReturnType = "void".equals(method.getReturnType().toString());
         if(isReturnTypeFutureResult)
         {
