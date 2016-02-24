@@ -27,6 +27,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.MirroredTypeException;
@@ -670,53 +671,62 @@ public class DaggerModuleCreator
         final List<String> implementingClasses = AnnotationInjectionProcessor
                 .readLines(AnnotationInjectionProcessor.getFile(folder, "services/" + interfaceName));
         final TypeElement interfaceClassTypeElement = processingEnvironment.getElementUtils().getTypeElement(interfaceName);
+
         for (String implementingClass : implementingClasses)
         {
             final TypeElement implementingClassTypeElement = processingEnvironment.getElementUtils().getTypeElement(implementingClass);
-            if (implementingClass.endsWith(GwtProxyCreator.PROXY_SUFFIX))
+            final Path path = implementingClassTypeElement != null ? implementingClassTypeElement.getAnnotation(Path.class) : null;
+            if ( interfaceClassTypeElement == null && path == null)
             {
-                generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, Scopes.Gwt);
+                processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR, "No interface class found for " + interfaceName, implementingClassTypeElement);
+                break;
             }
-            else if (implementingClass.endsWith(JavaClientProxyCreator.PROXY_SUFFIX))
+            else
             {
-                generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, Scopes.JavaClient);
-            }
-            else if (implementingClassTypeElement != null)
-            {
-                final DefaultImplementationRepeatable defaultImplementationRepeatable = implementingClassTypeElement
-                        .getAnnotation(DefaultImplementationRepeatable.class);
-                if (defaultImplementationRepeatable != null)
+                if (implementingClass.endsWith(GwtProxyCreator.PROXY_SUFFIX))
                 {
-                    final DefaultImplementation[] defaultImplementations = defaultImplementationRepeatable.value();
-                    for (DefaultImplementation defaultImplementation : defaultImplementations)
+                    generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, Scopes.Gwt);
+                }
+                else if (implementingClass.endsWith(JavaClientProxyCreator.PROXY_SUFFIX))
+                {
+                    generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, Scopes.JavaClient);
+                }
+                else if (implementingClassTypeElement != null)
+                {
+                    final DefaultImplementationRepeatable defaultImplementationRepeatable = implementingClassTypeElement
+                            .getAnnotation(DefaultImplementationRepeatable.class);
+                    if (defaultImplementationRepeatable != null)
+                    {
+                        final DefaultImplementation[] defaultImplementations = defaultImplementationRepeatable.value();
+                        for (DefaultImplementation defaultImplementation : defaultImplementations)
+                        {
+                            final BitSet exported = generateDefaultImplementation(artifactName, implementingClassTypeElement, interfaceClassTypeElement,
+                                    defaultImplementation);
+                            exportedInterface.or(exported);
+                        }
+                    }
+                    final DefaultImplementation defaultImplementation = implementingClassTypeElement.getAnnotation(DefaultImplementation.class);
+                    if (defaultImplementation != null)
                     {
                         final BitSet exported = generateDefaultImplementation(artifactName, implementingClassTypeElement, interfaceClassTypeElement,
                                 defaultImplementation);
                         exportedInterface.or(exported);
                     }
-                }
-                final DefaultImplementation defaultImplementation = implementingClassTypeElement.getAnnotation(DefaultImplementation.class);
-                if (defaultImplementation != null)
-                {
-                    final BitSet exported = generateDefaultImplementation(artifactName, implementingClassTypeElement, interfaceClassTypeElement,
-                            defaultImplementation);
-                    exportedInterface.or(exported);
-                }
-                final ExtensionRepeatable extensionRepeatable = implementingClassTypeElement.getAnnotation(ExtensionRepeatable.class);
-                if (extensionRepeatable != null)
-                {
-                    final Extension[] extensions = extensionRepeatable.value();
-                    for (Extension extension : extensions)
+                    final ExtensionRepeatable extensionRepeatable = implementingClassTypeElement.getAnnotation(ExtensionRepeatable.class);
+                    if (extensionRepeatable != null)
+                    {
+                        final Extension[] extensions = extensionRepeatable.value();
+                        for (Extension extension : extensions)
+                        {
+                            generateExtension(implementingClassTypeElement, interfaceClassTypeElement, extension);
+                        }
+                    }
+                    final Extension extension = implementingClassTypeElement.getAnnotation(Extension.class);
+                    if (extension != null)
                     {
                         generateExtension(implementingClassTypeElement, interfaceClassTypeElement, extension);
                     }
                 }
-                final Extension extension = implementingClassTypeElement.getAnnotation(Extension.class);
-                if (extension != null)
-                {
-                    generateExtension(implementingClassTypeElement, interfaceClassTypeElement, extension);
-                }
-                final Path path = implementingClassTypeElement.getAnnotation(Path.class);
                 if (path != null)
                 {
                     TypeElement interfaceTypeElement = implementingClassTypeElement;
@@ -800,8 +810,9 @@ public class DaggerModuleCreator
             final SourceWriter sourceWriter = getWriter(sourceWriterIndex, generated);
             sourceWriter.println();
             sourceWriter.println("@Provides");
+            final String s = toJavaName(interfaceClassTypeElement);
             sourceWriter.println(
-                    "public " + interfaceName + " provide_" + toJavaName(interfaceClassTypeElement) + "_" + implementingClass.replaceAll("\\.", "_") + "("
+                    "public " + interfaceName + " provide_" + s + "_" + implementingClass.replaceAll("\\.", "_") + "("
                             + implementingClass + " result) {");
             sourceWriter.indent();
             sourceWriter.println("return result;");
@@ -812,7 +823,8 @@ public class DaggerModuleCreator
 
     private String toJavaName(TypeElement className)
     {
-        final String s = className.getQualifiedName().toString().replaceAll("\\.", "_");
+        final Name qualifiedName = className.getQualifiedName();
+        final String s = qualifiedName.toString().replaceAll("\\.", "_");
         return s;
     }
 

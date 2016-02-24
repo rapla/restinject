@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.rapla</groupId>
 	<artifactId>restinject</artifactId>
-	<version>1.0-RC3</version>
+	<version>1.0-SNAPSHOT</version>
 	<url>https://github.com/rapla/restinject</url>
 	<description>Provides abstraction for dependency injection JSR 330.  Also supports json rest services that work on java and gwt clients. The rpc part was orignally from https://gerrit.googlesource.com/gwtjsonrpc/</description>
 	<name>restinject</name>
