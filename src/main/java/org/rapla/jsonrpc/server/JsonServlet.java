@@ -26,6 +26,8 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.SystemUtils;
+import org.rapla.jsonrpc.client.gwt.internal.impl.JsonCall;
 import org.rapla.jsonrpc.common.FutureResult;
 import org.rapla.jsonrpc.common.RemoteJsonMethod;
 import org.rapla.jsonrpc.common.internal.JSONParserWrapper;
@@ -100,6 +102,7 @@ public class JsonServlet
     private final Map<String, String> createMethods;
     private final Map<String, String> listMethods;
     private static final String ALL = "ALL";
+    final protected GsonBuilder gsonBuilder;
 
     public JsonServlet(final Class class1) throws NoPublicServiceMethodsException
     {
@@ -114,6 +117,68 @@ public class JsonServlet
         updatetMethods = getMethodNameWithAnnotations(class1, PUT.class);
         createMethods = getMethodNameWithAnnotations(class1, POST.class);
         listMethods = getMethodNameWithAnnotations(class1, GET.class);
+        gsonBuilder = createGsonBuilder();
+        gsonBuilder.registerTypeAdapter(ActiveCall.class, new JsonSerializer<ActiveCall>()
+        {
+            @Override public JsonElement serialize(final ActiveCall src, final Type typeOfSrc, final JsonSerializationContext context)
+            {
+                if (src.externalFailure != null)
+                {
+                    final String msg;
+                    if (src.method != null)
+                    {
+                        msg = "Error  in " + src.method.getName();
+                    }
+                    else
+                    {
+                        msg = "Error";
+                    }
+                    error(msg, src.externalFailure);
+                }
+
+                Throwable failure = src.externalFailure != null ? src.externalFailure : src.internalFailure;
+                Object result = src.result;
+                if (result instanceof FutureResult)
+                {
+                    try
+                    {
+                        result = ((FutureResult) result).get();
+                    }
+                    catch (Exception e)
+                    {
+                        failure = e;
+                    }
+                }
+
+                final JsonObject r = new JsonObject();
+                if (src.versionName == null || src.versionValue == null)
+                {
+                    r.add("jsonrpc", new JsonPrimitive("2.0"));
+                }
+                else
+                {
+                    r.add(src.versionName, src.versionValue);
+                }
+                if (src.id != null)
+                {
+                    r.add("id", src.id);
+                }
+                if (failure != null)
+                {
+                    final int code = to2_0ErrorCode(src);
+                    JsonElement params = getParams(failure);
+                    final JsonObject error = getError(src.versionName, code, failure, params, gsonBuilder);
+                    r.add("error", error);
+                }
+                else
+                {
+                    r.add("result", context.serialize(result));
+                }
+                return r;
+            }
+
+        });
+
     }
 
     private static Map<String, String> getMethodNameWithAnnotations(Class<?> clazz, Class<? extends Annotation>... annotations)
@@ -176,7 +241,8 @@ public class JsonServlet
     /** Create a GsonBuilder to parse a request or return a response. */
     protected GsonBuilder createGsonBuilder()
     {
-        return JSONParserWrapper.defaultGsonBuilder(getAdditionalClasses());
+        final GsonBuilder gsonBuilder = JSONParserWrapper.defaultGsonBuilder(getAdditionalClasses());
+            return gsonBuilder;
     }
 
     /**
@@ -204,6 +270,12 @@ public class JsonServlet
     public void service(final HttpServletRequest request, final HttpServletResponse resp, ServletContext servletContext, final Object service, String subpath)
             throws IOException
     {
+        final boolean debugEnabled = isDebugEnabled();
+        long start = 0;
+        if ( debugEnabled)
+        {
+            start = System.currentTimeMillis();
+        }
         {
             //int subpath = pathInfo != null ? pathInfo.indexOf("/", 1) : 0;
             String method = request.getMethod();
@@ -271,7 +343,7 @@ public class JsonServlet
             call = new ActiveCall(request, resp);
             try
             {
-                final Gson gs = createGsonBuilder().create();
+                final Gson gs = gsonBuilder.create();
                 JsonElement unpatchedObject = gs.toJsonTree(result);
                 String patchBody = readBody(call);
                 JsonElement patchElement = new JsonParser().parse(patchBody);
@@ -295,13 +367,16 @@ public class JsonServlet
         if (!isHtmlTextRequest(call))
         {
             final String out = formatResult(call);
-            if (class1 != null && call.method != null)
-            {
-                String childLoggerName = class1.getName() + "." + call.method.getName() + ".result";
-                debug(childLoggerName, out);
-
-            }
             writeResponse(servletContext, call, out);
+            if ( debugEnabled)
+            {
+                if (class1 != null && call.method != null)
+                {
+                    final String s = class1.getName() + "." + call.method.getName();
+                    debug(s + ".result", out);
+                    debug(s + ".performance", "Call took " + (System.currentTimeMillis() - start) + " millis ");
+                }
+            }
         }
     }
 
@@ -331,6 +406,12 @@ public class JsonServlet
         RPCServletUtils.writeResponse(servletContext, call.httpResponse, out, out.length() > 256 && RPCServletUtils.acceptsGzipEncoding(call.httpRequest));
     }
 
+    protected boolean isDebugEnabled()
+    {
+        return false;
+    }
+
+    /** override this method and isDebugEnabled for debuging info */
     protected void debug(String childLoggerName, String out)
     {
         System.out.println(childLoggerName + " " + out);
@@ -437,6 +518,8 @@ public class JsonServlet
         }
     }
 
+
+
     private void parseGetRequest(final ActiveCall call)
     {
         final HttpServletRequest req = call.httpRequest;
@@ -472,7 +555,7 @@ public class JsonServlet
 
             try
             {
-                final GsonBuilder gb = createGsonBuilder();
+                GsonBuilder gb = createGsonBuilder();
                 gb.registerTypeAdapter(ActiveCall.class, new CallDeserializer(call, this));
                 gb.create().fromJson(d, ActiveCall.class);
             }
@@ -495,7 +578,7 @@ public class JsonServlet
 
     public void mapRequestToCall(final ActiveCall call, final HttpServletRequest req, String body)
     {
-        final Gson gs = createGsonBuilder().create();
+        final Gson gs = gsonBuilder.create();
         String methodName = (String) req.getAttribute(JSON_METHOD);
         if (methodName != null)
         {
@@ -713,6 +796,12 @@ public class JsonServlet
 
         try
         {
+            long start = 0;
+            final boolean debugEnabled = isDebugEnabled();
+            if (debugEnabled)
+            {
+                start = System.currentTimeMillis();
+            }
             final byte[] body = new byte[len];
             int off = 0;
             while (off < len)
@@ -724,6 +813,12 @@ public class JsonServlet
                 }
                 off += n;
             }
+            if ( debugEnabled )
+            {
+                long millis= System.currentTimeMillis() - start;
+                debug("readbody", "reading " + len + " bytes from request took " + millis);
+                start = millis + start;
+            }
 
             final CharsetDecoder d = Charset.forName(JsonConstants.JSON_ENC).newDecoder();
             d.onMalformedInput(CodingErrorAction.REPORT);
@@ -732,6 +827,11 @@ public class JsonServlet
             {
                 ByteBuffer wrap = ByteBuffer.wrap(body);
                 CharBuffer decode = d.decode(wrap);
+                if ( debugEnabled )
+                {
+                    long millis= System.currentTimeMillis() - start;
+                    debug("decode", "decoding bytes took " + millis);
+                }
                 return decode.toString();
             }
             catch (CharacterCodingException e)
@@ -783,71 +883,8 @@ public class JsonServlet
 
     private String formatResult(final ActiveCall call) throws UnsupportedEncodingException, IOException
     {
-        final GsonBuilder gb = createGsonBuilder();
-
-        gb.registerTypeAdapter(call.getClass(), new JsonSerializer<ActiveCall>()
-        {
-            @Override public JsonElement serialize(final ActiveCall src, final Type typeOfSrc, final JsonSerializationContext context)
-            {
-                if (call.externalFailure != null)
-                {
-                    final String msg;
-                    if (call.method != null)
-                    {
-                        msg = "Error  in " + call.method.getName();
-                    }
-                    else
-                    {
-                        msg = "Error";
-                    }
-                    error(msg, call.externalFailure);
-                }
-
-                Throwable failure = src.externalFailure != null ? src.externalFailure : src.internalFailure;
-                Object result = src.result;
-                if (result instanceof FutureResult)
-                {
-                    try
-                    {
-                        result = ((FutureResult) result).get();
-                    }
-                    catch (Exception e)
-                    {
-                        failure = e;
-                    }
-                }
-
-                final JsonObject r = new JsonObject();
-                if (src.versionName == null || src.versionValue == null)
-                {
-                    r.add("jsonrpc", new JsonPrimitive("2.0"));
-                }
-                else
-                {
-                    r.add(src.versionName, src.versionValue);
-                }
-                if (src.id != null)
-                {
-                    r.add("id", src.id);
-                }
-                if (failure != null)
-                {
-                    final int code = to2_0ErrorCode(src);
-                    JsonElement params = getParams(failure);
-                    final JsonObject error = getError(src.versionName, code, failure, params, gb);
-                    r.add("error", error);
-                }
-                else
-                {
-                    r.add("result", context.serialize(result));
-                }
-                return r;
-            }
-
-        });
-        Gson create = gb.create();
+        Gson create = gsonBuilder.create();
         final StringWriter o = new StringWriter();
-
         create.toJson(call, o);
         o.close();
         String string = o.toString();

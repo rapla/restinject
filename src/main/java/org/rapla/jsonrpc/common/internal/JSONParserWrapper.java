@@ -60,7 +60,7 @@ public class JSONParserWrapper {
 	    gb.registerTypeAdapterFactory(new MyAdaptorFactory(reflectiveTypeAdapterFactory,nonPrimitiveClasses));
 	    gb.registerTypeAdapter(Date.class, new GmtDateTypeAdapter());
 	   
-	    GsonBuilder configured = gb.disableHtmlEscaping().setPrettyPrinting();
+	    GsonBuilder configured = gb.disableHtmlEscaping();
 	    return configured;
 	  }
 	  
