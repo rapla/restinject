@@ -270,12 +270,7 @@ public class JsonServlet
     public void service(final HttpServletRequest request, final HttpServletResponse resp, ServletContext servletContext, final Object service, String subpath)
             throws IOException
     {
-        final boolean debugEnabled = isDebugEnabled();
-        long start = 0;
-        if ( debugEnabled)
-        {
-            start = System.currentTimeMillis();
-        }
+        long start = System.currentTimeMillis();
         {
             //int subpath = pathInfo != null ? pathInfo.indexOf("/", 1) : 0;
             String method = request.getMethod();
@@ -368,13 +363,18 @@ public class JsonServlet
         {
             final String out = formatResult(call);
             writeResponse(servletContext, call, out);
-            if ( debugEnabled)
             {
                 if (class1 != null && call.method != null)
                 {
                     final String s = class1.getName() + "." + call.method.getName();
-                    debug(s + ".result", out);
-                    debug(s + ".performance", "Call took " + (System.currentTimeMillis() - start) + " millis ");
+                    if ( isDebugEnabled(s + ".result"))
+                    {
+                        debug(s + ".result", out);
+                    }
+                    if ( isDebugEnabled(s + ".performance"))
+                    {
+                        debug(s + ".performance", "Call took " + (System.currentTimeMillis() - start) + " millis ");
+                    }
                 }
             }
         }
@@ -406,7 +406,7 @@ public class JsonServlet
         RPCServletUtils.writeResponse(servletContext, call.httpResponse, out, out.length() > 256 && RPCServletUtils.acceptsGzipEncoding(call.httpRequest));
     }
 
-    protected boolean isDebugEnabled()
+    protected boolean isDebugEnabled(String childLogger)
     {
         return false;
     }
@@ -797,7 +797,8 @@ public class JsonServlet
         try
         {
             long start = 0;
-            final boolean debugEnabled = isDebugEnabled();
+            final String childLogger = "readbody";
+            final boolean debugEnabled = isDebugEnabled(childLogger);
             if (debugEnabled)
             {
                 start = System.currentTimeMillis();
@@ -816,7 +817,7 @@ public class JsonServlet
             if ( debugEnabled )
             {
                 long millis= System.currentTimeMillis() - start;
-                debug("readbody", "reading " + len + " bytes from request took " + millis);
+                debug(childLogger, "reading " + len + " bytes from request took " + millis);
                 start = millis + start;
             }
 
@@ -871,7 +872,10 @@ public class JsonServlet
                 mapper.fromJson(postBody, ActiveCall.class);
             }
             String childLoggerName = class1.getName() + "." + call.method.getName() + ".arguments";
-            debug(childLoggerName, postBody);
+            if (isDebugEnabled( childLoggerName))
+            {
+                debug(childLoggerName, postBody);
+            }
         }
         catch (JsonParseException err)
         {

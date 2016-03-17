@@ -56,18 +56,19 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         BasicRaplaHTTPConnector.serviceEntryPointFactory = serviceEntryPointFactory;
     }
 
-    CustomConnector customConnector;
+    final private CustomConnector customConnector;
     protected Executor scheduler;
 
     protected String getMockAccessToken()
     {
         return customConnector.getAccessToken();
     }
-
+    final GsonBuilder gsonBuilder;
     public BasicRaplaHTTPConnector(CustomConnector customConnector)
     {
         this.scheduler = customConnector.getScheduler();
         this.customConnector = customConnector;
+        gsonBuilder = JSONParserWrapper.defaultGsonBuilder(customConnector.getNonPrimitiveClasses()).disableHtmlEscaping();
     }
 
     public abstract class MyFutureResult<T> implements FutureResult<T>
@@ -99,9 +100,8 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
 
     private JsonArray serializeArguments(Class<?>[] parameterTypes, Object[] args)
     {
-        final GsonBuilder gb = JSONParserWrapper.defaultGsonBuilder(customConnector.getNonPrimitiveClasses()).disableHtmlEscaping();
         JsonArray params = new JsonArray();
-        Gson serializer = gb.disableHtmlEscaping().create();
+        Gson serializer = gsonBuilder.create();
         for (int i = 0; i < parameterTypes.length; i++)
         {
             Class<?> type = parameterTypes[i];
@@ -142,7 +142,7 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
 
     private Gson createJsonMapper()
     {
-        Gson gson = JSONParserWrapper.defaultGsonBuilder(customConnector.getNonPrimitiveClasses()).disableHtmlEscaping().create();
+        Gson gson = gsonBuilder.create();
         return gson;
     }
 

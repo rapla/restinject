@@ -33,7 +33,7 @@ public class HTTPJsonConnector extends HTTPConnector
     }
 
     protected JsonObject sendCall(String requestMethod, URL methodURL, JsonElement jsonObject, String authenticationToken) throws  IOException,JsonParseException   {
-        Gson gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
+        Gson gson = new GsonBuilder().disableHtmlEscaping().create();
         String body = gson.toJson( jsonObject);
         String resultString = sendCallWithString(requestMethod, methodURL, body, authenticationToken);
         JsonObject resultMessage = parseJson(resultString);
