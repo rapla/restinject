@@ -14,8 +14,12 @@
 
 package org.rapla.jsonrpc.generator.internal;
 
-import org.rapla.inject.generator.internal.SourceWriter;
-import org.rapla.jsonrpc.common.RemoteJsonMethod;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -30,13 +34,19 @@ import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.JavaFileObject;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import javax.ws.rs.QueryParam;
+
+import org.rapla.inject.generator.internal.SourceWriter;
+
+import com.google.gwt.http.client.RequestBuilder;
 
 public class GwtProxyCreator implements SerializerClasses
 {
@@ -117,7 +127,7 @@ public class GwtProxyCreator implements SerializerClasses
             }
 
             final TreeLogger branch = logger;//.branch(TreeLogger.DEBUG, m.getName() + ", result " + resultType.getQualifiedSourceName());
-            if (returnType.toString().startsWith(FutureResult) && SerializerCreator.isParameterized( returnType))
+            if (returnType.toString().startsWith(FutureResult) && SerializerCreator.isParameterized(returnType))
             {
                 final TypeMirror typeMirror = getParameters(returnType).get(0);
                 serializerCreator.checkCanSerialize(branch, typeMirror);
@@ -154,11 +164,11 @@ public class GwtProxyCreator implements SerializerClasses
     {
         final List<? extends Element> allMembers = processingEnvironment.getElementUtils().getAllMembers(svcInf);
         List<ExecutableElement> result = new ArrayList<ExecutableElement>();
-        for (ExecutableElement r: ElementFilter.methodsIn(allMembers))
+        for (ExecutableElement r : ElementFilter.methodsIn(allMembers))
         {
-            if (!canIgnore( r))
+            if (!canIgnore(r))
             {
-                result.add( r );
+                result.add(r);
             }
         }
         return result;
@@ -190,7 +200,7 @@ public class GwtProxyCreator implements SerializerClasses
             //String pathname = pkgName.replaceAll("\\.", "/") + "/" + className;
             //File file = new File(pathname);
             String name = svcInf.getQualifiedName() + PROXY_SUFFIX;
-            JavaFileObject sourceFile = processingEnvironment.getFiler().createSourceFile(name,svcInf);
+            JavaFileObject sourceFile = processingEnvironment.getFiler().createSourceFile(name, svcInf);
             pw = new SourceWriter(sourceFile.openWriter());
         }
         catch (IOException e)
@@ -205,9 +215,10 @@ public class GwtProxyCreator implements SerializerClasses
         pw.println("import " + ResultDeserializer + ";");
         pw.println("import " + FutureResultImpl + ";");
         pw.println("import com.google.gwt.core.client.GWT;");
+        pw.println("import " + RequestBuilder.class.getCanonicalName() + ";");
         pw.println();
         TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
-        String interfaceName =  erasedType.getQualifiedName().toString();
+        String interfaceName = erasedType.getQualifiedName().toString();
         pw.println(getGeneratorString());
         //pw.println("@" + DefaultImplementation.class.getCanonicalName() + "(of=" + interfaceName + ".class, context=" + InjectionContext.class.getCanonicalName() + "." + InjectionContext.gwt + ")");
         pw.println("public class " + className + " extends " + AbstractJsonProxy_simple + " implements " + interfaceName);
@@ -218,14 +229,14 @@ public class GwtProxyCreator implements SerializerClasses
 
     private void generateProxyConstructor(@SuppressWarnings("unused") final TreeLogger logger, final SourceWriter w)
     {
-        final RemoteJsonMethod relPath = svcInf.getAnnotation(RemoteJsonMethod.class);
+        final Path relPath = svcInf.getAnnotation(Path.class);
         if (relPath != null)
         {
             w.println();
             w.println("@javax.inject.Inject");
             w.println("public " + getProxySimpleName() + "() {");
             w.indent();
-            String path = relPath.path();
+            String path = relPath.value();
             if (path == null || path.isEmpty())
             {
                 TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
@@ -239,22 +250,22 @@ public class GwtProxyCreator implements SerializerClasses
 
     private void generateProxyCallCreator(final TreeLogger logger, final SourceWriter w) throws UnableToCompleteException
     {
-        String callName = getJsonCallClassName(logger);
-        w.println();
-        w.println("@Override");
-        w.print("protected <T> ");
-        w.print(callName);
-        w.print("<T> newJsonCall(final AbstractJsonProxy proxy, ");
-        w.print("final String methodName, final String reqData, ");
-        w.println("final ResultDeserializer<T> ser) {");
-        w.indent();
-
-        w.print("return new ");
-        w.print(callName);
-        w.println("<T>(proxy, methodName, reqData, ser);");
-
-        w.outdent();
-        w.println("}");
+        //        String callName = getJsonCallClassName(logger);
+        //        w.println();
+        //        w.println("@Override");
+        //        w.print("protected <T> ");
+        //        w.print(callName);
+        //        w.print("<T> newJsonCall(final AbstractJsonProxy proxy, ");
+        //        w.print("final String methodName, final String reqData, ");
+        //        w.println("final ResultDeserializer<T> ser) {");
+        //        w.indent();
+        //
+        //        w.print("return new ");
+        //        w.print(callName);
+        //        w.println("<T>(proxy, methodName, reqData, ser);");
+        //
+        //        w.outdent();
+        //        w.println("}");
     }
 
     private String getJsonCallClassName(final TreeLogger logger) throws UnableToCompleteException
@@ -345,20 +356,72 @@ public class GwtProxyCreator implements SerializerClasses
 
         w.println(") {");
         w.indent();
+        w.println("final java.util.Map<String, String> additionalHeaders = new java.util.HashMap<String, String>();");
 
         final String reqDataStr;
+        final String subPath;
+        final Path annotation = method.getAnnotation(Path.class);
+        if(annotation!=null)
+        {
+            subPath = annotation.value();
+        }
+        else
+        {
+            subPath = "";
+        }
+        w.println("String subPath = \"" + subPath + "\";");
         if (params.isEmpty())
         {
             reqDataStr = "\"[]\"";
         }
         else
         {
+            boolean queryParamAdded=false;
             final String reqData = nameFactory.createName("reqData");
             w.println("final StringBuilder " + reqData + " = new StringBuilder();");
             needsComma = false;
             w.println(reqData + ".append('[');");
             for (int i = 0; i < params.size(); i++)
             {
+                final VariableElement param = params.get(i);
+                final String pName = param.getSimpleName().toString();
+                final TypeMirror paramType = param.asType();
+
+                final PathParam pathParamAnnotation = param.getAnnotation(PathParam.class);
+                if(pathParamAnnotation != null)
+                {
+                    final String value = pathParamAnnotation.value();
+                    final String expInPath = "{"+value+"}";
+                    final String convertedValue = convertParam(paramType, pName, serializerFields, i);
+                    w.println("subPath = subPath.replaceFirst(\"" + expInPath + "\", " + convertedValue + ");");
+                    continue;
+                }
+                final QueryParam queryParamAnnotation = param.getAnnotation(QueryParam.class);
+                if(queryParamAnnotation != null)
+                {
+                    if(queryParamAdded)
+                    {
+                        w.println("subPath +=\"&"+queryParamAnnotation.value()+"=\"+"+convertParam(paramType, pName, serializerFields, i)+";");
+                    }
+                    else
+                    {
+                        queryParamAdded = true;
+                        w.println("subPath +=\"?"+queryParamAnnotation.value()+"=\"+"+convertParam(paramType, pName, serializerFields, i)+";");
+                    }
+                    continue;
+                }
+                final HeaderParam headerParamAnnotation = param.getAnnotation(HeaderParam.class);
+                if(headerParamAnnotation != null)
+                {
+                    w.println("additionalHeaders.put(\""+headerParamAnnotation.value()+"\", "+convertParam(paramType, pName, serializerFields, i)+");");
+                    continue;
+                }
+                final FormParam formParamAnnotation = param.getAnnotation(FormParam.class);
+                if(formParamAnnotation != null)
+                {
+                    w.println("additionalHeaders.put(\""+formParamAnnotation.value()+"\", "+convertParam(paramType, pName, serializerFields, i)+");");
+                    continue;
+                }
                 if (needsComma)
                 {
                     w.println(reqData + ".append(\",\");");
@@ -368,10 +431,6 @@ public class GwtProxyCreator implements SerializerClasses
                     needsComma = true;
                 }
 
-                final VariableElement param = params.get(i);
-                String pName = param.getSimpleName().toString();
-
-                TypeMirror paramType = param.asType();
                 //                pType == JPrimitiveType.CHAR ||
                 if (SerializerCreator.isBoxedCharacter(paramType))
                 {
@@ -432,9 +491,27 @@ public class GwtProxyCreator implements SerializerClasses
         }
         w.println(resultClass + " result = new " + resultClass + "();");
         w.print("doInvoke(");
-        w.print("\"" + method.getSimpleName().toString() + "\"");
-        w.print(", " + reqDataStr);
-        w.print(", ");
+        final String methodType;
+        if(method.getAnnotation(POST.class) != null)
+        {
+            methodType = "RequestBuilder.POST";
+        }
+        else if(method.getAnnotation(PUT.class) != null)
+        {
+            methodType = "RequestBuilder.PUT";
+        }
+        else if(method.getAnnotation(DELETE.class) != null)
+        {
+            methodType = "RequestBuilder.DELETE";
+        }
+        else // assume if(method.getAnnotation(GET.class) != null)
+        {
+            methodType = "RequestBuilder.GET";
+        }
+        w.print(methodType);
+        w.print(", subPath, ");
+        w.print(reqDataStr);
+        w.print(", additionalHeaders, ");
         if ((resultType instanceof DeclaredType) && ((DeclaredType )resultType).getTypeArguments() != null && !((DeclaredType )resultType).getTypeArguments().isEmpty())
         {
             final List<? extends TypeMirror> typeArguments = ((DeclaredType) resultType).getTypeArguments();
@@ -472,6 +549,27 @@ public class GwtProxyCreator implements SerializerClasses
         w.println("}");
     }
 
+    private String convertParam(final TypeMirror paramType, final String pName, String[] serializerFields, int index)
+    {
+        //                pType == JPrimitiveType.CHAR ||
+        if (SerializerCreator.isBoxedCharacter(paramType))
+        {
+            return JsonSerializer_simple + ".escapeChar(" + pName + "));";
+        }
+        else if ((SerializerCreator.isJsonPrimitive(paramType) || SerializerCreator.isBoxedPrimitive(paramType)) && !SerializerCreator.isJsonString(paramType))
+        {
+            return pName + ";";
+        }
+        else
+        {
+//            final boolean needsTypeParameter = SerializerCreator.needsTypeParameter(paramType, processingEnvironment);
+//            return pName + " != null ? " + (needsTypeParameter ? serializerFields[index] : pName) + ": \"\"";
+            // FIXME think about serializing arrays and lists
+            return pName + " != null ? " + pName + ".toString(): \"\"";
+            // serializerCreator.generateSerializerReference(paramType, w, false);
+        }
+    }
+
     private String getProxyQualifiedName()
     {
         final String[] name = synthesizeTopLevelClassName(svcInf, PROXY_SUFFIX, nameFactory, processingEnvironment);
@@ -491,8 +589,8 @@ public class GwtProxyCreator implements SerializerClasses
         String className;
         String packageName;
 
-        TypeMirror typeMirror =getLeafType(type.asType());
-        TypeElement leafType = (TypeElement)processingEnvironment.getTypeUtils().asElement( typeMirror);
+        TypeMirror typeMirror = getLeafType(type.asType());
+        TypeElement leafType = (TypeElement) processingEnvironment.getTypeUtils().asElement(typeMirror);
         if (SerializerCreator.isPrimitive(typeMirror))
         {
             className = leafType.getSimpleName().toString();
@@ -501,8 +599,9 @@ public class GwtProxyCreator implements SerializerClasses
         else
         {
             //assert(SerializerCreator.isClass(typeMirror) || SerializerCreator.isInterface(typeMirror));
-            packageName = processingEnvironment.getElementUtils().getPackageOf(processingEnvironment.getTypeUtils().asElement(typeMirror)).getQualifiedName().toString();
-            className = typeMirror.toString().substring( packageName.length() + 1);
+            packageName = processingEnvironment.getElementUtils().getPackageOf(processingEnvironment.getTypeUtils().asElement(typeMirror)).getQualifiedName()
+                    .toString();
+            className = typeMirror.toString().substring(packageName.length() + 1);
 
         }
 
@@ -520,7 +619,7 @@ public class GwtProxyCreator implements SerializerClasses
         boolean isArray = SerializerCreator.isArray(typeMirror);
         if (isArray)
         {
-            int rank = getRank((ArrayType)typeMirror);
+            int rank = getRank((ArrayType) typeMirror);
             className += "_Array_Rank_" + rank;
 
         }
@@ -538,7 +637,7 @@ public class GwtProxyCreator implements SerializerClasses
 
     private static TypeMirror getLeafType(TypeMirror type)
     {
-        if ( type instanceof  ArrayType)
+        if (type instanceof ArrayType)
         {
             final TypeMirror componentType = ((ArrayType) type).getComponentType();
             return getLeafType(componentType);
@@ -549,14 +648,13 @@ public class GwtProxyCreator implements SerializerClasses
     public static int getRank(ArrayType typeMirror)
     {
         final TypeMirror componentType = typeMirror.getComponentType();
-        if(typeMirror
-                 == componentType)
+        if (typeMirror == componentType)
         {
             return 1;
         }
-        if(componentType instanceof  ArrayType)
+        if (componentType instanceof ArrayType)
         {
-            return getRank( (ArrayType) componentType) + 1;
+            return getRank((ArrayType) componentType) + 1;
         }
         return 1;
     }

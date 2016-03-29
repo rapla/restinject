@@ -1,20 +1,38 @@
 package org.rapla.common;
 
-import org.rapla.jsonrpc.common.RemoteJsonMethod;
-import org.rapla.jsonrpc.common.FutureResult;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@RemoteJsonMethod
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+import org.rapla.jsonrpc.common.FutureResult;
+
+@Path("AnnotationProcessingTest")
 public interface AnnotationProcessingTest
 {
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
     FutureResult<List<Result>> sayHello(Parameter param);
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("hello2")
     Result sayHello2(Parameter param);
+
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
     List<Result> sayHello3(Parameter param);
-    FutureResult<Map<String,Set<String>>> complex();
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    FutureResult<Map<String, Set<String>>> complex();
 
     public static class Result {
         private String name;

@@ -14,33 +14,40 @@
 
 package org.rapla.jsonrpc.client.gwt.internal.impl;
 
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.rapla.jsonrpc.client.gwt.AbstractJsonProxy;
 import org.rapla.jsonrpc.common.internal.JsonConstants;
 
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.URL;
-import org.rapla.jsonrpc.client.gwt.AbstractJsonProxy;
 
 /** JsonCall implementation for JsonRPC version 2.0 over HTTP POST */
 public class JsonCall20HttpGet<T> extends JsonCall<T> {
   private String encodedRequestParams;
 
   public JsonCall20HttpGet(AbstractJsonProxy abstractJsonProxy,
-      String methodName, String requestParams,
+      String methodName, Map<String, String> additionalHeaders, String requestParams,
       ResultDeserializer<T> resultDeserializer) {
-    super(abstractJsonProxy, methodName, requestParams, resultDeserializer);
+    super(abstractJsonProxy, methodName, additionalHeaders, requestParams, resultDeserializer);
     encodedRequestParams = URL.encodeQueryString(encodeBase64(requestParams));
   }
 
   @Override
   protected void send() {
     requestId = ++lastRequestId;
-    final StringBuilder url = new StringBuilder(proxy.getServiceEntryPoint());
-    url.append("?jsonrpc=2.0&method=").append(methodName);
-    url.append("&params=").append(encodedRequestParams);
-    url.append("&id=").append(requestId);
+    final StringBuilder url = new StringBuilder(proxy.getServiceEntryPoint()+"/"+URL.encodeQueryString(methodName));
+//    url.append("?jsonrpc=2.0&method=").append(methodName);
+//    url.append("&params=").append(encodedRequestParams);
+//    url.append("&id=").append(requestId);
 
     final RequestBuilder rb;
     rb = new RequestBuilder(RequestBuilder.GET, url.toString());
+    for(Entry<String, String> additionalHeader : getAdditionalHeaders().entrySet())
+    {
+        rb.setHeader(additionalHeader.getKey(), additionalHeader.getValue());
+    }
     rb.setHeader("Content-Type", JsonConstants.JSONRPC20_REQ_CT);
     rb.setHeader("Accept", JsonConstants.JSONRPC20_ACCEPT_CTS);
     rb.setCallback(this);

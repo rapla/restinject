@@ -1,12 +1,5 @@
 package org.rapla.jsonrpc.client.swing;
 
-import com.google.gson.*;
-import org.rapla.jsonrpc.client.gwt.MockProxy;
-import org.rapla.jsonrpc.common.internal.JSONParserWrapper;
-import org.rapla.jsonrpc.common.AsyncCallback;
-import org.rapla.jsonrpc.common.FutureResult;
-import org.rapla.jsonrpc.client.EntryPointFactory;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -14,9 +7,26 @@ import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.Executor;
+
+import org.rapla.jsonrpc.client.EntryPointFactory;
+import org.rapla.jsonrpc.client.gwt.MockProxy;
+import org.rapla.jsonrpc.common.AsyncCallback;
+import org.rapla.jsonrpc.common.FutureResult;
+import org.rapla.jsonrpc.common.internal.JSONParserWrapper;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 public class BasicRaplaHTTPConnector extends HTTPJsonConnector
 {
@@ -98,18 +108,10 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         }
     }
 
-    private JsonArray serializeArguments(Class<?>[] parameterTypes, Object[] args)
+    private JsonElement serializeArguments(Object arg)
     {
-        JsonArray params = new JsonArray();
         Gson serializer = gsonBuilder.create();
-        for (int i = 0; i < parameterTypes.length; i++)
-        {
-            Class<?> type = parameterTypes[i];
-            Object arg = args[i];
-            JsonElement jsonTree = serializer.toJsonTree(arg, type);
-            params.add(jsonTree);
-        }
-        return params;
+        return serializer.toJsonTree(arg);
     }
 
     /*
@@ -238,19 +240,19 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         return new RaplaConnectException(message.toString());
     }
 
-    synchronized protected JsonObject sendCall_(String requestMethod, URL methodURL, JsonElement jsonObject) throws Exception
+    synchronized protected JsonElement sendCall_(String requestMethod, URL methodURL, JsonElement jsonObject,Map<String, String>additionalHeaders) throws Exception
     {
         String authenticationToken = customConnector.getAccessToken();
-        return sendCall_(requestMethod, methodURL, jsonObject, authenticationToken);
+        return sendCall_(requestMethod, methodURL, jsonObject, authenticationToken, additionalHeaders);
     }
 
-    synchronized protected JsonObject sendCall_(String requestMethod, URL methodURL, JsonElement jsonObject, String authenticationToken) throws Exception
+    synchronized protected JsonElement sendCall_(String requestMethod, URL methodURL, JsonElement jsonObject, String authenticationToken,Map<String, String>additionalHeaders) throws Exception
     {
 
-        JsonObject resultMessage;
+        JsonElement resultMessage;
         try
         {
-            resultMessage = sendCall(requestMethod, methodURL, jsonObject, authenticationToken);
+            resultMessage = sendCall(requestMethod, methodURL, jsonObject, authenticationToken, additionalHeaders);
         }
         catch (SocketException ex)
         {
@@ -274,7 +276,7 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
             // try the same call again with the new result, this time with no auth code failed fallback
             if ( newAuthCode != null )
             {
-                resultMessage = sendCall_("POST", methodURL, jsonObject, newAuthCode);
+                resultMessage = sendCall_("POST", methodURL, jsonObject, newAuthCode, additionalHeaders);
                 checkError(resultMessage);
             }
             else
@@ -286,20 +288,25 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
     }
 
 
-    protected void checkError(JsonObject resultMessage) throws Exception
+    protected void checkError(JsonElement resultMessage) throws Exception
     {
-        JsonElement errorElement = resultMessage.get("error");
-        if (errorElement != null)
+        if(resultMessage.isJsonObject())
         {
-            Exception ex = deserializeExceptionObject(resultMessage);
-            throw ex;
+            JsonElement errorElement = resultMessage.getAsJsonObject().get("error");
+            if (errorElement != null)
+            {
+                Exception ex = deserializeExceptionObject(resultMessage.getAsJsonObject());
+                throw ex;
+            }
+            
         }
     }
 
 
-    protected URL getMethodUrl(String classname, String methodName)
+    protected URL getMethodUrl(String classname, String subPath)
     {
-        final String entryPoint = getServiceEntryPointFactory().getEntryPoint(classname, getPath());
+        final String entryPoint = getServiceEntryPointFactory().getEntryPoint(classname, getPath())
+                + (subPath == null || subPath.isEmpty() ? "" : (subPath.startsWith("?") ? "" : "/") + subPath);
         try
         {
             return new URL(entryPoint);
@@ -310,9 +317,8 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         }
     }
 
-    protected Object getResult(JsonObject resultMessage, Class resultType, Class container) throws RaplaConnectException
+    protected Object getResult(JsonElement resultElement, Class resultType, Class container) throws RaplaConnectException
     {
-        JsonElement resultElement = resultMessage.get("result");
         Object resultObject;
         if (container != null)
         {
@@ -373,16 +379,17 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         return method;
     }
 
-    public JsonObject serializeCall(Method method, Object[] args)
+    public JsonElement serializeCall(Object arg)
     {
-        Class<?>[] parameterTypes = method.getParameterTypes();
-        JsonElement params = serializeArguments(parameterTypes, args);
-        JsonObject element = new JsonObject();
-        element.addProperty("jsonrpc", "2.0");
-        element.addProperty("method", method.getName());
-        element.add("params", params);
-        element.addProperty("id", "1");
-        return element;
+//        Class<?>[] parameterTypes = method.getParameterTypes();
+        JsonElement params = serializeArguments(arg);
+        return params;
+//        JsonObject element = new JsonObject();
+//        element.addProperty("jsonrpc", "2.0");
+//        element.addProperty("method", method.getName());
+//        element.add("params", params);
+//        element.addProperty("id", "1");
+//        return element;
     }
 
     //    private void addParams(Appendable writer, Map<String,String> args ) throws IOException

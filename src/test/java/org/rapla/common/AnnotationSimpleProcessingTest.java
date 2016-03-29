@@ -2,13 +2,29 @@ package org.rapla.common;
 
 import java.util.List;
 
-import org.rapla.jsonrpc.common.FutureResult;
-import org.rapla.jsonrpc.common.RemoteJsonMethod;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 
-@RemoteJsonMethod
+import org.rapla.jsonrpc.common.FutureResult;
+
+@Path("AnnotationSimpleProcessingTest")
 public interface AnnotationSimpleProcessingTest
 {
-    FutureResult<String> sayHello(String param);
+    @GET
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+    FutureResult<String> sayHello(@QueryParam("param") String param);
     
-    List<String> translations(String id);
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+    @Path("translation")
+    List<String> translations(@HeaderParam("id") String id);
+    
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+    @Path("exception")
+    List<String> exception();
 }

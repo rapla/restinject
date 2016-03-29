@@ -1,21 +1,33 @@
 package org.rapla.jsonrpc.client.swing;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
 public class HTTPConnector
 {
-    public String sendCallWithString(String requestMethod, URL methodURL,String body, String authenticationToken) throws IOException, ProtocolException, UnsupportedEncodingException {
-        return sendCallWithString(requestMethod,methodURL,body,authenticationToken,"application/json");
+    public String sendCallWithString(String requestMethod, URL methodURL,String body, String authenticationToken, Map<String, String>additionalHeaders) throws IOException, ProtocolException, UnsupportedEncodingException {
+        return sendCallWithString(requestMethod,methodURL,body,authenticationToken,"application/json", additionalHeaders);
     }
 
-    public String sendCallWithString(String requestMethod, URL methodURL,String body, String authenticationToken,String accept) throws IOException, ProtocolException, UnsupportedEncodingException {
+    public String sendCallWithString(String requestMethod, URL methodURL,String body, String authenticationToken,String accept, Map<String, String>additionalHeaders) throws IOException, ProtocolException, UnsupportedEncodingException {
         HttpURLConnection conn = (HttpURLConnection)methodURL.openConnection();
+        for (Entry<String, String> additionalHeader : additionalHeaders.entrySet())
+        {
+            conn.setRequestProperty(additionalHeader.getKey(), additionalHeader.getValue());
+        }
         if ( !requestMethod.equals("POST") && !requestMethod.equals("GET"))
         {
             conn.setRequestMethod("POST");
@@ -78,16 +90,23 @@ public class HTTPConnector
             InputStream inputStream = null;
             try
             {
-                String encoding = conn.getContentEncoding();
-                if (encoding != null && encoding.equalsIgnoreCase("gzip")) 
+                if(conn.getResponseCode() != 200)
                 {
-                    inputStream = new GZIPInputStream(conn.getInputStream());
+                    inputStream = conn.getErrorStream();
                 }
-                else if (encoding != null && encoding.equalsIgnoreCase("deflate")) {
-                     inputStream = new InflaterInputStream(conn.getInputStream(), new Inflater(true));
-                }
-                else {
-                    inputStream = conn.getInputStream();
+                else
+                {
+                    String encoding = conn.getContentEncoding();
+                    if (encoding != null && encoding.equalsIgnoreCase("gzip")) 
+                    {
+                        inputStream = new GZIPInputStream(conn.getInputStream());
+                    }
+                    else if (encoding != null && encoding.equalsIgnoreCase("deflate")) {
+                        inputStream = new InflaterInputStream(conn.getInputStream(), new Inflater(true));
+                    }
+                    else {
+                        inputStream = conn.getInputStream();
+                    }
                 }
                 resultString = readResultToString( inputStream);
             }

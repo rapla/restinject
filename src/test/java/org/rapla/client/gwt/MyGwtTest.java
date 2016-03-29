@@ -39,7 +39,7 @@ public class MyGwtTest extends GWTTestCase
             @Override public String getEntryPoint(String interfaceName, String relativePath)
             {
                 String s = GWT.getModuleBaseURL();
-                s+= "rapla/";
+                s+= "rest/";
                 String url = s + (relativePath != null ? relativePath : interfaceName);
                 return url;
             }

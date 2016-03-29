@@ -1,9 +1,8 @@
 package org.rapla.server;
 
-import org.rapla.inject.server.RequestScoped;
+import javax.servlet.http.HttpServletRequest;
 
-@RequestScoped
 public interface RemoteSession
 {
-    String toString();
+    String toString(HttpServletRequest request);
 }

@@ -1,36 +1,50 @@
 package org.rapla.server;
 
-import org.rapla.common.AnnotationSimpleProcessingTest;
-import org.rapla.jsonrpc.common.FutureResult;
-import org.rapla.jsonrpc.common.ResultImpl;
-import org.rapla.inject.DefaultImplementation;
-import org.rapla.inject.InjectionContext;
-
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Context;
 
-@DefaultImplementation(of=AnnotationSimpleProcessingTest.class,context = InjectionContext.server)
+import org.rapla.common.AnnotationSimpleProcessingTest;
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.InjectionContext;
+import org.rapla.jsonrpc.common.FutureResult;
+import org.rapla.jsonrpc.common.ResultImpl;
+
+@DefaultImplementation(context=InjectionContext.server, of=AnnotationSimpleProcessingTest.class)
 public class AnnotationSimpleProcessingTestImpl implements AnnotationSimpleProcessingTest
 {
-    RemoteSession session;
     @Inject
-    public AnnotationSimpleProcessingTestImpl(RemoteSession session)
+    RemoteSession session;
+    private final HttpServletRequest request;
+
+    @Inject
+    public AnnotationSimpleProcessingTestImpl(@Context HttpServletRequest request)
     {
-        this.session = session;
+        this.request = request;
     }
+
+    @Override
     public FutureResult<String> sayHello(String param)
     {
-        return new ResultImpl<String>(param + session.toString());
+        return new ResultImpl<String>(param + session.toString(request));
     }
+
     @Override
     public List<String> translations(String id)
     {
         final ArrayList<String> result = new ArrayList<String>();
         result.add(id);
-        result.add(id+"_de");
-        result.add(id+"_fr");
+        result.add(id + "_de");
+        result.add(id + "_fr");
         return result;
+    }
+
+    @Override
+    public List<String> exception()
+    {
+        throw new RuntimeException("Something went wrong");
     }
 }

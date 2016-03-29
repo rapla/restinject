@@ -9,5 +9,5 @@
     <source path='inject'/>
     <source path='common'/>
     <source path='dagger'/>
-    <servlet path='/rapla/*' class='org.rapla.server.TestServlet'/>
+    <servlet path='/rest/*' class='org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher'/>
 </module>

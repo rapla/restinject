@@ -16,6 +16,7 @@ package org.rapla.jsonrpc.client.gwt.internal.impl;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.rapla.jsonrpc.client.gwt.internal.ExceptionDeserializer;
 import org.rapla.jsonrpc.client.gwt.internal.JsonUtil;
@@ -83,14 +84,21 @@ public abstract class JsonCall<T> implements RequestCallback {
     protected AsyncCallback<T> callback;
 
     private String token;
+    private final Map<String, String> additionalHeaders;
 
     protected JsonCall(final AbstractJsonProxy abstractJsonProxy,
-            final String methodName, final String requestParams,
+            final String methodName, Map<String, String> additionalHeaders, final String requestParams,
             final ResultDeserializer<T> resultDeserializer) {
         this.proxy = abstractJsonProxy;
         this.methodName = methodName;
+        this.additionalHeaders = additionalHeaders;
         this.requestParams = requestParams;
         this.resultDeserializer = resultDeserializer;
+    }
+    
+    protected Map<String, String> getAdditionalHeaders()
+    {
+        return additionalHeaders;
     }
 
     public String getToken() {
@@ -156,13 +164,12 @@ public abstract class JsonCall<T> implements RequestCallback {
         requestId = ++lastRequestId;
         final StringBuilder body = new StringBuilder();
         body.append("{\"jsonrpc\":\"2.0\",\"method\":\"");
-        body.append(methodName);
         body.append("\",\"params\":");
         body.append(requestParams);
         body.append(",\"id\":").append(requestId);
         body.append("}");
 
-        String url = proxy.getServiceEntryPoint();
+        String url = proxy.getServiceEntryPoint() + "/" + methodName;
 
         SynchronousXHR request = (SynchronousXHR) SynchronousXHR.create();
         //request.setTimeout( (int)wait);

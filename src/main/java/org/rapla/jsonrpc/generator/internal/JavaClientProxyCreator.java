@@ -14,18 +14,38 @@
 
 package org.rapla.jsonrpc.generator.internal;
 
-import org.rapla.jsonrpc.common.RemoteJsonMethod;
-import org.rapla.inject.generator.internal.SourceWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.*;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.JavaFileObject;
-import java.io.IOException;
-import java.util.*;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.QueryParam;
+
+import org.rapla.inject.generator.internal.SourceWriter;
 
 public class JavaClientProxyCreator implements SerializerClasses
 {
@@ -68,7 +88,7 @@ public class JavaClientProxyCreator implements SerializerClasses
             return getProxyQualifiedName();
         }
 
-        generateProxyConstructor(logger, srcWriter,interfaceName);
+        generateProxyConstructor(logger, srcWriter, interfaceName);
         //generateProxyCallCreator(logger, srcWriter);
         generateProxyMethods(logger, srcWriter);
         srcWriter.outdent();
@@ -196,7 +216,10 @@ public class JavaClientProxyCreator implements SerializerClasses
         pw.println("import java.util.concurrent.Executor;");
         pw.println("import java.lang.reflect.Method;");
         pw.println("import com.google.gson.JsonObject;");
+        pw.println("import com.google.gson.JsonElement;");
         pw.println("import java.net.URL;");
+        pw.println("import " + Map.class.getCanonicalName() + ";");
+        pw.println("import " + HashMap.class.getCanonicalName() + ";");
         pw.println("import " + FutureResult + ";");
         pw.println("import " + AbstractJsonJavaProxy + ";");
         pw.println("import " + AbstractJsonJavaProxy + ".CustomConnector;");
@@ -214,7 +237,7 @@ public class JavaClientProxyCreator implements SerializerClasses
 
     private void generateProxyConstructor(@SuppressWarnings("unused") final TreeLogger logger, final SourceWriter w, String interfaceName)
     {
-        final RemoteJsonMethod relPath = svcInf.getAnnotation(RemoteJsonMethod.class);
+        final Path relPath = svcInf.getAnnotation(Path.class);
         if (relPath != null)
         {
             w.println();
@@ -222,20 +245,16 @@ public class JavaClientProxyCreator implements SerializerClasses
             w.println("public " + getProxySimpleName() + "(CustomConnector customConnector) {");
             w.indent();
             w.println("super(customConnector);");
-            String path = relPath.path();
-            if (path == null || path.isEmpty())
-            {
-                TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
-                path = erasedType.getQualifiedName().toString();
-            }
+            //            TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
+            String path = relPath.value();
             w.println("setPath(\"" + path + "\");");
             w.outdent();
             w.println("}");
         }
 
-        w.println(interfaceName +" createMock(){");
+        w.println(interfaceName + " createMock(){");
         w.indent();
-        w.println("return getMockProxy().create("+ interfaceName +".class, getMockAccessToken());");
+        w.println("return getMockProxy().create(" + interfaceName + ".class, getMockAccessToken());");
         w.outdent();
         w.println("}");
 
@@ -265,7 +284,6 @@ public class JavaClientProxyCreator implements SerializerClasses
         //        callback.isParameterized().getTypeArgs()[0];
         final String[] serializerFields = new String[params.size()];
         String resultField = "";
-
 
         w.println();
         //        for (int i = 0; i < params.size() /*- 1*/; i++)
@@ -341,13 +359,13 @@ public class JavaClientProxyCreator implements SerializerClasses
         final String cast;
         String containerClass = "null";
         {
-            if ((resultType instanceof DeclaredType) && ((DeclaredType) resultType).getTypeArguments() != null && !((DeclaredType) resultType)
-                    .getTypeArguments().isEmpty())
+            if ((resultType instanceof DeclaredType) && ((DeclaredType) resultType).getTypeArguments() != null
+                    && !((DeclaredType) resultType).getTypeArguments().isEmpty())
             {
                 final DeclaredType resultType1 = (DeclaredType) resultType;
                 final List<? extends TypeMirror> typeArguments = resultType1.getTypeArguments();
                 wrapFutureResult = resultType1.toString().startsWith(FutureResult);
-                if ( !wrapFutureResult)
+                if (!wrapFutureResult)
                 {
                     TypeMirror typeMirror = resultType1;
                     {
@@ -365,7 +383,8 @@ public class JavaClientProxyCreator implements SerializerClasses
                 else
                 {
                     final TypeMirror typeMirror = typeArguments.get(0);
-                    if ((typeMirror instanceof DeclaredType) && ((DeclaredType) typeMirror).getTypeArguments() != null && !((DeclaredType) typeMirror).getTypeArguments().isEmpty())
+                    if ((typeMirror instanceof DeclaredType) && ((DeclaredType) typeMirror).getTypeArguments() != null
+                            && !((DeclaredType) typeMirror).getTypeArguments().isEmpty())
                     {
                         {
                             final TypeMirror erasedType = SerializerCreator.getErasedType(typeMirror, processingEnvironment);
@@ -387,10 +406,10 @@ public class JavaClientProxyCreator implements SerializerClasses
 
                 {
 
-//                    if (resultType1.toString().startsWith("java.util.List"))
-//                    {
-//                        containerClass = "\"java.util.List\"";
-//                    }
+                    //                    if (resultType1.toString().startsWith("java.util.List"))
+                    //                    {
+                    //                        containerClass = "\"java.util.List\"";
+                    //                    }
                 }
 
             }
@@ -405,7 +424,7 @@ public class JavaClientProxyCreator implements SerializerClasses
         w.println("try{");
         w.indent();
         final String s = "return";
-        w.println("if ( isMock() ) {" + (hasReturn ?"return":"") +" createMock()."+methodName+"("+ argsBuilder.toString() + "); }");
+        w.println("if ( isMock() ) {" + (hasReturn ? "return" : "") + " createMock()." + methodName + "(" + argsBuilder.toString() + "); }");
         if (wrapFutureResult)
         {
             w.println("return new BasicRaplaHTTPConnector.MyFutureResult() {");
@@ -420,22 +439,160 @@ public class JavaClientProxyCreator implements SerializerClasses
             resultClass += "<" + parameterizedResult.toString() + ">";
         }
 
+        w.println("java.lang.String subPath = \"" + (method.getAnnotation(Path.class) != null ? method.getAnnotation(Path.class).value() : "") + "\";");
+        w.println("final Map<java.lang.String, java.lang.String>additionalHeaders = new HashMap<>();");
         w.indent();
         final String className = svcInf.getQualifiedName().toString();
-        w.println("URL methodURL = getMethodUrl(\"" + className + "\", \"" + methodName + "\");");
+        boolean firstQueryParam = true;
+        boolean elementPrint = false;
+        for (int i = 0; i < params.size(); i++)
+        {
+            final VariableElement param = params.get(i);
+            final TypeMirror paramType = param.asType();
+            String pname = param.getSimpleName().toString();
+            final QueryParam queryAnnotation = param.getAnnotation(QueryParam.class);
+            final PathParam pathAnnotation = param.getAnnotation(PathParam.class);
+            final HeaderParam headerAnnotation = param.getAnnotation(HeaderParam.class);
+            final FormParam formAnnotation = param.getAnnotation(FormParam.class);
+            if (queryAnnotation != null || pathAnnotation != null || headerAnnotation != null || formAnnotation != null)
+            {
+                w.println("final String param" + i + ";");
+                w.println("{");
+                w.indent();
+                if (SerializerCreator.isBoxedCharacter(paramType))
+                {
+                    w.println("param" + i + " = " + pname + " != null ? " + pname + ".toString() : null;");
+                }
+                else if ((SerializerCreator.isJsonPrimitive(paramType) || SerializerCreator.isBoxedPrimitive(paramType))
+                        && !SerializerCreator.isJsonString(paramType))
+                {
+                    w.println("param" + i + " = " + pname + "+\"\";");
+                }
+                else if (SerializerCreator.isArray(paramType))
+                {
+                    w.println("{");
+                    w.indent();
+                    w.println("boolean first = true;");
+                    w.println(StringBuilder.class.getCanonicalName() + " sb = new " + StringBuilder.class.getCanonicalName() + "();");
+                    w.println("for(int i = 0;i < "+pname+".length; i++) {");
+                    w.println("if(first) {");
+                    w.indent();
+                    w.println("first = false;");
+                    w.outdent();
+                    w.println("} else {");
+                    w.indent();
+                    String name = (queryAnnotation != null ? queryAnnotation.value(): (headerAnnotation != null ? headerAnnotation.value() : formAnnotation.value())); 
+                    w.println("sb.append(\"&"+name+"=\");");
+                    w.outdent();
+                    w.println("} ");
+                    w.indent();
+                    w.println("sb.append("+pname+"[i]);");
+                    w.outdent();
+                    w.println("}");
+                    w.outdent();
+                    w.println("param" + i + " = sb.toString();");
+                    w.println("}");
+                }
+                else if (processingEnvironment.getTypeUtils().isAssignable(paramType, processingEnvironment.getTypeUtils()
+                        .getDeclaredType(processingEnvironment.getElementUtils().getTypeElement(Collection.class.getCanonicalName()))))
+                {
+                    w.println("{");
+                    w.indent();
+                    w.println("boolean first = true;");
+                    w.println(StringBuilder.class.getCanonicalName() + " sb = new " + StringBuilder.class.getCanonicalName() + "();");
+                    w.println("for(" + Iterator.class.getCanonicalName() + " it = " + pname + ".iterator(); it.hasNext(); ) {");
+                    w.println("if(first) {");
+                    w.indent();
+                    w.println("first = false;");
+                    w.outdent();
+                    w.println("} else {");
+                    w.indent();
+                    String name = (queryAnnotation != null ? queryAnnotation.value(): (headerAnnotation != null ? headerAnnotation.value() : formAnnotation.value())); 
+                    w.println("sb.append(\"&"+name+"=\");");
+                    w.outdent();
+                    w.println("} ");
+                    w.indent();
+                    w.println("sb.append(it.next());");
+                    w.outdent();
+                    w.println("}");
+                    w.outdent();
+                    w.println("param" + i + " = sb.toString();");
+                    w.println("}");
+                }
+                else
+                {
+                    w.println("param" + i + " = " + pname + " != null ? " + pname + ".toString() : \"\";");
+                }
+                w.outdent();
+                w.println("}");
+            }
+
+            if (queryAnnotation != null)
+            {
+                if (firstQueryParam)
+                {
+                    w.print("subPath += \"?");
+                    firstQueryParam = false;
+                }
+                else
+                {
+                    w.print("subPath += \"&");
+                }
+                w.println(queryAnnotation.value() + "=\"+param" + i + ";");
+                continue;
+            }
+            if (pathAnnotation != null)
+            {
+                final String pathVariable = "{" + pathAnnotation.value() + "}";
+                w.println("subPath = subPath.replaceFirst(\"" + pathVariable + "\", param" + i + ");");
+                continue;
+            }
+            if (headerAnnotation != null)
+            {
+                w.println("additionalHeaders.put(\"" + headerAnnotation.value() + "\", param" + i + ");");
+                continue;
+            }
+            if (formAnnotation != null)
+            {
+                w.println("additionalHeaders.put(\"" + formAnnotation.value() + "\", param" + i + ");");
+                continue;
+            }
+            w.println("final JsonElement element = serializeCall(" + pname + ");");
+            elementPrint = true;
+        }
+        if (!elementPrint)
+        {
+            w.println("final JsonElement element = null;");
+        }
+        w.println("URL methodURL = getMethodUrl(\"" + className + "\", subPath);");
         //final String resultClassname = "org.rapla.gwtjsonrpc.proxy.AnnotationProcessingTest.Result";
 
-        w.println("Method remoteMethod = findMethod(" + className + ".class, \"" + methodName + "\");");
-        w.println("Object[] args = new Object[] { " + argsBuilder.toString() + " };");
-
-        w.println("final JsonObject element = serializeCall(remoteMethod, args);");
-        w.println("JsonObject resultMessage = sendCall_(\"POST\", methodURL, element);");
+        //        w.println("Method remoteMethod = findMethod(" + className + ".class, \"" + methodName + "\");");
+        //        w.println("Object[] args = new Object[] { " + argsBuilder.toString() + " };");
+        final String methodType;
+        if (method.getAnnotation(POST.class) != null)
+        {
+            methodType = "POST";
+        }
+        else if (method.getAnnotation(PUT.class) != null)
+        {
+            methodType = "PUT";
+        }
+        else if (method.getAnnotation(DELETE.class) != null)
+        {
+            methodType = "DELETE";
+        }
+        else // if (method.getAnnotation(GET.class) != null)
+        {
+            methodType = "GET";
+        }
+        w.println("JsonElement resultMessage = sendCall_(\"" + methodType + "\", methodURL, element, additionalHeaders);");
         w.println("Class resultType = " + resultClassname + ".class;");
         w.println("Class containerClass = " + containerClass + ";");
         w.println("final Object result = getResult(resultMessage, resultType, containerClass);");
         if (hasReturn)
         {
-            if ( wrapFutureResult)
+            if (wrapFutureResult)
             {
                 w.println("return result;");
             }

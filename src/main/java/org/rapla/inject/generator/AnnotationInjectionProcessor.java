@@ -1,11 +1,16 @@
 package org.rapla.inject.generator;
 
-import org.rapla.inject.*;
-import org.rapla.inject.generator.internal.DaggerModuleCreator;
-import org.rapla.jsonrpc.generator.internal.GwtProxyCreator;
-import org.rapla.jsonrpc.generator.internal.JavaClientProxyCreator;
-import org.rapla.jsonrpc.generator.internal.TreeLogger;
-import org.rapla.jsonrpc.common.RemoteJsonMethod;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.annotation.Generated;
 import javax.annotation.processing.AbstractProcessor;
@@ -20,16 +25,32 @@ import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+import javax.tools.Diagnostic.Kind;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
 import javax.tools.StandardLocation;
 import javax.ws.rs.Path;
-import java.io.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import javax.ws.rs.ext.Provider;
 
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.DefaultImplementationRepeatable;
+import org.rapla.inject.Extension;
+import org.rapla.inject.ExtensionPoint;
+import org.rapla.inject.ExtensionRepeatable;
+import org.rapla.inject.generator.internal.DaggerModuleCreator;
+import org.rapla.jsonrpc.generator.internal.GwtProxyCreator;
+import org.rapla.jsonrpc.generator.internal.JavaClientProxyCreator;
+import org.rapla.jsonrpc.generator.internal.TreeLogger;
+
+/*
+ * Annotation Processor to create the org.rapla.servicelist file within the META-INF folder and one file 
+ * for each extension point, default implementation of a class or interface and webservice within the META-INF/services folder.</br>
+ * Scannes for the Annotations @Extension, @ExtensionRepeatable, @ExtensionPoint, @DefaultImplementation,
+ * @DefaultImplementationRepeatable, @Path and @RemoteJsonMethod. </br>
+ * E.g. for a @DefaultImplementation(of="org.example.Interface", context=InjectionContext.all) at a class called
+ * "org.example.InterfaceImpl" a entry of org.example.Interface is added to the org.rapla.servicelist file and
+ * an entry of org.example.InterfaceImpl is inserted in the org.example.Interface file within the service folder.
+ */
 public class AnnotationInjectionProcessor extends AbstractProcessor
 {
     public static final String GWT_MODULE_LIST = "META-INF/org.rapla.servicelist";
@@ -41,9 +62,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     }
 
     Class<?>[] supportedAnnotations = new Class[] { Extension.class, ExtensionRepeatable.class, ExtensionPoint.class, DefaultImplementation.class,
-            DefaultImplementationRepeatable.class, Path.class, RemoteJsonMethod.class };
+            DefaultImplementationRepeatable.class, Path.class, Provider.class };
 
-    @Override public synchronized void init(ProcessingEnvironment processingEnv)
+    @Override
+    public synchronized void init(ProcessingEnvironment processingEnv)
     {
         super.init(processingEnv);
     }
@@ -74,7 +96,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         catch (Exception ioe)
         {
             StringWriter stringWriter = new StringWriter();
-            ioe.printStackTrace( new PrintWriter(stringWriter));
+            ioe.printStackTrace(new PrintWriter(stringWriter));
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, stringWriter.toString());
             return false;
         }
@@ -87,32 +109,35 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         File folder = f.getParentFile();
         boolean found = false;
         TreeLogger proxyLogger = new TreeLogger();
+        /*
         final Set<? extends Element> remoteMethods = roundEnv.getElementsAnnotatedWith(RemoteJsonMethod.class);
-        for ( Element element : remoteMethods)
+        for (Element element : remoteMethods)
         {
             final TypeElement interfaceElement = (TypeElement) element;
-            if(interfaceElement.getKind() != ElementKind.INTERFACE)
+            if (interfaceElement.getKind() != ElementKind.INTERFACE)
             {
                 continue;
             }
             GwtProxyCreator proxyCreator = new GwtProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
             String proxyClassName = proxyCreator.create(proxyLogger);
 
-            JavaClientProxyCreator swingProxyCreator = new JavaClientProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
+            JavaClientProxyCreator swingProxyCreator = new JavaClientProxyCreator(interfaceElement, processingEnv,
+                    AnnotationInjectionProcessor.class.getCanonicalName());
             String swingproxyClassName = swingProxyCreator.create(proxyLogger);
 
             final String qualifiedName = interfaceElement.getQualifiedName().toString();
             appendToServiceList(f, qualifiedName);
             final File serviceFile = getFile(f.getParentFile(), "services/" + qualifiedName);
             appendToFile(serviceFile, proxyClassName);
-            appendToFile(serviceFile, swingproxyClassName );
+            appendToFile(serviceFile, swingproxyClassName);
             processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Proxies " + proxyClassName + ", " + swingproxyClassName);
             if (interfaceElement.getAnnotation(Generated.class) == null)
             {
                 found = true;
             }
         }
-/*
+        */
+        /*
         for (Element elem : roundEnv.getElementsAnnotatedWith(RequestScoped.class))
         {
             TypeElement implementationElement = (TypeElement) elem;
@@ -126,6 +151,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             }
         }
         */
+        boolean pathAnnotationFound = false;
 
         //        List<InjectionContext> gwtContexts = Arrays.asList(new InjectionContext[] { InjectionContext.gwt, InjectionContext.gwt });
         for (Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementation.class))
@@ -133,13 +159,46 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             TypeElement implementationElement = (TypeElement) elem;
             DefaultImplementation annotation = elem.getAnnotation(DefaultImplementation.class);
             TypeElement interfaceElement = getDefaultImplementationOf(annotation);
-            final String qualifiedName = interfaceElement.getQualifiedName().toString();
-            appendToServiceList(f, qualifiedName);
-            addServiceFile(interfaceElement, implementationElement, folder);
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding DefaultImplemenation " + implementationElement);
-            if (implementationElement.getAnnotation(Generated.class) == null)
+            if(interfaceElement.getAnnotation(Path.class) != null)
             {
-                found = true;
+                if (interfaceElement.getKind() != ElementKind.INTERFACE)
+                {
+                    continue;
+                }
+                GwtProxyCreator proxyCreator = new GwtProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
+                String proxyClassName = proxyCreator.create(proxyLogger);
+
+                JavaClientProxyCreator swingProxyCreator = new JavaClientProxyCreator(interfaceElement, processingEnv,
+                        AnnotationInjectionProcessor.class.getCanonicalName());
+                String swingproxyClassName = swingProxyCreator.create(proxyLogger);
+
+                {
+                    final String qualifiedName = interfaceElement.getQualifiedName().toString();
+                    appendToServiceList(f, qualifiedName);
+                    final File serviceFile = getFile(f.getParentFile(), "services/" + qualifiedName);
+                    appendToFile(serviceFile, proxyClassName);
+                    appendToFile(serviceFile, swingproxyClassName);
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Proxies " + proxyClassName + ", " + swingproxyClassName);
+                    if (interfaceElement.getAnnotation(Generated.class) == null)
+                    {
+                        found = true;
+                    }
+                }
+                {
+                    final File serviceFile = getFile(f.getParentFile(), "services/" + Path.class.getCanonicalName());
+                    appendToFile(serviceFile, implementationElement.getQualifiedName().toString());
+                    pathAnnotationFound = true;
+                }
+            }
+            {
+                final String qualifiedName = interfaceElement.getQualifiedName().toString();
+                appendToServiceList(f, qualifiedName);
+                addServiceFile(interfaceElement, implementationElement, folder);
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding DefaultImplemenation " + implementationElement);
+                if (implementationElement.getAnnotation(Generated.class) == null)
+                {
+                    found = true;
+                }
             }
         }
 
@@ -206,30 +265,39 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         }
 
         // Path
-        boolean append = false;
         for (Element elem : roundEnv.getElementsAnnotatedWith(Path.class))
         {
-            if(elem instanceof TypeElement)
+            if (elem instanceof TypeElement)
             {
-                TypeElement typeElement = (TypeElement) elem;
-                addServiceFile(Path.class.getCanonicalName(), typeElement, folder);
-                append = true;
+                final TypeElement typeElement=(TypeElement) elem;
+                if(typeElement.getKind() != ElementKind.INTERFACE)
+                {
+                    addServiceFile(Path.class.getCanonicalName(), typeElement, folder);
+                    pathAnnotationFound = true;
+                }
             }
         }
-        if(append)
+        if (pathAnnotationFound)
         {
             appendToServiceList(f, Path.class.getCanonicalName());
             found = true;
-       }
-        // only generate the modules if we processed a class
-        if ( found)
+        }
+        for (Element elem : roundEnv.getElementsAnnotatedWith(Provider.class))
         {
-//            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating RaplaGinModulesGenerated");
-//            String className = "RaplaGinModulesGenerated";
-//            String packageName = "org.rapla.inject.client.gwt";
-//            final RaplaGwtModuleGenerator raplaGwtModuleProcessor = new RaplaGwtModuleGenerator(processingEnv);
-//            raplaGwtModuleProcessor.process(packageName, className);
-            
+            if (elem instanceof TypeElement)
+            {
+                addServiceFile(Provider.class.getCanonicalName(), (TypeElement) elem, folder);
+            }
+        }
+        // only generate the modules if we processed a class
+        if (found)
+        {
+            //            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating RaplaGinModulesGenerated");
+            //            String className = "RaplaGinModulesGenerated";
+            //            String packageName = "org.rapla.inject.client.gwt";
+            //            final RaplaGwtModuleGenerator raplaGwtModuleProcessor = new RaplaGwtModuleGenerator(processingEnv);
+            //            raplaGwtModuleProcessor.process(packageName, className);
+
             // Dagger
             processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Dagger Modules");
             final DaggerModuleCreator daggerModuleProcessor = new DaggerModuleCreator(processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
@@ -248,8 +316,9 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     {
         final String serviceFileName = interfaceElement.getQualifiedName().toString();
         addServiceFile(serviceFileName, implementationElement, folder);
-        
+
     }
+
     private void addServiceFile(String serviceFileName, TypeElement implementationElement, File folder) throws IOException
     {
         String implementationName = implementationElement != null ? implementationElement.getQualifiedName().toString() : null;
@@ -268,7 +337,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             appendToFile(serviceFile, line);
         }
     }
-    
+
     static public File getFile(File folder, String filename)
     {
         final File serviceFile = new File(folder, filename);
@@ -306,8 +375,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         w.close();
     }
 
-
-    public static List<String> readLines( File f) throws IOException
+    public static List<String> readLines(File f) throws IOException
     {
         List<String> lines = new ArrayList<String>();
         try (final BufferedReader reader = new BufferedReader(new FileReader(f)))

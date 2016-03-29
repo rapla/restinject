@@ -14,17 +14,23 @@
 
 package org.rapla.jsonrpc.client.gwt;
 
-import com.google.gwt.core.client.GWT;
-import org.rapla.jsonrpc.client.gwt.internal.ExceptionDeserializer;
+import java.util.Map;
 
+import org.rapla.jsonrpc.client.EntryPointFactory;
+import org.rapla.jsonrpc.client.gwt.internal.ExceptionDeserializer;
+import org.rapla.jsonrpc.client.gwt.internal.impl.FutureResultImpl;
+import org.rapla.jsonrpc.client.gwt.internal.impl.JsonCall;
+import org.rapla.jsonrpc.client.gwt.internal.impl.JsonCall20HttpGet;
+import org.rapla.jsonrpc.client.gwt.internal.impl.JsonCall20HttpPost;
+import org.rapla.jsonrpc.client.gwt.internal.impl.ResultDeserializer;
+
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.http.client.RequestBuilder;
+import com.google.gwt.http.client.RequestBuilder.Method;
 import com.google.gwt.user.client.rpc.InvocationException;
 import com.google.gwt.user.client.rpc.RpcRequestBuilder;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
-import org.rapla.jsonrpc.client.gwt.internal.impl.FutureResultImpl;
-import org.rapla.jsonrpc.client.gwt.internal.impl.JsonCall;
-import org.rapla.jsonrpc.client.gwt.internal.impl.ResultDeserializer;
-import org.rapla.jsonrpc.client.EntryPointFactory;
 
 /**
  * Base class for generated RemoteJsonService implementations.
@@ -99,7 +105,7 @@ public abstract class AbstractJsonProxy implements ServiceDefTarget
         return path;
     }
 
-    protected <T> void doInvoke(final String methodName, final String reqData, final ResultDeserializer<T> ser, final FutureResultImpl<T> cb)
+    protected <T> void doInvoke(final Method requestMethodType, final String methodName, final String reqData, final Map<String, String> additionalHeaders, final ResultDeserializer<T> ser, final FutureResultImpl<T> cb)
             throws InvocationException
     {
         if (serviceEntryPointFactory != null)
@@ -115,9 +121,8 @@ public abstract class AbstractJsonProxy implements ServiceDefTarget
         if (url == null)
         {
             throw new NoServiceEntryPointSpecifiedException();
-
         }
-        JsonCall<T> newJsonCall = newJsonCall(this, methodName, reqData, ser);
+        JsonCall<T> newJsonCall = newJsonCall(requestMethodType, methodName, additionalHeaders, reqData, ser);
         cb.setCall(newJsonCall);
         if (token != null)
         {
@@ -125,7 +130,21 @@ public abstract class AbstractJsonProxy implements ServiceDefTarget
         }
     }
 
-    protected abstract <T> JsonCall<T> newJsonCall(AbstractJsonProxy proxy, final String methodName, final String reqData, final ResultDeserializer<T> ser);
+    protected <T> JsonCall<T> newJsonCall(Method requestMethodType, String methodName, Map<String, String>additionalHeaders, final String reqData, final ResultDeserializer<T> ser)
+    {
+        if(requestMethodType == RequestBuilder.POST)
+        {
+            return new JsonCall20HttpPost<>(this, methodName, additionalHeaders, reqData, ser);
+        }
+        else if (requestMethodType == RequestBuilder.GET)
+        {
+            return new JsonCall20HttpGet<>(this, methodName, additionalHeaders, reqData, ser);
+        }
+        else
+        {
+            throw new IllegalArgumentException("request method not implemented: " + requestMethodType);
+        }
+    }
 
     protected static native JavaScriptObject hostPageCacheGetOnce(String name)
   /*-{

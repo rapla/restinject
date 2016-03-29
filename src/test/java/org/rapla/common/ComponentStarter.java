@@ -1,8 +1,12 @@
 package org.rapla.common;
 
-import org.rapla.inject.client.gwt.GwtComponentMarker;
+import java.util.Map;
 
-public interface ComponentStarter extends GwtComponentMarker
+import dagger.MembersInjector;
+
+public interface ComponentStarter
 {
     public String start();
+    
+    Map<String, MembersInjector> getMembersInjector();
 }

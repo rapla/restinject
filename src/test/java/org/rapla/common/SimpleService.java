@@ -1,15 +1,23 @@
 package org.rapla.common;
 
-import org.rapla.jsonrpc.common.RemoteJsonMethod;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
 
-@RemoteJsonMethod
+@Path("SimpleService")
 public interface SimpleService
 {
+    @DELETE
     void sayHello();
-    
+
+    @POST
     boolean isDone();
-    
+
+    @PUT
     int getStepCount();
 
+    @GET
     double getPercentage();
 }
