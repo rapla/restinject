@@ -1,11 +1,11 @@
 package org.rapla.server;
 
-import java.io.IOException;
-
-import javax.inject.Inject;
-
+import org.rapla.common.MyRestApi;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
+
+import javax.inject.Inject;
+import java.io.IOException;
 
 @DefaultImplementation(context=InjectionContext.server, of=MyRestApi.class)
 public class MyRestPage implements MyRestApi

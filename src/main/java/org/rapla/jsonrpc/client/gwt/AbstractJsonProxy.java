@@ -17,7 +17,7 @@ package org.rapla.jsonrpc.client.gwt;
 import java.util.Map;
 
 import org.rapla.jsonrpc.client.EntryPointFactory;
-import org.rapla.jsonrpc.client.gwt.internal.ExceptionDeserializer;
+import org.rapla.jsonrpc.common.ExceptionDeserializer;
 import org.rapla.jsonrpc.client.gwt.internal.impl.FutureResultImpl;
 import org.rapla.jsonrpc.client.gwt.internal.impl.JsonCall;
 import org.rapla.jsonrpc.client.gwt.internal.impl.JsonCall20HttpGet;

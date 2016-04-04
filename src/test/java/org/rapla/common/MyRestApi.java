@@ -1,4 +1,4 @@
-package org.rapla.server;
+package org.rapla.common;
 
 import java.io.IOException;
 

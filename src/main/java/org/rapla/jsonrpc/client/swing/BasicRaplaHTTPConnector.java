@@ -18,6 +18,7 @@ import java.util.concurrent.Executor;
 
 import org.rapla.jsonrpc.client.EntryPointFactory;
 import org.rapla.jsonrpc.client.gwt.MockProxy;
+import org.rapla.jsonrpc.common.ExceptionDeserializer;
 import org.rapla.jsonrpc.common.AsyncCallback;
 import org.rapla.jsonrpc.common.FutureResult;
 import org.rapla.jsonrpc.common.internal.JSONParserWrapper;
@@ -131,7 +132,7 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
     }
     */
 
-    public interface CustomConnector
+    public interface CustomConnector extends ExceptionDeserializer
     {
         String reauth(BasicRaplaHTTPConnector proxy) throws Exception;
         Exception deserializeException(String classname, String s, List<String> params);

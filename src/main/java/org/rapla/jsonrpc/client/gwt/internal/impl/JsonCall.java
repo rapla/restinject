@@ -18,7 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.rapla.jsonrpc.client.gwt.internal.ExceptionDeserializer;
+import org.rapla.jsonrpc.common.ExceptionDeserializer;
 import org.rapla.jsonrpc.client.gwt.internal.JsonUtil;
 import org.rapla.jsonrpc.client.gwt.internal.RemoteJsonException;
 import org.rapla.jsonrpc.client.gwt.internal.ServerUnavailableException;
@@ -265,7 +265,7 @@ public abstract class JsonCall<T> implements RequestCallback {
 					final String message = error.message();
 					String[] paramObj = data.params();
 					final List<String> parameter = paramObj != null ? Arrays.asList(paramObj) : null;
-					e = exceptionDeserializer.deserialize(exception, message, parameter);
+					e = exceptionDeserializer.deserializeException(exception, message, parameter);
             	}
 				if(e == null) {
 					final String errmsg = r.error().message();
@@ -308,7 +308,7 @@ public abstract class JsonCall<T> implements RequestCallback {
     /**
      * Call a JSON parser javascript function to parse an encoded JSON string.
      *
-     * @param parser
+     * @param parserFunction
      *            a javascript function
      * @param json
      *            encoded JSON text

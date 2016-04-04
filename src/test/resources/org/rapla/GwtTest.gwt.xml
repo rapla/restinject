@@ -5,9 +5,10 @@
     <inherits name='com.google.gwt.user.User'/>
     <inherits name='org.rapla.jsonrpc.jsonrpc'/>
     <inherits name='org.rapla.inject.inject'/>
+    <inherits name='RestinjectExternal'/>
     <source path='client/gwt' />
     <source path='inject'/>
     <source path='common'/>
     <source path='dagger'/>
-    <servlet path='/rest/*' class='org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher'/>
+    <servlet path='/rest/*' class='org.rapla.server.TestServlet'/>
 </module>
