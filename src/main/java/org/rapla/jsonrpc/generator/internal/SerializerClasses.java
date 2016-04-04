@@ -4,14 +4,11 @@ import org.rapla.jsonrpc.client.swing.BasicRaplaHTTPConnector;
 
 public interface SerializerClasses
 {
-    String FutureResult = org.rapla.jsonrpc.common.FutureResult.class.getCanonicalName();
-
     String JsonCall20HttpGet = org.rapla.jsonrpc.client.gwt.internal.impl.JsonCall20HttpGet.class.getCanonicalName();
     String JsonCall20HttpPost = org.rapla.jsonrpc.client.gwt.internal.impl.JsonCall20HttpPost.class.getCanonicalName();
     String AbstractJsonJavaProxy = BasicRaplaHTTPConnector.class.getCanonicalName();
     String AbstractJsonProxy = org.rapla.jsonrpc.client.gwt.AbstractJsonProxy.class.getCanonicalName();
     String AbstractJsonProxy_simple = org.rapla.jsonrpc.client.gwt.AbstractJsonProxy.class.getSimpleName();
-    String FutureResultImpl = org.rapla.jsonrpc.client.gwt.internal.impl.FutureResultImpl.class.getCanonicalName();
 
     String ResultDeserializer = org.rapla.jsonrpc.client.gwt.internal.impl.ResultDeserializer.class.getCanonicalName();
     String ArrayResultDeserializer = org.rapla.jsonrpc.client.gwt.internal.impl.ArrayResultDeserializer.class.getCanonicalName();
@@ -34,7 +31,6 @@ public interface SerializerClasses
     String SetSerializer = org.rapla.jsonrpc.client.gwt.internal.impl.ser.SetSerializer.class.getCanonicalName();
     String PrimitiveArrayResultDeserializers = org.rapla.jsonrpc.client.gwt.internal.impl.ser.PrimitiveArrayResultDeserializers.class.getCanonicalName();
     String PrimitiveResultDeserializers = org.rapla.jsonrpc.client.gwt.internal.impl.ser.PrimitiveResultDeserializers.class.getCanonicalName();
-    String VoidResult_JsonSerializer = org.rapla.jsonrpc.client.gwt.internal.impl.ser.VoidResult_JsonSerializer.class.getCanonicalName();
 
 
 }

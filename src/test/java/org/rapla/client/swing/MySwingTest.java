@@ -18,7 +18,6 @@ import org.rapla.jsonrpc.client.EntryPointFactory;
 import org.rapla.jsonrpc.client.gwt.MockProxy;
 import org.rapla.jsonrpc.client.swing.BasicRaplaHTTPConnector;
 import org.rapla.jsonrpc.client.swing.RaplaConnectException;
-import org.rapla.jsonrpc.common.FutureResult;
 import org.rapla.server.ServletTestContainer;
 
 import junit.framework.TestCase;
@@ -112,8 +111,7 @@ public class MySwingTest extends TestCase
         AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
         AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
-        final FutureResult<List<AnnotationProcessingTest.Result>> resultFutureResult = test.sayHello(p);
-        final List<AnnotationProcessingTest.Result> resultList = resultFutureResult.get();
+        final List<AnnotationProcessingTest.Result> resultList = test.sayHello(p);
         final AnnotationProcessingTest.Result result = resultList.get(0);
         final List<String> ids = result.getIds();
         assertEquals(2, ids.size());
@@ -127,8 +125,7 @@ public class MySwingTest extends TestCase
     {
         AnnotationSimpleProcessingTest test = new AnnotationSimpleProcessingTest_JavaJsonProxy(connector);
         final String message = "hello";
-        final FutureResult<String> resultFutureResult = test.sayHello(message);
-        final String result = resultFutureResult.get();
+        final String result = test.sayHello(message);
         System.out.println("result");
         assertTrue(result.startsWith(message));
     }
@@ -147,8 +144,7 @@ public class MySwingTest extends TestCase
     public void test4() throws Exception
     {
         AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
-        final FutureResult<Map<String, Set<String>>> resultFutureResult = test.complex();
-        final Set<String> greeting = resultFutureResult.get().get("greeting");
+        final Set<String> greeting = test.complex().get("greeting");
         assertEquals(2, greeting.size());
         final Iterator<String> iterator = greeting.iterator();
         assertEquals("Hello", iterator.next());

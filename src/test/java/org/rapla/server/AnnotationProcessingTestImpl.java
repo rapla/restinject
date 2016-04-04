@@ -12,8 +12,6 @@ import javax.inject.Inject;
 import org.rapla.common.AnnotationProcessingTest;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
-import org.rapla.jsonrpc.common.FutureResult;
-import org.rapla.jsonrpc.common.ResultImpl;
 
 @DefaultImplementation(context = InjectionContext.server, of = AnnotationProcessingTest.class)
 public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
@@ -24,11 +22,10 @@ public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
     }
 
     @Override
-    public FutureResult<List<Result>> sayHello(Parameter param)
+    public List<Result> sayHello(Parameter param)
     {
         List<Result> list = sayHello3(param);
-        final ResultImpl<List<Result>> futureResult = new ResultImpl<>(list);
-        return futureResult;
+        return list;
     }
 
     @Override
@@ -55,7 +52,7 @@ public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
     }
 
     @Override
-    public FutureResult<Map<String, Set<String>>> complex()
+    public Map<String, Set<String>> complex()
     {
 
         Map<String, Set<String>> list = new LinkedHashMap<>();
@@ -63,7 +60,6 @@ public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
         set.add("Hello");
         set.add("World");
         list.put("greeting", set);
-        final ResultImpl<Map<String, Set<String>>> futureResult = new ResultImpl<>(list);
-        return futureResult;
+        return list;
     }
 }

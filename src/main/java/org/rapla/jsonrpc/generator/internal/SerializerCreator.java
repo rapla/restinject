@@ -14,9 +14,16 @@
 
 package org.rapla.jsonrpc.generator.internal;
 
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsonUtils;
-import org.rapla.inject.generator.internal.SourceWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -31,16 +38,11 @@ import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import org.rapla.inject.generator.internal.SourceWriter;
+
+import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.JsonUtils;
 
 class SerializerCreator implements SerializerClasses
 {
@@ -69,8 +71,6 @@ class SerializerCreator implements SerializerClasses
         defaultSerializers.put(String.class.getCanonicalName(), JavaLangString_JsonSerializer);
         defaultSerializers.put(Integer.class.getCanonicalName(), JavaLangInteger_JsonSerializer);
         defaultSerializers.put(Date.class.getCanonicalName(), JavaUtilDate_JsonSerializer);
-        defaultSerializers.put(Void.class.getCanonicalName(), VoidResult_JsonSerializer);
-        defaultSerializers.put("void", VoidResult_JsonSerializer);
         //    defaultSerializers.put(java.sql.Date.class.getCanonicalName(),
         //        JavaSqlDate_JsonSerializer.class.getCanonicalName());
         //    defaultSerializers.put(java.sql.Timestamp.class.getCanonicalName(),
@@ -147,7 +147,7 @@ class SerializerCreator implements SerializerClasses
 
     private void recursivelyCreateSerializers(final TreeLogger logger, final TypeMirror targetType) throws UnableToCompleteException, IOException
     {
-        if (isPrimitive(targetType) || isBoxedPrimitive(targetType))
+        if (isPrimitive(targetType) || isBoxedPrimitive(targetType) || targetType.getKind() == TypeKind.VOID)
         {
             return;
         }

@@ -7,8 +7,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import org.rapla.jsonrpc.common.FutureResult;
-
 @Path("EnumJsonService")
 public interface EnumJsonService
 {
@@ -27,7 +25,7 @@ public interface EnumJsonService
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{comment}")
-    FutureResult<TrueFalse> insert(@PathParam("comment")String comment);
+    TrueFalse insert(@PathParam("comment")String comment);
 
     @PUT
     @Produces(MediaType.APPLICATION_JSON)

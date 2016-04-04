@@ -10,8 +10,6 @@ import javax.ws.rs.core.Context;
 import org.rapla.common.AnnotationSimpleProcessingTest;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
-import org.rapla.jsonrpc.common.FutureResult;
-import org.rapla.jsonrpc.common.ResultImpl;
 
 @DefaultImplementation(context=InjectionContext.server, of=AnnotationSimpleProcessingTest.class)
 public class AnnotationSimpleProcessingTestImpl implements AnnotationSimpleProcessingTest
@@ -27,9 +25,9 @@ public class AnnotationSimpleProcessingTestImpl implements AnnotationSimpleProce
     }
 
     @Override
-    public FutureResult<String> sayHello(String param)
+    public String sayHello(String param)
     {
-        return new ResultImpl<String>(param + session.toString(request));
+        return param + session.toString(request);
     }
 
     @Override

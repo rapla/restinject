@@ -19,8 +19,6 @@ import java.util.concurrent.Executor;
 import org.rapla.jsonrpc.client.EntryPointFactory;
 import org.rapla.jsonrpc.client.gwt.MockProxy;
 import org.rapla.jsonrpc.common.ExceptionDeserializer;
-import org.rapla.jsonrpc.common.AsyncCallback;
-import org.rapla.jsonrpc.common.FutureResult;
 import org.rapla.jsonrpc.common.internal.JSONParserWrapper;
 
 import com.google.gson.Gson;
@@ -80,33 +78,6 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         this.scheduler = customConnector.getScheduler();
         this.customConnector = customConnector;
         gsonBuilder = JSONParserWrapper.defaultGsonBuilder(customConnector.getNonPrimitiveClasses()).disableHtmlEscaping();
-    }
-
-    public abstract class MyFutureResult<T> implements FutureResult<T>
-    {
-        public abstract T get() throws Exception;
-
-        @Override public void get(final AsyncCallback callback)
-        {
-            scheduler.execute(new Runnable()
-            {
-                public void run()
-                {
-                    Object result;
-                    try
-                    {
-                        result = get();
-                    }
-                    catch (Exception e)
-                    {
-                        callback.onFailure(e);
-                        return;
-                    }
-                    callback.onSuccess(result);
-                }
-
-            });
-        }
     }
 
     private JsonElement serializeArguments(Object arg)

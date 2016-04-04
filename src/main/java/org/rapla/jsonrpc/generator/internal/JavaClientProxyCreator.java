@@ -51,7 +51,6 @@ public class JavaClientProxyCreator implements SerializerClasses
 {
     public static final String PROXY_SUFFIX = "_JavaJsonProxy";
     private TypeElement svcInf;
-    String futureResultClassName;
     private SerializerCreator serializerCreator;
     private ResultDeserializerCreator deserializerCreator;
     private int instanceField;
@@ -66,7 +65,6 @@ public class JavaClientProxyCreator implements SerializerClasses
         this.processingEnvironment = processingEnvironment;
         serializerCreator = new SerializerCreator(processingEnvironment, nameFactory, generatorName);
         deserializerCreator = new ResultDeserializerCreator(serializerCreator, processingEnvironment, generatorName);
-        futureResultClassName = FutureResultImpl;
     }
 
     private String getGeneratorString()
@@ -133,16 +131,7 @@ public class JavaClientProxyCreator implements SerializerClasses
             }
 
             final TreeLogger branch = logger;//.branch(TreeLogger.DEBUG, m.getName() + ", result " + resultType.getQualifiedSourceName());
-            if (returnType.toString().startsWith(FutureResult) && SerializerCreator.isParameterized(returnType))
-            {
-                final TypeMirror typeMirror = getParameters(returnType).get(0);
-                serializerCreator.checkCanSerialize(branch, typeMirror);
-                returnType = typeMirror;
-            }
-            else
-            {
-                serializerCreator.checkCanSerialize(branch, returnType);
-            }
+            serializerCreator.checkCanSerialize(branch, returnType);
             if (SerializerCreator.isArray(returnType))
             {
                 // Arrays need a special deserializer
@@ -220,10 +209,8 @@ public class JavaClientProxyCreator implements SerializerClasses
         pw.println("import java.net.URL;");
         pw.println("import " + Map.class.getCanonicalName() + ";");
         pw.println("import " + HashMap.class.getCanonicalName() + ";");
-        pw.println("import " + FutureResult + ";");
         pw.println("import " + AbstractJsonJavaProxy + ";");
         pw.println("import " + AbstractJsonJavaProxy + ".CustomConnector;");
-        pw.println("import " + FutureResultImpl + ";");
 
         pw.println();
 
@@ -354,7 +341,6 @@ public class JavaClientProxyCreator implements SerializerClasses
 
         w.println(") {");
         w.indent();
-        final boolean wrapFutureResult;
         final String resultClassname;
         final String cast;
         String containerClass = "null";
@@ -364,45 +350,18 @@ public class JavaClientProxyCreator implements SerializerClasses
             {
                 final DeclaredType resultType1 = (DeclaredType) resultType;
                 final List<? extends TypeMirror> typeArguments = resultType1.getTypeArguments();
-                wrapFutureResult = resultType1.toString().startsWith(FutureResult);
-                if (!wrapFutureResult)
+                TypeMirror typeMirror = resultType1;
                 {
-                    TypeMirror typeMirror = resultType1;
-                    {
-                        TypeMirror erasedType = SerializerCreator.getErasedType(typeMirror, processingEnvironment);
-                        containerClass = erasedType.toString() + ".class";
-                    }
-                    {
-                        final List<? extends TypeMirror> typeArguments1 = ((DeclaredType) typeMirror).getTypeArguments();
-                        final TypeMirror innerType = typeArguments1.get(typeArguments1.size() - 1);
-                        final TypeMirror erasedType = SerializerCreator.getErasedType(innerType, processingEnvironment);
-                        resultClassname = erasedType.toString();
-                    }
-                    cast = typeMirror.toString();
+                    TypeMirror erasedType = SerializerCreator.getErasedType(typeMirror, processingEnvironment);
+                    containerClass = erasedType.toString() + ".class";
                 }
-                else
                 {
-                    final TypeMirror typeMirror = typeArguments.get(0);
-                    if ((typeMirror instanceof DeclaredType) && ((DeclaredType) typeMirror).getTypeArguments() != null
-                            && !((DeclaredType) typeMirror).getTypeArguments().isEmpty())
-                    {
-                        {
-                            final TypeMirror erasedType = SerializerCreator.getErasedType(typeMirror, processingEnvironment);
-                            containerClass = erasedType.toString() + ".class";
-                        }
-                        {
-                            final List<? extends TypeMirror> typeArguments1 = ((DeclaredType) typeMirror).getTypeArguments();
-                            final TypeMirror innerType = typeArguments1.get(typeArguments1.size() - 1);
-                            final TypeMirror erasedType = SerializerCreator.getErasedType(innerType, processingEnvironment);
-                            resultClassname = erasedType.toString();
-                        }
-                    }
-                    else
-                    {
-                        resultClassname = typeMirror.toString();
-                    }
-                    cast = typeMirror.toString();
+                    final List<? extends TypeMirror> typeArguments1 = ((DeclaredType) typeMirror).getTypeArguments();
+                    final TypeMirror innerType = typeArguments1.get(typeArguments1.size() - 1);
+                    final TypeMirror erasedType = SerializerCreator.getErasedType(innerType, processingEnvironment);
+                    resultClassname = erasedType.toString();
                 }
+                cast = typeMirror.toString();
 
                 {
 
@@ -416,7 +375,6 @@ public class JavaClientProxyCreator implements SerializerClasses
             else
             {
                 resultClassname = resultType.toString();
-                wrapFutureResult = false;
                 cast = resultClassname;
             }
         }
@@ -425,23 +383,9 @@ public class JavaClientProxyCreator implements SerializerClasses
         w.indent();
         final String s = "return";
         w.println("if ( isMock() ) {" + (hasReturn ? "return" : "") + " createMock()." + methodName + "(" + argsBuilder.toString() + "); }");
-        if (wrapFutureResult)
-        {
-            w.println("return new BasicRaplaHTTPConnector.MyFutureResult() {");
-            w.indent();
-            w.println("@Override public Object get() throws Exception {");
-            w.indent();
-        }
-
-        String resultClass = futureResultClassName;
-        if (parameterizedResult != null)
-        {
-            resultClass += "<" + parameterizedResult.toString() + ">";
-        }
 
         w.println("java.lang.String subPath = \"" + (method.getAnnotation(Path.class) != null ? method.getAnnotation(Path.class).value() : "") + "\";");
         w.println("final Map<java.lang.String, java.lang.String>additionalHeaders = new HashMap<>();");
-        w.indent();
         final String className = svcInf.getQualifiedName().toString();
         boolean firstQueryParam = true;
         boolean elementPrint = false;
@@ -592,22 +536,7 @@ public class JavaClientProxyCreator implements SerializerClasses
         w.println("final Object result = getResult(resultMessage, resultType, containerClass);");
         if (hasReturn)
         {
-            if (wrapFutureResult)
-            {
-                w.println("return result;");
-            }
-            else
-            {
-                w.println("return (" + cast + ") result;");
-            }
-        }
-
-        if (wrapFutureResult)
-        {
-            w.outdent();
-            w.println("}");
-            w.outdent();
-            w.println("};");
+            w.println("return (" + cast + ") result;");
         }
 
         w.outdent();

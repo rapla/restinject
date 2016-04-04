@@ -14,7 +14,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
 
-import org.rapla.jsonrpc.common.FutureResult;
 import org.rapla.jsonrpc.common.internal.JSONParserWrapper;
 
 import com.google.gson.Gson;
@@ -70,18 +69,6 @@ public class GsonWriter<T> implements MessageBodyWriter<T>
             final JsonObject wrapper = new JsonObject();
             wrapper.add("error", obj);
             json = gson.toJson(wrapper);
-        }
-        else if (t instanceof FutureResult)
-        {
-            try
-            {
-                Object realResult = ((FutureResult) t).get();
-                json = gson.toJson(realResult);
-            }
-            catch (Exception e)
-            {
-                throw new IOException(e.getMessage(), e);
-            }
         }
         else
         {

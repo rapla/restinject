@@ -9,14 +9,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import org.rapla.jsonrpc.common.FutureResult;
-
 @Path("AnnotationSimpleProcessingTest")
 public interface AnnotationSimpleProcessingTest
 {
     @GET
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-    FutureResult<String> sayHello(@QueryParam("param") String param);
+    String sayHello(@QueryParam("param") String param);
     
     @GET
     @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })

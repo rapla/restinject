@@ -17,18 +17,16 @@ package org.rapla.jsonrpc.client.gwt;
 import java.util.Map;
 
 import org.rapla.jsonrpc.client.EntryPointFactory;
-import org.rapla.jsonrpc.common.ExceptionDeserializer;
-import org.rapla.jsonrpc.client.gwt.internal.impl.FutureResultImpl;
 import org.rapla.jsonrpc.client.gwt.internal.impl.JsonCall;
 import org.rapla.jsonrpc.client.gwt.internal.impl.JsonCall20HttpGet;
 import org.rapla.jsonrpc.client.gwt.internal.impl.JsonCall20HttpPost;
 import org.rapla.jsonrpc.client.gwt.internal.impl.ResultDeserializer;
+import org.rapla.jsonrpc.common.ExceptionDeserializer;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestBuilder.Method;
-import com.google.gwt.user.client.rpc.InvocationException;
 import com.google.gwt.user.client.rpc.RpcRequestBuilder;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 
@@ -105,8 +103,8 @@ public abstract class AbstractJsonProxy implements ServiceDefTarget
         return path;
     }
 
-    protected <T> void doInvoke(final Method requestMethodType, final String methodName, final String reqData, final Map<String, String> additionalHeaders, final ResultDeserializer<T> ser, final FutureResultImpl<T> cb)
-            throws InvocationException
+    protected <T> T doInvoke(final Method requestMethodType, final String methodName, final String reqData, final Map<String, String> additionalHeaders, final ResultDeserializer<T> ser)
+            throws Exception
     {
         if (serviceEntryPointFactory != null)
         {
@@ -123,11 +121,11 @@ public abstract class AbstractJsonProxy implements ServiceDefTarget
             throw new NoServiceEntryPointSpecifiedException();
         }
         JsonCall<T> newJsonCall = newJsonCall(requestMethodType, methodName, additionalHeaders, reqData, ser);
-        cb.setCall(newJsonCall);
         if (token != null)
         {
             newJsonCall.setToken(token);
         }
+        return newJsonCall.sendSynchronized();
     }
 
     protected <T> JsonCall<T> newJsonCall(Method requestMethodType, String methodName, Map<String, String>additionalHeaders, final String reqData, final ResultDeserializer<T> ser)

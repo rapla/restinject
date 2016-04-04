@@ -22,8 +22,6 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import org.rapla.jsonrpc.common.FutureResult;
-
 @Provider
 @Produces(MediaType.APPLICATION_XML)
 public class XmlWriter<T> implements MessageBodyWriter<T>
@@ -46,7 +44,7 @@ public class XmlWriter<T> implements MessageBodyWriter<T>
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType)
     {
-        return type == FutureResult.class || type.getAnnotation(XmlRootElement.class) != null;
+        return type.getAnnotation(XmlRootElement.class) != null;
     }
 
     @Override
@@ -85,15 +83,9 @@ public class XmlWriter<T> implements MessageBodyWriter<T>
                 {
                     entityStream.write(e.getMessage().getBytes("UTF-8"));
                 }
+                return;
             }
-            if (t instanceof FutureResult)
-            {
-                realResult = ((FutureResult) t).get();
-            }
-            else
-            {
-                realResult = t;
-            }
+            realResult = t;
             final Class<? extends Object> clazz = realResult.getClass();
             JAXBContext jaxbContext = contexts.get(clazz);
             if (jaxbContext == null)

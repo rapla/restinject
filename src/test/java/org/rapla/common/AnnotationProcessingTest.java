@@ -12,14 +12,12 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import org.rapla.jsonrpc.common.FutureResult;
-
 @Path("AnnotationProcessingTest")
 public interface AnnotationProcessingTest
 {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    FutureResult<List<Result>> sayHello(Parameter param);
+    List<Result> sayHello(Parameter param);
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
@@ -32,7 +30,7 @@ public interface AnnotationProcessingTest
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    FutureResult<Map<String, Set<String>>> complex();
+    Map<String, Set<String>> complex();
 
     public static class Result {
         private String name;
