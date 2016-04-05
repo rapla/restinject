@@ -11,5 +11,5 @@
     <source path='inject'/>
     <source path='common'/>
     <source path='dagger'/>
-    <servlet path='/rest/*' class='org.rapla.server.TestServlet'></servlet>
+    <servlet path='/rest/*' class='org.rapla.server.GwtTestServlet'></servlet>
 </module>

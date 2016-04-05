@@ -7,14 +7,9 @@ import org.rapla.common.AnnotationProcessingTest;
 import org.rapla.common.ComponentStarter;
 import org.rapla.rest.client.EntryPointFactory;
 import org.rapla.rest.client.gwt.AbstractJsonProxy;
-import org.rapla.scheduler.Promise;
-import org.rapla.scheduler.CommandScheduler;
-import org.rapla.scheduler.client.gwt.GwtCommandScheduler;
 
-import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 
 public class MyGwtTest extends GWTTestCase
 {

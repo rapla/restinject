@@ -4,6 +4,7 @@ import dagger.MembersInjector;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap;
 import org.jboss.resteasy.plugins.servlet.ResteasyServletInitializer;
+import org.rapla.client.gwt.MyGwtTest;
 import org.rapla.server.dagger.DaggerRaplaServerComponent;
 import org.rapla.server.dagger.DaggerRaplaServerStartupModule;
 import org.rapla.server.dagger.RaplaServerComponent;
@@ -26,9 +27,14 @@ import java.util.Map;
 
 public class TestServlet extends HttpServlet
 {
+
     HttpServletDispatcher dispatcher;
     private Map<String, MembersInjector> membersInjector;
 
+    protected String getPrefix()
+    {
+        return "";
+    }
     @Override public void init(ServletConfig config) throws ServletException
     {
         System.out.println("Starting init");
@@ -51,7 +57,7 @@ public class TestServlet extends HttpServlet
             {
                 switch ( name)
                 {
-                    case "resteasy.servlet.mapping.prefix": return "/rest";
+                    case "resteasy.servlet.mapping.prefix": return getPrefix() + "/rest";
                     case "resteasy.use.builtin.providers": return  "false";
                     case "javax.ws.rs.Application": return RestTestApplication.class.getCanonicalName();
                 }
@@ -75,7 +81,7 @@ public class TestServlet extends HttpServlet
     @Override protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         request.setAttribute(RestDaggerListener.RAPLA_CONTEXT, membersInjector);
-        System.out.println("service request " + request);
+        System.out.println("service request full " + request.toString() + " uri: " + request.getRequestURI() + " context: " + request.getContextPath() + " pathInfo " + request.getPathInfo() + " servlet path " + request.getServletPath()) ;
         dispatcher.service( request, response);
     }
 
