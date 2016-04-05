@@ -1,17 +1,20 @@
 package org.rapla.client.gwt;
 
-import java.util.Arrays;
-import java.util.List;
-
-import org.rapla.common.AnnotationProcessingTest;
-import org.rapla.common.ComponentStarter;
-import org.rapla.jsonrpc.client.EntryPointFactory;
-import org.rapla.jsonrpc.client.gwt.AbstractJsonProxy;
-
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.junit.client.GWTTestCase;
-
 import dagger.Component;
+import org.rapla.common.AnnotationProcessingTest;
+import org.rapla.common.ComponentStarter;
+import org.rapla.rest.client.EntryPointFactory;
+import org.rapla.rest.client.gwt.AbstractJsonProxy;
+import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.CommandScheduler;
+import org.rapla.scheduler.client.gwt.GwtCommandScheduler;
+
+import java.net.URL;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Supplier;
 
 public class MyGwtTest extends GWTTestCase
 {
@@ -31,19 +34,39 @@ public class MyGwtTest extends GWTTestCase
     public interface BootstrapInterface {
         Bootstrap getBootstrap();
     }
-    
-    public void testGwtCall() throws Exception
+
+    @Override protected void gwtSetUp() throws Exception
     {
+        super.gwtSetUp();
         AbstractJsonProxy.setServiceEntryPointFactory(new EntryPointFactory()
         {
             @Override public String getEntryPoint(String interfaceName, String relativePath)
             {
-                String s = GWT.getModuleBaseURL();
-                s+= "rest/";
+                String moduleBase = GWT.getModuleBaseURL();//.replaceAll("/org.rapla.GwtTest.JUnit","");
+                int port = 59683;
+//                try
+//                {
+//                    port = new URL(s).getPort();
+//                }
+//                catch ( Exception ex)
+//                {
+//                }
+//                final String s1 = "http://192.168.0.102:" + port + "/rest/AnnotationProcessingTest";
+//                System.out.println("Entry point " + s1 );
+//                return s1;
+
+                String s= moduleBase + "rest/";
                 String url = s + (relativePath != null ? relativePath : interfaceName);
+                System.out.println("module base '" + moduleBase + "', entry point " + url + " for relativPath " + relativePath + " and interface " + interfaceName);
                 return url;
+
             }
         });
+
+    }
+
+    public void testGwtCall() throws Exception
+    {
 
         final Bootstrap bootstrap = DaggerMyGwtTest_BootstrapInterface.create().getBootstrap();
         AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
@@ -56,7 +79,42 @@ public class MyGwtTest extends GWTTestCase
         assertEquals("1", ids.get(0));
         assertEquals("2", ids.get(1));
     }
-    
+
+    AnnotationProcessingTest.Result asyncResult;
+
+    /*
+    public void testGwtPromiseCall() throws Exception
+    {
+        final Bootstrap bootstrap = DaggerMyGwtTest_BootstrapInterface.create().getBootstrap();
+        AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
+        p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
+        CommandScheduler scheduler = new GwtCommandScheduler()
+        {
+            @Override protected void warn(String message, Exception e)
+            {
+                e.printStackTrace( System.err);
+                System.err.println( message);
+            }
+
+        };
+        final Promise<List<AnnotationProcessingTest.Result>> promise = bootstrap.callAsync(p, scheduler);
+        delayTestFinish( 10000);
+        promise.thenAccept((list) -> {
+            asyncResult = list.get(0);
+            final List<String> ids = asyncResult.getIds();
+            assertEquals(2, ids.size());
+            assertEquals("1", ids.get(0));
+            assertEquals("2", ids.get(1));
+        }).exceptionally((ex)->{ex.printStackTrace();fail(ex.getMessage());return null;});
+
+
+
+
+        //final FutureResult<AnnotationProcessingTest.Result> futureResult = new AnnotationProcessingTestImpl().sayHello(p);
+        //AnnotationProcessingTest.Result result = futureResult.get();
+
+    }
+    */
     public void testStartGeneratedServerComponent()
     {
         System.out.println("Before GWT create");

@@ -44,8 +44,8 @@ import org.rapla.inject.ExtensionRepeatable;
 import org.rapla.inject.InjectionContext;
 import org.rapla.inject.generator.AnnotationInjectionProcessor;
 import org.rapla.inject.internal.DaggerMapKey;
-import org.rapla.jsonrpc.generator.internal.GwtProxyCreator;
-import org.rapla.jsonrpc.generator.internal.JavaClientProxyCreator;
+import org.rapla.rest.generator.internal.GwtProxyCreator;
+import org.rapla.rest.generator.internal.JavaClientProxyCreator;
 
 import dagger.Component;
 import dagger.MembersInjector;

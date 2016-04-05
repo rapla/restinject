@@ -5,6 +5,8 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.rapla.common.AnnotationProcessingTest;
+import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.CommandScheduler;
 
 public class Bootstrap
 {
@@ -21,5 +23,11 @@ public class Bootstrap
         final List<AnnotationProcessingTest.Result> resultFutureResult = webservice.sayHello(p);
         final AnnotationProcessingTest.Result result = resultFutureResult.get(0);
         return result;
+    }
+
+    public Promise<List<AnnotationProcessingTest.Result>> callAsync(final AnnotationProcessingTest.Parameter p, final CommandScheduler scheduler) throws Exception
+    {
+        final Promise<List<AnnotationProcessingTest.Result>> listPromise = scheduler.supplyProxy(webservice, (service) -> service.sayHello(p));
+        return listPromise;
     }
 }

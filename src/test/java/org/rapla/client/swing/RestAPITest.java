@@ -5,10 +5,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.jetty.server.Server;
-import org.rapla.jsonrpc.client.EntryPointFactory;
-import org.rapla.jsonrpc.client.swing.BasicRaplaHTTPConnector;
-import org.rapla.jsonrpc.client.swing.HTTPConnector;
-import org.rapla.jsonrpc.client.swing.HTTPJsonConnector;
+import org.rapla.rest.client.EntryPointFactory;
+import org.rapla.rest.client.swing.BasicRaplaHTTPConnector;
+import org.rapla.rest.client.swing.HTTPConnector;
+import org.rapla.rest.client.swing.HTTPJsonConnector;
 import org.rapla.server.ServletTestContainer;
 
 import com.google.gson.JsonElement;

@@ -2,8 +2,6 @@ package org.rapla.client.swing;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import org.rapla.jsonrpc.client.swing.HTTPJsonConnector;
 
 import java.net.URL;
 

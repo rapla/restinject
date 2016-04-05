@@ -25,7 +25,6 @@ import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
-import javax.tools.Diagnostic.Kind;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
 import javax.tools.StandardLocation;
@@ -38,9 +37,9 @@ import org.rapla.inject.Extension;
 import org.rapla.inject.ExtensionPoint;
 import org.rapla.inject.ExtensionRepeatable;
 import org.rapla.inject.generator.internal.DaggerModuleCreator;
-import org.rapla.jsonrpc.generator.internal.GwtProxyCreator;
-import org.rapla.jsonrpc.generator.internal.JavaClientProxyCreator;
-import org.rapla.jsonrpc.generator.internal.TreeLogger;
+import org.rapla.rest.generator.internal.GwtProxyCreator;
+import org.rapla.rest.generator.internal.JavaClientProxyCreator;
+import org.rapla.rest.generator.internal.TreeLogger;
 
 /*
  * Annotation Processor to create the org.rapla.servicelist file within the META-INF folder and one file 

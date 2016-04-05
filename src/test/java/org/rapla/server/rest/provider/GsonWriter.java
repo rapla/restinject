@@ -14,7 +14,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
 
-import org.rapla.jsonrpc.common.internal.JSONParserWrapper;
+import org.rapla.rest.client.swing.JSONParserWrapper;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;

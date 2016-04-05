@@ -1,12 +1,9 @@
 package org.rapla.client.swing;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Executor;
 
 import org.eclipse.jetty.server.Server;
 import org.junit.Assert;
@@ -14,10 +11,8 @@ import org.rapla.common.AnnotationProcessingTest;
 import org.rapla.common.AnnotationProcessingTest_JavaJsonProxy;
 import org.rapla.common.AnnotationSimpleProcessingTest;
 import org.rapla.common.AnnotationSimpleProcessingTest_JavaJsonProxy;
-import org.rapla.jsonrpc.client.EntryPointFactory;
-import org.rapla.jsonrpc.client.gwt.MockProxy;
-import org.rapla.jsonrpc.client.swing.BasicRaplaHTTPConnector;
-import org.rapla.jsonrpc.client.swing.RaplaConnectException;
+import org.rapla.rest.client.EntryPointFactory;
+import org.rapla.rest.client.swing.BasicRaplaHTTPConnector;
 import org.rapla.server.ServletTestContainer;
 
 import junit.framework.TestCase;
@@ -26,62 +21,7 @@ public class MySwingTest extends TestCase
 {
     Server server;
 
-    BasicRaplaHTTPConnector.CustomConnector connector = new BasicRaplaHTTPConnector.CustomConnector()
-    {
-
-        String accessToken;
-        Executor executor = new Executor()
-        {
-            @Override
-            public void execute(Runnable command)
-            {
-                command.run();
-            }
-        };
-
-        @Override
-        public String reauth(BasicRaplaHTTPConnector proxy) throws Exception
-        {
-            return accessToken;
-        }
-
-        @Override
-        public String getAccessToken()
-        {
-            return accessToken;
-        }
-
-        @Override
-        public Exception deserializeException(String classname, String s, List<String> params)
-        {
-            return new Exception(classname + " " + s + " " + params);
-            // throw new Au
-        }
-
-        @Override
-        public Class[] getNonPrimitiveClasses()
-        {
-            return new Class[0];
-        }
-
-        @Override
-        public Exception getConnectError(IOException ex)
-        {
-            return new RaplaConnectException("Connection Error " + ex.getMessage());
-        }
-
-        @Override
-        public Executor getScheduler()
-        {
-            return executor;
-        }
-
-        @Override
-        public MockProxy getMockProxy()
-        {
-            return null;
-        }
-    };
+    BasicRaplaHTTPConnector.CustomConnector connector = new MyCustomConnector();
 
     @Override
     protected void setUp() throws Exception
@@ -164,4 +104,5 @@ public class MySwingTest extends TestCase
 
         }
     }
+
 }
