@@ -27,7 +27,7 @@ public class Bootstrap
 
     public Promise<List<AnnotationProcessingTest.Result>> callAsync(final AnnotationProcessingTest.Parameter p, final CommandScheduler scheduler) throws Exception
     {
-        final Promise<List<AnnotationProcessingTest.Result>> listPromise = scheduler.supplyProxy(webservice, (service) -> service.sayHello(p));
+        final Promise<List<AnnotationProcessingTest.Result>> listPromise = scheduler.supplyProxy(()->webservice.sayHello(p));
         return listPromise;
     }
 }

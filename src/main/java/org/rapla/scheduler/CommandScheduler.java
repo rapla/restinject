@@ -9,16 +9,11 @@ public interface CommandScheduler
     Cancelable schedule(Command command, long delay, long period);
     /** if two commands are scheduled for the same synchronisation object then they must be executed in the order in which they are scheduled*/
 
-    <U> Promise<U> supply(Supplier<U> supplier);
+    <T> Promise<T> supply(Supplier<T> supplier);
     Promise<Void> run(Runnable supplier);
 
     // TODO GWT implmentation
-    <T,U> Promise<U> supplyProxy(T t,ProxyPromiseOperation<U,T> supplier);
-
-    public interface ProxyPromiseOperation<T,S>
-    {
-        T get(S t) throws Exception;
-    }
+    <T> Promise<T> supplyProxy(Supplier<T> supplier);
 
     @FunctionalInterface
     public interface Supplier<T> {
@@ -39,7 +34,7 @@ class Test
         CommandScheduler manager = null;
         manager.schedule(() -> {return;}, 0);
         ProxyTest proxyTest = null;
-        manager.supplyProxy(proxyTest,(proxy) ->  proxy.doSomething()).thenRun(()->{System.out.println("Done");});
+        manager.supplyProxy(() ->  proxyTest.doSomething()).thenRun(()->{System.out.println("Done");});
         manager.supply(() -> {return "test";});
         manager.run(() -> {System.out.println("Test");});
     }

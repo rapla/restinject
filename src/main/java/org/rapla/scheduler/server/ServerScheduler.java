@@ -15,11 +15,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public abstract class ServerScheduler implements CommandScheduler
 {
@@ -303,9 +298,9 @@ public abstract class ServerScheduler implements CommandScheduler
             return w(f.thenApplyAsync( fun, executor));
         }
 
-        @Override public Promise<Void> thenAccept(Consumer<? super T> action)
+        @Override public Promise<Void> thenAccept(Consumer<? super T> fn)
         {
-            final java.util.function.Consumer<T> consumer = (a) -> {action.accept(a);};
+            final java.util.function.Consumer<T> consumer = (a) -> {fn.accept(a);};
             return w(f.thenAcceptAsync(consumer,executor));
         }
 
@@ -320,9 +315,9 @@ public abstract class ServerScheduler implements CommandScheduler
             return w(f.thenCombineAsync( v(other),bifn, executor));
         }
 
-        @Override public <U> Promise<Void> thenAcceptBoth(Promise<? extends U> other, BiConsumer<? super T, ? super U> action)
+        @Override public <U> Promise<Void> thenAcceptBoth(Promise<? extends U> other, BiConsumer<? super T, ? super U> fn)
         {
-            final java.util.function.BiConsumer<? super T, ? super U> biConsumer = (t,u) -> {action.accept(t,u);};
+            final java.util.function.BiConsumer<? super T, ? super U> biConsumer = (t,u) -> {fn.accept(t,u);};
             return w(f.thenAcceptBothAsync( v(other),biConsumer,executor));
         }
 
@@ -337,14 +332,15 @@ public abstract class ServerScheduler implements CommandScheduler
             return w(f.applyToEitherAsync( v(other),fun,executor));
         }
 
-        @Override public Promise<Void> acceptEither(Promise<? extends T> other, Consumer<? super T> action)
+        @Override public Promise<Void> acceptEither(Promise<? extends T> other, Consumer<? super T> fn)
         {
-            throw new UnsupportedOperationException();
+            final java.util.function.Consumer<? super T> action = (t) -> fn.accept(t);
+            return w(f.acceptEitherAsync( v(other),action,executor));
         }
 
-        @Override public Promise<Void> runAfterEither(Promise<?> other, Runnable action)
+        @Override public Promise<Void> runAfterEither(Promise<?> other, Runnable fn)
         {
-            throw new UnsupportedOperationException();
+            return w(f.runAfterEitherAsync( v(other),fn,executor));
         }
 
         @Override public <U> Promise<U> thenCompose(Function<? super T, ? extends Promise<U>> fn)
@@ -375,6 +371,10 @@ public abstract class ServerScheduler implements CommandScheduler
         return promise;
     }
 
+    @Override public <T> Promise<T> supplyProxy( Supplier<T> supplier)
+    {
+        return null;
+    }
 
     @Override public Promise<Void> run(Runnable supplier)
     {
@@ -383,9 +383,6 @@ public abstract class ServerScheduler implements CommandScheduler
         return promise;
     }
 
-    @Override public <T, U> Promise<U> supplyProxy(T t, ProxyPromiseOperation<U, T> supplier)
-    {
-        return null;
-    }
+
     
 }
