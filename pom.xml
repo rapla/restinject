@@ -108,13 +108,13 @@
 				<configuration>
 					<source>${maven.compiler.source}</source>
 					<target>${maven.compiler.target}</target>
+					<proc>none</proc>
 					<!--
 					<annotationProcessors>
 						<annotationProcessor>org.rapla.inject.generator.AnnotationInjectionProcessor</annotationProcessor>
 						<annotationProcessor>dagger.internal.codegen.ComponentProcessor</annotationProcessor>
 					</annotationProcessors>
 					-->
-					<proc>none</proc>
 				</configuration>
 
 			</plugin>
@@ -139,8 +139,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!--
-			-->
 
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>

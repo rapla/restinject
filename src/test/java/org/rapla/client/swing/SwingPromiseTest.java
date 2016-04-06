@@ -13,7 +13,6 @@ import org.junit.Assert;
 import org.rapla.common.AnnotationProcessingTest;
 import org.rapla.common.AnnotationProcessingTest.Parameter;
 import org.rapla.common.AnnotationProcessingTest.Result;
-import org.rapla.common.AnnotationProcessingTest_JavaJsonProxy;
 import org.rapla.rest.client.EntryPointFactory;
 import org.rapla.rest.client.swing.BasicRaplaHTTPConnector;
 import org.rapla.scheduler.Promise;
@@ -73,6 +72,11 @@ public class SwingPromiseTest extends TestCase
         });
     }
 
+    protected AnnotationProcessingTest createAnnotationProcessingProxy()
+    {
+        return new org.rapla.common.AnnotationProcessingTest_JavaJsonProxy(connector);
+    }
+
     @Override
     protected void tearDown() throws Exception
     {
@@ -82,7 +86,7 @@ public class SwingPromiseTest extends TestCase
 
     public void testAccept() throws Exception
     {
-        AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
+        AnnotationProcessingTest test = createAnnotationProcessingProxy();
         AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
         Semaphore semaphore = new Semaphore(0);
@@ -102,7 +106,7 @@ public class SwingPromiseTest extends TestCase
     public void testHandle() throws Exception
     {
         final Semaphore semaphore = new Semaphore(0);
-        AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
+        AnnotationProcessingTest test = createAnnotationProcessingProxy();
         final AnnotationProcessingTest.Parameter p = null;
         final Promise<List<AnnotationProcessingTest.Result>> supply = scheduler.supply(() -> test.sayHello(p));
         supply.handle((resultList, ex) ->
@@ -139,7 +143,7 @@ public class SwingPromiseTest extends TestCase
     public void testApplyAccept() throws Exception
     {
         final Semaphore semaphore = new Semaphore(0);
-        AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
+        AnnotationProcessingTest test = createAnnotationProcessingProxy();
         final Promise<Map<String, Set<String>>> supply = scheduler.supply(() -> test.complex());
         supply.thenApply((map) ->
         {
@@ -155,7 +159,7 @@ public class SwingPromiseTest extends TestCase
     public void testApplyRun() throws Exception
     {
         final Semaphore semaphore = new Semaphore(0);
-        AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
+        AnnotationProcessingTest test = createAnnotationProcessingProxy();
         final AtomicReference<Map<String, Set<String>>> result = new AtomicReference<Map<String, Set<String>>>(null);
         final Promise<Map<String, Set<String>>> supply = scheduler.supply(() -> test.complex());
         supply.thenApply((map) ->
@@ -177,7 +181,7 @@ public class SwingPromiseTest extends TestCase
     public void testCombine() throws Exception
     {
         final Semaphore semaphore = new Semaphore(0);
-        AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
+        AnnotationProcessingTest test = createAnnotationProcessingProxy();
         AtomicReference<Map<String, Set<String>>> result = new AtomicReference<Map<String, Set<String>>>(null);
         final Promise<Map<String, Set<String>>> promise1 = scheduler.supplyProxy(() -> test.complex());
         final Promise<Map<String, Set<String>>> promise2 = scheduler.supplyProxy(() -> test.complex());
@@ -196,7 +200,7 @@ public class SwingPromiseTest extends TestCase
     public void testCompose() throws Exception
     {
         final Semaphore semaphore = new Semaphore(0);
-        AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
+        AnnotationProcessingTest test = createAnnotationProcessingProxy();
         final Promise<Map<String, Set<String>>> promise = scheduler.supplyProxy(() -> test.complex());
         final AtomicReference<Map> result1 = new AtomicReference<Map>();
         promise.thenCompose((map) ->
@@ -220,7 +224,7 @@ public class SwingPromiseTest extends TestCase
     public void testExceptionally() throws Exception
     {
         final Semaphore semaphore = new Semaphore(0);
-        AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
+        AnnotationProcessingTest test = createAnnotationProcessingProxy();
         final Promise<List<AnnotationProcessingTest.Result>> promise = scheduler.supplyProxy(() -> test.sayHello(null));
         promise.exceptionally((ex) ->
         {
@@ -230,7 +234,7 @@ public class SwingPromiseTest extends TestCase
         Assert.assertTrue(semaphore.tryAcquire(20, TimeUnit.SECONDS));
     }
 
-    public void test() throws Exception
+    public void testApplyToEither() throws Exception
     {
         final Semaphore semaphore = new Semaphore(0);
         final Promise<Integer> promise = scheduler.supply(() ->
