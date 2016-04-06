@@ -108,6 +108,7 @@
 				<configuration>
 					<source>${maven.compiler.source}</source>
 					<target>${maven.compiler.target}</target>
+					<proc>none</proc>
 					<!--
 					<annotationProcessors>
 						<annotationProcessor>org.rapla.inject.generator.AnnotationInjectionProcessor</annotationProcessor>
@@ -117,7 +118,6 @@
 				</configuration>
 
 			</plugin>
-			<!--
 			<plugin>
 				<groupId>org.bsc.maven</groupId>
 				<artifactId>maven-processor-plugin</artifactId>
@@ -139,7 +139,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			-->
 
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
