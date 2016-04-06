@@ -162,12 +162,6 @@ public abstract class JsonCall<T> implements RequestCallback {
     public T sendSynchronized() throws Exception
     {
         requestId = ++lastRequestId;
-        final StringBuilder body = new StringBuilder();
-        body.append("{\"rest\":\"2.0\",\"method\":\"");
-        body.append("\",\"params\":");
-        body.append(requestParams);
-        body.append(",\"id\":").append(requestId);
-        body.append("}");
 
         String url = proxy.getServiceEntryPoint() + "/" + methodName;
 
@@ -185,7 +179,7 @@ public abstract class JsonCall<T> implements RequestCallback {
             request.setRequestHeader("Authorization", "Bearer " + token);
         }
         
-        String requestData = body.toString();
+        String requestData = requestParams != null ? requestParams : "";
         request.send(requestData);
         String contentType = request.getResponseHeader("Content-Type");
         String statusText = request.getStatusText();

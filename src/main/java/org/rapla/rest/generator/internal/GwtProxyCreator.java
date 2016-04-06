@@ -388,7 +388,6 @@ public class GwtProxyCreator implements SerializerClasses
             final String reqData = nameFactory.createName("reqData");
             w.println("final StringBuilder " + reqData + " = new StringBuilder();");
             needsComma = false;
-            w.println(reqData + ".append('[');");
             for (int i = 0; i < params.size(); i++)
             {
                 final VariableElement param = params.get(i);
@@ -465,14 +464,13 @@ public class GwtProxyCreator implements SerializerClasses
                     }
                     w.println(".printJson(" + reqData + ", " + pName + ");");
                     w.outdent();
-                    w.println("} else {");
-                    w.indent();
-                    w.println(reqData + ".append(" + JsonSerializer + ".JS_NULL);");
-                    w.outdent();
-                    w.println("}");
+                    w.println("}");// else {");
+//                    w.indent();
+//                    w.println(reqData + ".append(" + JsonSerializer + ".JS_NULL);");
+//                    w.outdent();
+//                    w.println("}");
                 }
             }
-            w.println(reqData + ".append(']');");
             reqDataStr = reqData + ".toString()";
         }
         final boolean isVoidReturnType = "void".equals(method.getReturnType().toString());
