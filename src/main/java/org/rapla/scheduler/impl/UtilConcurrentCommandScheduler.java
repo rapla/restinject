@@ -285,7 +285,7 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
 
         protected <U> Promise<U> w(CompletionStage<U> stage)
         {
-            return new MyPromise<U>(executor, stage);
+            return new MyPromise<U>(promiseExecuter, stage);
         }
 
         protected <T> CompletionStage<T> v(final Promise<T> promise)
