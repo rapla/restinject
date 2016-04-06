@@ -1,8 +1,6 @@
 package org.rapla.client.swing;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,10 +15,8 @@ import org.rapla.common.AnnotationProcessingTest.Parameter;
 import org.rapla.common.AnnotationProcessingTest.Result;
 import org.rapla.rest.client.EntryPointFactory;
 import org.rapla.rest.client.swing.BasicRaplaHTTPConnector;
-import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.Promise;
-import org.rapla.scheduler.Promise.Function;
-import org.rapla.scheduler.server.ServerScheduler;
+import org.rapla.scheduler.impl.UtilConcurrentCommandScheduler;
 import org.rapla.server.ServletTestContainer;
 
 import junit.framework.TestCase;
@@ -31,14 +27,14 @@ public class SwingPromiseTest extends TestCase
     Server server;
 
     BasicRaplaHTTPConnector.CustomConnector connector = new MyCustomConnector();
-    CommandScheduler scheduler;
+    UtilConcurrentCommandScheduler scheduler;
 
 
     @Override
     protected void setUp() throws Exception
     {
         super.setUp();
-        scheduler = new ServerScheduler()
+        scheduler = new UtilConcurrentCommandScheduler()
         {
             @Override protected void error(String message, Exception ex)
             {
