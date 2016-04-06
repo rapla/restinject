@@ -101,6 +101,43 @@
 
 				</executions>
 			</plugin>
+			<!--
+			<plugin>
+				<groupId>org.bsc.maven</groupId>
+				<artifactId>maven-processor-plugin</artifactId>
+				<version>2.2.4</version>
+				<executions>
+					<execution>
+						<id>process</id>
+						<goals>
+							<goal>process</goal>
+						</goals>
+						<phase>generate-sources</phase>
+						<configuration>
+							<defaultOutputDirectory>${project.build.directory}/generated-sources/apt</defaultOutputDirectory>
+							<processors>
+								<processor>org.rapla.inject.generator.AnnotationInjectionProcessor</processor>
+								<processor>dagger.internal.codegen.ComponentProcessor</processor>
+							</processors>
+						</configuration>
+					</execution>
+					<execution>
+						<id>process-test</id>
+						<goals>
+							<goal>process-test</goal>
+						</goals>
+						<phase>generate-test-sources</phase>
+						<configuration>
+							<defaultOutputDirectory>${project.build.directory}/generated-test-sources/apt</defaultOutputDirectory>
+							<processors>
+								<processor>org.rapla.inject.generator.AnnotationInjectionProcessor</processor>
+								<processor>dagger.internal.codegen.ComponentProcessor</processor>
+							</processors>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			-->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -108,6 +145,7 @@
 				<configuration>
 					<source>${maven.compiler.source}</source>
 					<target>${maven.compiler.target}</target>
+					<proc>none</proc>
 					<!--
 					<annotationProcessors>
 						<annotationProcessor>org.rapla.inject.generator.AnnotationInjectionProcessor</annotationProcessor>
@@ -117,7 +155,7 @@
 				</configuration>
 
 			</plugin>
-			<!--
+
 			<plugin>
 				<groupId>org.bsc.maven</groupId>
 				<artifactId>maven-processor-plugin</artifactId>
@@ -139,7 +177,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			-->
 
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
@@ -154,12 +191,10 @@
 					</execution>
 				</executions>
 				<configuration>
-					<!--
-					-->
-					<extraJvmArgs>-agentlib:jdwp=transport=dt_socket,server=n,address=localhost:5050,suspend=y</extraJvmArgs>
+					<extraJvmArgs>-agentlib:jdwp=transport=dt_socket,server=n,address=127.0.0.1:5050,suspend=y</extraJvmArgs>
 					<includes>**/*GwtTest.java</includes>
 					<productionMode>${gwt.plugin.productionmode}</productionMode>
-					<testTimeOut>12360</testTimeOut>
+					<testTimeOut>360</testTimeOut>
 					<sourceLevel>1.8</sourceLevel>
 					<generateDirectory>${project.build.testOutputDirectory}/generated-gwt-test-code</generateDirectory>
 					<warSourceDirectory>${project.build.testSourceDirectory}/webapp</warSourceDirectory>
