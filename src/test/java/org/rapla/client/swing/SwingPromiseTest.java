@@ -30,31 +30,34 @@ public class SwingPromiseTest extends TestCase
     BasicRaplaHTTPConnector.CustomConnector connector = new MyCustomConnector();
     UtilConcurrentCommandScheduler scheduler;
 
-
     @Override
     protected void setUp() throws Exception
     {
         super.setUp();
         scheduler = new UtilConcurrentCommandScheduler()
         {
-            @Override protected void error(String message, Exception ex)
+            @Override
+            protected void error(String message, Exception ex)
             {
-                System.err.println( message);
+                System.err.println(message);
             }
 
-            @Override protected void debug(String message)
+            @Override
+            protected void debug(String message)
             {
-                System.out.println( message);
+                System.out.println(message);
             }
 
-            @Override protected void info(String message)
+            @Override
+            protected void info(String message)
             {
-                System.out.println( message);
+                System.out.println(message);
             }
 
-            @Override protected void warn(String message)
+            @Override
+            protected void warn(String message)
             {
-                System.err.println( message);
+                System.err.println(message);
             }
 
         };
@@ -84,15 +87,16 @@ public class SwingPromiseTest extends TestCase
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
         Semaphore semaphore = new Semaphore(0);
         final Promise<List<AnnotationProcessingTest.Result>> supply = scheduler.supply(() -> test.sayHello(p));
-        supply.thenAccept( (resultList) -> {
-                    final AnnotationProcessingTest.Result result = resultList.get(0);
-                    final List<String> ids = result.getIds();
-                    assertEquals(2, ids.size());
-                    assertEquals("1", ids.get(0));
-                    assertEquals("2", ids.get(1));
-                    semaphore.release();
-                });
-        assertTrue(semaphore.tryAcquire(10000,TimeUnit.MILLISECONDS));
+        supply.thenAccept((resultList) ->
+        {
+            final AnnotationProcessingTest.Result result = resultList.get(0);
+            final List<String> ids = result.getIds();
+            assertEquals(2, ids.size());
+            assertEquals("1", ids.get(0));
+            assertEquals("2", ids.get(1));
+            semaphore.release();
+        });
+        assertTrue(semaphore.tryAcquire(10000, TimeUnit.MILLISECONDS));
     }
 
     public void testHandle() throws Exception
@@ -114,19 +118,20 @@ public class SwingPromiseTest extends TestCase
             return null;
         });
         assertTrue(semaphore.tryAcquire(10000, TimeUnit.MILLISECONDS));
-        AnnotationProcessingTest.Parameter  p2 = new AnnotationProcessingTest.Parameter();
-        p2.setActionIds(Arrays.asList(new Integer[]{3,5}));
+        AnnotationProcessingTest.Parameter p2 = new AnnotationProcessingTest.Parameter();
+        p2.setActionIds(Arrays.asList(new Integer[] { 3, 5 }));
         final Promise<List<Result>> successPromise = scheduler.supply(() -> test.sayHello(p2));
-        successPromise.handle((resultList, ex) -> {
-           if(ex != null)
-           {
-               fail("No exception should have occured");
-           }
-           else
-           {
-               semaphore.release();
-           }
-           return null;
+        successPromise.handle((resultList, ex) ->
+        {
+            if (ex != null)
+            {
+                fail("No exception should have occured");
+            }
+            else
+            {
+                semaphore.release();
+            }
+            return null;
         });
         assertTrue(semaphore.tryAcquire(10000, TimeUnit.MILLISECONDS));
     }
@@ -146,12 +151,12 @@ public class SwingPromiseTest extends TestCase
         });
         Assert.assertTrue(semaphore.tryAcquire(10, TimeUnit.SECONDS));
     }
-    
+
     public void testApplyRun() throws Exception
     {
         final Semaphore semaphore = new Semaphore(0);
         AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
-        final AtomicReference<Map<String, Set<String>>> result = new AtomicReference<Map<String,Set<String>>>(null);
+        final AtomicReference<Map<String, Set<String>>> result = new AtomicReference<Map<String, Set<String>>>(null);
         final Promise<Map<String, Set<String>>> supply = scheduler.supply(() -> test.complex());
         supply.thenApply((map) ->
         {
@@ -166,14 +171,14 @@ public class SwingPromiseTest extends TestCase
         // Check data model
         final Map<String, Set<String>> map = result.get();
         Assert.assertNotNull(map);
-        System.out.println("got keys: "+map.keySet());
+        System.out.println("got keys: " + map.keySet());
     }
-    
+
     public void testCombine() throws Exception
     {
         final Semaphore semaphore = new Semaphore(0);
         AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
-        AtomicReference<Map<String, Set<String>>> result = new AtomicReference<Map<String,Set<String>>>(null);
+        AtomicReference<Map<String, Set<String>>> result = new AtomicReference<Map<String, Set<String>>>(null);
         final Promise<Map<String, Set<String>>> promise1 = scheduler.supplyProxy(() -> test.complex());
         final Promise<Map<String, Set<String>>> promise2 = scheduler.supplyProxy(() -> test.complex());
         promise1.thenCombine(promise2, (map1, map2) ->
@@ -187,7 +192,7 @@ public class SwingPromiseTest extends TestCase
         });
         Assert.assertTrue(semaphore.tryAcquire(10, TimeUnit.SECONDS));
     }
-    
+
     public void testCompose() throws Exception
     {
         final Semaphore semaphore = new Semaphore(0);
@@ -199,15 +204,57 @@ public class SwingPromiseTest extends TestCase
             Parameter param = new AnnotationProcessingTest.Parameter();
             param.setActionIds(Arrays.asList(new Integer[] { map.keySet().size(), map.values().size() }));
             result1.set(map);
-            return scheduler.supplyProxy(() -> test.sayHello(param)).thenAccept((list) -> {
+            return scheduler.supplyProxy(() -> test.sayHello(param)).thenAccept((list) ->
+            {
                 final Result resultParam = list.get(0);
                 final List<String> ids = resultParam.getIds();
                 final Map internalMap = result1.get();
-                Assert.assertEquals(internalMap.keySet().size()+"", ids.get(0));
-                Assert.assertEquals(internalMap.values().size()+"", ids.get(1));
+                Assert.assertEquals(internalMap.keySet().size() + "", ids.get(0));
+                Assert.assertEquals(internalMap.values().size() + "", ids.get(1));
                 semaphore.release();
             });
         });
         Assert.assertTrue(semaphore.tryAcquire(20, TimeUnit.SECONDS));
+    }
+
+    public void testExceptionally() throws Exception
+    {
+        final Semaphore semaphore = new Semaphore(0);
+        AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
+        final Promise<List<AnnotationProcessingTest.Result>> promise = scheduler.supplyProxy(() -> test.sayHello(null));
+        promise.exceptionally((ex) ->
+        {
+            semaphore.release();
+            return null;
+        });
+        Assert.assertTrue(semaphore.tryAcquire(20, TimeUnit.SECONDS));
+    }
+
+    public void test() throws Exception
+    {
+        final Semaphore semaphore = new Semaphore(0);
+        final Promise<Integer> promise = scheduler.supply(() ->
+        {
+            try
+            {
+                Thread.sleep(1000);
+            }
+            catch (Exception e)
+            {
+                fail(e.getMessage());
+            }
+            return 1000;
+        });
+        final Promise<Integer> promise2 = scheduler.supply(() ->
+        {
+            return 100;
+        });
+        promise.applyToEither(promise2, (first) ->
+        {
+            Assert.assertEquals(100, (int) first);
+            semaphore.release();
+            return null;
+        });
+        Assert.assertTrue(semaphore.tryAcquire(10, TimeUnit.SECONDS));
     }
 }
