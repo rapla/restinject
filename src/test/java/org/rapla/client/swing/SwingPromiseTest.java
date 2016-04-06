@@ -13,6 +13,7 @@ import org.junit.Assert;
 import org.rapla.common.AnnotationProcessingTest;
 import org.rapla.common.AnnotationProcessingTest.Parameter;
 import org.rapla.common.AnnotationProcessingTest.Result;
+import org.rapla.common.AnnotationProcessingTest_JavaJsonProxy;
 import org.rapla.rest.client.EntryPointFactory;
 import org.rapla.rest.client.swing.BasicRaplaHTTPConnector;
 import org.rapla.scheduler.Promise;
@@ -98,7 +99,7 @@ public class SwingPromiseTest extends TestCase
     {
         final Semaphore semaphore = new Semaphore(0);
         AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
-        AnnotationProcessingTest.Parameter p = null;
+        final AnnotationProcessingTest.Parameter p = null;
         final Promise<List<AnnotationProcessingTest.Result>> supply = scheduler.supply(() -> test.sayHello(p));
         supply.handle((resultList, ex) ->
         {
@@ -113,9 +114,9 @@ public class SwingPromiseTest extends TestCase
             return null;
         });
         assertTrue(semaphore.tryAcquire(10000, TimeUnit.MILLISECONDS));
-        p = new AnnotationProcessingTest.Parameter();
-        p.setActionIds(Arrays.asList(new Integer[]{3,5}));
-        final Promise<List<Result>> successPromise = scheduler.supply(() -> test.sayHello(p));
+        AnnotationProcessingTest.Parameter  p2 = new AnnotationProcessingTest.Parameter();
+        p2.setActionIds(Arrays.asList(new Integer[]{3,5}));
+        final Promise<List<Result>> successPromise = scheduler.supply(() -> test.sayHello(p2));
         successPromise.handle((resultList, ex) -> {
            if(ex != null)
            {
