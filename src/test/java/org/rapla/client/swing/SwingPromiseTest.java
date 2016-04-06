@@ -8,14 +8,13 @@ import org.rapla.rest.client.EntryPointFactory;
 import org.rapla.rest.client.swing.BasicRaplaHTTPConnector;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.Promise;
-import org.rapla.scheduler.server.ServerScheduler;
+import org.rapla.scheduler.impl.UtilConcurrentCommandScheduler;
 import org.rapla.server.ServletTestContainer;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 public class SwingPromiseTest extends TestCase
 {
@@ -30,7 +29,7 @@ public class SwingPromiseTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        scheduler = new ServerScheduler()
+        scheduler = new UtilConcurrentCommandScheduler()
         {
             @Override protected void error(String message, Exception ex)
             {
