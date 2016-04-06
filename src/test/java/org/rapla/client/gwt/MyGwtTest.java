@@ -1,15 +1,20 @@
 package org.rapla.client.gwt;
 
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.junit.client.GWTTestCase;
-import dagger.Component;
+import java.util.Arrays;
+import java.util.List;
+
 import org.rapla.common.AnnotationProcessingTest;
 import org.rapla.common.ComponentStarter;
 import org.rapla.rest.client.EntryPointFactory;
 import org.rapla.rest.client.gwt.AbstractJsonProxy;
+import org.rapla.scheduler.CommandScheduler;
+import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.client.gwt.GwtCommandScheduler;
 
-import java.util.Arrays;
-import java.util.List;
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.junit.client.GWTTestCase;
+
+import dagger.Component;
 
 public class MyGwtTest extends GWTTestCase
 {
@@ -77,7 +82,6 @@ public class MyGwtTest extends GWTTestCase
 
     AnnotationProcessingTest.Result asyncResult;
 
-    /*
     public void testGwtPromiseCall() throws Exception
     {
         final Bootstrap bootstrap = DaggerMyGwtTest_BootstrapInterface.create().getBootstrap();
@@ -93,23 +97,17 @@ public class MyGwtTest extends GWTTestCase
 
         };
         final Promise<List<AnnotationProcessingTest.Result>> promise = bootstrap.callAsync(p, scheduler);
-        delayTestFinish( 10000);
+        delayTestFinish(10000);
         promise.thenAccept((list) -> {
             asyncResult = list.get(0);
             final List<String> ids = asyncResult.getIds();
             assertEquals(2, ids.size());
             assertEquals("1", ids.get(0));
             assertEquals("2", ids.get(1));
+            finishTest();
         }).exceptionally((ex)->{ex.printStackTrace();fail(ex.getMessage());return null;});
-
-
-
-
-        //final FutureResult<AnnotationProcessingTest.Result> futureResult = new AnnotationProcessingTestImpl().sayHello(p);
-        //AnnotationProcessingTest.Result result = futureResult.get();
-
     }
-    */
+
     public void testStartGeneratedServerComponent()
     {
         System.out.println("Before GWT create");
