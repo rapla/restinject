@@ -389,7 +389,6 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
                 try
                 {
                     t = supplier.call();
-
                 }
                 catch (Exception ex)
                 {
@@ -403,16 +402,36 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
         return promise;
     }
 
+    private <Void> Promise<Void> run(final Command command, Executor executor)
+    {
+        if (command == null) throw new NullPointerException();
+        CompletableFuture<Void> future =new CompletableFuture<Void>();
+        executor.execute(new Runnable()
+        {
+            @Override public void run()
+            {
+                try
+                {
+                    command.execute();
+                }
+                catch (Exception ex)
+                {
+                    future.completeExceptionally(ex);
+                }
+            }
+        });
+        MyPromise<Void> promise = new MyPromise<Void>(executor, future);
+        return promise;
+    }
+
     @Override public <T> Promise<T> supplyProxy( Callable<T> supplier)
     {
         return supply(supplier, promiseExecuter);
     }
 
-    @Override public Promise<Void> run(Runnable supplier)
+    @Override public Promise<Void> run(Command command)
     {
-        final CompletableFuture<Void> f = CompletableFuture.runAsync(supplier);
-        MyPromise<Void> promise = new MyPromise<Void>(promiseExecuter, f);
-        return promise;
+        return run( command, promiseExecuter);
     }
 
 

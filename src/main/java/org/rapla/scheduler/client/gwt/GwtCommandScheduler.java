@@ -214,14 +214,14 @@ public abstract class GwtCommandScheduler implements CommandScheduler
     }
 
     @Override
-    public Promise<Void> run(final Runnable supplier)
+    public Promise<Void> run(final Command supplier)
     {
         final GwtPromise<Void> promise = new GwtPromise<Void>();
         Scheduler.get().scheduleFinally(() ->
         {
             try
             {
-                supplier.run();
+                supplier.execute();
                 promise.complete(null);
             }
             catch (Throwable ex)
