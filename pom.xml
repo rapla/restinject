@@ -155,12 +155,12 @@
 				</executions>
 				<configuration>
 					<!--
-					<extraJvmArgs>-agentlib:jdwp=transport=dt_socket,server=n,address=192.168.0.101:5050,suspend=y</extraJvmArgs>
 					-->
+					<extraJvmArgs>-agentlib:jdwp=transport=dt_socket,server=n,address=localhost:5050,suspend=y</extraJvmArgs>
 					<includes>**/*GwtTest.java</includes>
 					<productionMode>${gwt.plugin.productionmode}</productionMode>
-					<testTimeOut>360</testTimeOut>
-					<sourceLevel>1.7</sourceLevel>
+					<testTimeOut>12360</testTimeOut>
+					<sourceLevel>1.8</sourceLevel>
 					<generateDirectory>${project.build.testOutputDirectory}/generated-gwt-test-code</generateDirectory>
 					<warSourceDirectory>${project.build.testSourceDirectory}/webapp</warSourceDirectory>
 					<detail>false</detail>
