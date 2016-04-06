@@ -195,14 +195,14 @@ public abstract class GwtCommandScheduler implements CommandScheduler
     }
 
     @Override
-    public <T> Promise<T> supply(final Supplier<T> supplier)
+    public <T> Promise<T> supply(final Callable<T> supplier)
     {
         final GwtPromise<T> promise = new GwtPromise<T>();
         Scheduler.get().scheduleFinally(() ->
         {
             try
             {
-                final T result = supplier.get();
+                final T result = supplier.call();
                 promise.complete(result);
             }
             catch (Throwable ex)
@@ -233,7 +233,7 @@ public abstract class GwtCommandScheduler implements CommandScheduler
     }
 
     @Override
-    public <T> Promise<T> supplyProxy(final Supplier<T> supplier)
+    public <T> Promise<T> supplyProxy(final Callable<T> supplier)
     {
         final GwtPromise<T> promise = new GwtPromise<T>();
         Scheduler.get().scheduleFinally(() ->
@@ -254,7 +254,7 @@ public abstract class GwtCommandScheduler implements CommandScheduler
             };
             try
             {
-                supplier.get();
+                supplier.call();
             }
             catch (Exception ex)
             {

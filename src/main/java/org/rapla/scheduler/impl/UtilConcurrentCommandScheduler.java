@@ -372,19 +372,40 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
 
     }
 
-    @Override public <T> Promise<T> supply(Supplier<T> supplier)
+    @Override public <T> Promise<T> supply(Callable<T> supplier)
     {
-        final CompletableFuture<T> f = CompletableFuture.supplyAsync(() -> supplier.get());
-        MyPromise<T> promise = new MyPromise<T>(promiseExecuter, f);
+        return supply(supplier, promiseExecuter);
+    }
+
+    private <T> Promise<T> supply(final Callable<T> supplier, Executor executor)
+    {
+        if (supplier == null) throw new NullPointerException();
+        CompletableFuture<T> future =new CompletableFuture<T>();
+        executor.execute(new Runnable()
+        {
+            @Override public void run()
+            {
+                final T t;
+                try
+                {
+                    t = supplier.call();
+
+                }
+                catch (Exception ex)
+                {
+                    future.completeExceptionally(ex);
+                    return;
+                }
+                future.complete(t);
+            }
+        });
+        MyPromise<T> promise = new MyPromise<T>(executor, future);
         return promise;
     }
 
-    @Override public <T> Promise<T> supplyProxy( Supplier<T> supplier)
+    @Override public <T> Promise<T> supplyProxy( Callable<T> supplier)
     {
-        final CompletableFuture<T> f = CompletableFuture.supplyAsync(() -> supplier.get());
-        // execute suplier with swing thread
-        MyPromise<T> promise = new MyPromise<T>(promiseExecuter, f);
-        return promise;
+        return supply(supplier, promiseExecuter);
     }
 
     @Override public Promise<Void> run(Runnable supplier)
