@@ -290,6 +290,11 @@ public abstract class GwtCommandScheduler implements CommandScheduler
         return schedule(command, delay, -1);
     }
 
+    @Override public Cancelable scheduleSynchronized(Object synchronizationObject, Command task, long delay)
+    {
+        return schedule(task,delay);
+    }
+
     abstract protected void warn(String message, Exception e);
 
 }

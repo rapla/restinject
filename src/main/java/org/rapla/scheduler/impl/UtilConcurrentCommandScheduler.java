@@ -53,6 +53,7 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
         schedule(task, 0);
     }
 
+    @Override
     public Cancelable schedule(Command command, long delay)
     {
         Runnable task = createTask(command);
@@ -83,7 +84,7 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
         return timerTask;
     }
 
-    public Cancelable schedule(Runnable task, long delay)
+    protected Cancelable schedule(Runnable task, long delay)
     {
         if (executor.isShutdown())
         {
@@ -119,7 +120,7 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
 
     abstract protected void warn(String message);
 
-    public Cancelable schedule(Runnable task, long delay, long period)
+    private Cancelable schedule(Runnable task, long delay, long period)
     {
         if (executor.isShutdown())
         {
@@ -132,10 +133,46 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
         return createCancable(schedule);
     }
 
+    @Override
     public Cancelable schedule(Command command, long delay, long period)
     {
         Runnable task = createTask(command);
         return schedule(task, delay, period);
+    }
+
+    @Override
+    public Cancelable scheduleSynchronized(final Object synchronizationObject, Command command, final long delay)
+    {
+        Runnable task = createTask( command );
+        CancableTask wrapper = new CancableTask(task,delay)
+        {
+            @Override
+            protected void replaceWithNext(CancableTask next)
+            {
+                futureTasks.replace( synchronizationObject , this, next);
+            }
+            @Override
+            protected void endOfQueueReached()
+            {
+                synchronized (synchronizationObject)
+                {
+                    futureTasks.remove( synchronizationObject);
+                }
+            }
+        };
+        synchronized (synchronizationObject)
+        {
+            CancableTask existing = futureTasks.putIfAbsent( synchronizationObject, wrapper);
+            if (existing == null)
+            {
+                wrapper.scheduleThis();
+            }
+            else
+            {
+                existing.pushToEndOfQueue( wrapper );
+            }
+            return wrapper;
+        }
     }
 
     abstract class CancableTask implements Cancelable, Runnable
