@@ -1,10 +1,5 @@
 package org.rapla.scheduler.impl;
 
-import org.rapla.scheduler.Cancelable;
-import org.rapla.scheduler.Command;
-import org.rapla.scheduler.CommandScheduler;
-import org.rapla.scheduler.Promise;
-
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -15,6 +10,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+
+import org.rapla.scheduler.Cancelable;
+import org.rapla.scheduler.Command;
+import org.rapla.scheduler.CommandScheduler;
+import org.rapla.scheduler.Promise;
 
 public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
 {
@@ -269,6 +269,22 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
         {
         }
     }
+    
+    private static class PromiseRuntimeException extends RuntimeException{
+        private static final long serialVersionUID = 1L;
+
+        public PromiseRuntimeException(Throwable cause)
+        {
+            super(cause);
+        }
+        
+        @Override
+        public synchronized Throwable getCause()
+        {
+            return super.getCause();
+        }
+        
+    }
 
     
     static class MyPromise<T>  implements Promise<T>
@@ -295,7 +311,16 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
 
         @Override public <U> Promise<U> thenApply(Function<? super T, ? extends U> fn)
         {
-            final java.util.function.Function<? super T, ? extends U> fun = (t) -> fn.apply(t);
+            final java.util.function.Function<? super T, ? extends U> fun = (t) -> {
+                try
+                {
+                    return fn.apply(t);
+                }
+                catch (Exception e)
+                {
+                    throw new PromiseRuntimeException(e);
+                }
+            };
             return w(f.thenApplyAsync( fun, promiseExecuter));
         }
 
@@ -331,7 +356,17 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
 
         @Override public <U> Promise<U> applyToEither(Promise<? extends T> other, Function<? super T, U> fn)
         {
-            final java.util.function.Function<? super T, ? extends U> fun = (t) -> fn.apply(t);
+            final java.util.function.Function<? super T, ? extends U> fun = (t) ->
+            {
+                try
+                {
+                    return fn.apply(t);
+                }
+                catch (Exception e)
+                {
+                    throw new PromiseRuntimeException(e);
+                }
+            };
             return w(f.applyToEitherAsync( v(other),fun,promiseExecuter));
         }
 
@@ -348,13 +383,36 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
 
         @Override public <U> Promise<U> thenCompose(Function<? super T, ? extends Promise<U>> fn)
         {
-            final java.util.function.Function<? super T, ? extends CompletionStage<U>> fun = (t) ->v(fn.apply(t));
+            final java.util.function.Function<? super T, ? extends CompletionStage<U>> fun = (t) ->
+            {
+                try
+                {
+                    return v(fn.apply(t));
+                }
+                catch (Exception e)
+                {
+                    throw new PromiseRuntimeException(e);
+                }
+            };
             return w(f.thenComposeAsync(fun,promiseExecuter));
         }
 
         @Override public Promise<T> exceptionally(Function<Throwable, ? extends T> fn)
         {
-            final java.util.function.Function<Throwable, ? extends T>  fun = (t) ->fn.apply(t);
+            final java.util.function.Function<Throwable, ? extends T>  fun = (t) ->{
+                try
+                {
+                    if(t instanceof PromiseRuntimeException)
+                    {
+                        return fn.apply(t.getCause());
+                    }
+                    return fn.apply(t);
+                }
+                catch(Exception e)
+                {
+                    throw new PromiseRuntimeException(e);
+                }
+            };
             return w(f.exceptionally(fun));
         }
 
