@@ -43,19 +43,19 @@ public interface Promise<T>
     @FunctionalInterface
     public interface Consumer<F>
     {
-        void accept(F t);
+        void accept(F t) throws Exception;
     }
 
     @FunctionalInterface
     public interface BiFunction<T, U, R>
     {
-        R apply(T t, U u);
+        R apply(T t, U u) throws Exception;
     }
 
     @FunctionalInterface
     public interface BiConsumer<T, U>
     {
-        void accept(T t, U u);
+        void accept(T t, U u) throws Exception;
     }
 
 }

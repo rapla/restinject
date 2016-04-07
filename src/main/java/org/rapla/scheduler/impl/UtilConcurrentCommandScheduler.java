@@ -20,17 +20,22 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
 {
     private final ScheduledExecutorService executor;
     private final Executor promiseExecuter;
-    public UtilConcurrentCommandScheduler() {
-        this( 6);
+
+    public UtilConcurrentCommandScheduler()
+    {
+        this(6);
     }
 
-    public UtilConcurrentCommandScheduler( int poolSize) {
-        final ScheduledExecutorService executor = Executors.newScheduledThreadPool(poolSize,new ThreadFactory() {
+    public UtilConcurrentCommandScheduler(int poolSize)
+    {
+        final ScheduledExecutorService executor = Executors.newScheduledThreadPool(poolSize, new ThreadFactory()
+        {
 
-            public Thread newThread(Runnable r) {
+            public Thread newThread(Runnable r)
+            {
                 Thread thread = new Thread(r);
                 String name = thread.getName();
-                if ( name == null)
+                if (name == null)
                 {
                     name = "";
                 }
@@ -45,7 +50,7 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
 
     public void execute(Runnable task)
     {
-        schedule(task, 0 );
+        schedule(task, 0);
     }
 
     public Cancelable schedule(Command command, long delay)
@@ -54,15 +59,22 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
         return schedule(task, delay);
     }
 
-    protected Runnable createTask(final Command command) {
-        Runnable timerTask = new Runnable() {
-            public void run() {
-                try {
+    protected Runnable createTask(final Command command)
+    {
+        Runnable timerTask = new Runnable()
+        {
+            public void run()
+            {
+                try
+                {
                     command.execute();
-                } catch (Exception e) {
-                    error( e.getMessage(), e);
+                }
+                catch (Exception e)
+                {
+                    error(e.getMessage(), e);
                 }
             }
+
             public String toString()
             {
                 return command.toString();
@@ -71,26 +83,27 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
         return timerTask;
     }
 
-
-    public Cancelable schedule(Runnable task, long delay) {
+    public Cancelable schedule(Runnable task, long delay)
+    {
         if (executor.isShutdown())
         {
             Exception ex = new Exception("Can't schedule command because executer is already shutdown " + task.toString());
             error(ex.getMessage(), ex);
-            return createCancable( null);
+            return createCancable(null);
         }
 
         TimeUnit unit = TimeUnit.MILLISECONDS;
         ScheduledFuture<?> schedule = executor.schedule(task, delay, unit);
-        return createCancable( schedule);
+        return createCancable(schedule);
     }
 
-
-
-    private Cancelable createCancable(final ScheduledFuture<?> schedule) {
-        return new Cancelable() {
-            public void cancel() {
-                if ( schedule != null)
+    private Cancelable createCancable(final ScheduledFuture<?> schedule)
+    {
+        return new Cancelable()
+        {
+            public void cancel()
+            {
+                if (schedule != null)
                 {
                     schedule.cancel(true);
                 }
@@ -99,20 +112,24 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
     }
 
     abstract protected void error(String message, Exception ex);
+
     abstract protected void debug(String message);
+
     abstract protected void info(String message);
+
     abstract protected void warn(String message);
 
-    public Cancelable schedule(Runnable task, long delay, long period) {
+    public Cancelable schedule(Runnable task, long delay, long period)
+    {
         if (executor.isShutdown())
         {
             Exception ex = new Exception("Can't schedule command because executer is already shutdown " + task.toString());
             error(ex.getMessage(), ex);
-            return createCancable( null);
+            return createCancable(null);
         }
         TimeUnit unit = TimeUnit.MILLISECONDS;
         ScheduledFuture<?> schedule = executor.scheduleWithFixedDelay(task, delay, period, unit);
-        return createCancable( schedule);
+        return createCancable(schedule);
     }
 
     public Cancelable schedule(Command command, long delay, long period)
@@ -121,7 +138,7 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
         return schedule(task, delay, period);
     }
 
-    abstract class  CancableTask implements Cancelable, Runnable
+    abstract class CancableTask implements Cancelable, Runnable
     {
         long delay;
         private Runnable task;
@@ -141,7 +158,7 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
         {
             try
             {
-                if ( status == Thread.State.NEW)
+                if (status == Thread.State.NEW)
                 {
                     status = Thread.State.RUNNABLE;
                     task.run();
@@ -153,10 +170,11 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
                 scheduleNext();
             }
         }
+
         @Override
         public void cancel()
         {
-            if ( cancelable != null && status == Thread.State.RUNNABLE )
+            if (cancelable != null && status == Thread.State.RUNNABLE)
             {
                 // send interrupt if thread is running
                 cancelable.cancel();
@@ -166,13 +184,13 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
 
         public void pushToEndOfQueue(CancableTask wrapper)
         {
-            if ( next == null)
+            if (next == null)
             {
                 next = wrapper;
             }
             else
             {
-                next.pushToEndOfQueue( wrapper);
+                next.pushToEndOfQueue(wrapper);
             }
         }
 
@@ -183,9 +201,9 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
 
         private void scheduleNext()
         {
-            if ( next != null)
+            if (next != null)
             {
-                replaceWithNext( next);
+                replaceWithNext(next);
                 next.scheduleThis();
             }
             else
@@ -199,7 +217,7 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
         abstract protected void endOfQueueReached();
     }
 
-    ConcurrentHashMap<Object, CancableTask> futureTasks= new ConcurrentHashMap<Object, CancableTask>();
+    ConcurrentHashMap<Object, CancableTask> futureTasks = new ConcurrentHashMap<Object, CancableTask>();
 
     /*
     public Cancelable scheduleSynchronized(final Object synchronizationObject, Runnable task, final long delay)
@@ -236,27 +254,29 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
     }
     */
 
-    public void cancel() {
-        try{
+    public void cancel()
+    {
+        try
+        {
             info("Stopping scheduler thread.");
             List<Runnable> shutdownNow = executor.shutdownNow();
-            for ( Runnable task: shutdownNow)
+            for (Runnable task : shutdownNow)
             {
                 long delay = -1;
-                if ( task instanceof ScheduledFuture)
+                if (task instanceof ScheduledFuture)
                 {
                     ScheduledFuture scheduledFuture = (ScheduledFuture) task;
-                    delay = scheduledFuture.getDelay( TimeUnit.SECONDS);
+                    delay = scheduledFuture.getDelay(TimeUnit.SECONDS);
                 }
-                if ( delay <=0)
+                if (delay <= 0)
                 {
-                    warn("Interrupted active task " + task );
+                    warn("Interrupted active task " + task);
                 }
             }
             executor.awaitTermination(3, TimeUnit.SECONDS);
             info("Stopped scheduler thread.");
         }
-        catch ( Throwable ex)
+        catch (Throwable ex)
         {
             warn(ex.getMessage());
         }
@@ -269,25 +289,25 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
         {
         }
     }
-    
-    private static class PromiseRuntimeException extends RuntimeException{
+
+    private static class PromiseRuntimeException extends RuntimeException
+    {
         private static final long serialVersionUID = 1L;
 
         public PromiseRuntimeException(Throwable cause)
         {
             super(cause);
         }
-        
+
         @Override
         public synchronized Throwable getCause()
         {
             return super.getCause();
         }
-        
+
     }
 
-    
-    static class MyPromise<T>  implements Promise<T>
+    static class MyPromise<T> implements Promise<T>
     {
 
         final Executor promiseExecuter;
@@ -309,52 +329,8 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
             return ((MyPromise) promise).f;
         }
 
-        @Override public <U> Promise<U> thenApply(Function<? super T, ? extends U> fn)
-        {
-            final java.util.function.Function<? super T, ? extends U> fun = (t) -> {
-                try
-                {
-                    return fn.apply(t);
-                }
-                catch (Exception e)
-                {
-                    throw new PromiseRuntimeException(e);
-                }
-            };
-            return w(f.thenApplyAsync( fun, promiseExecuter));
-        }
-
-        @Override public Promise<Void> thenAccept(Consumer<? super T> fn)
-        {
-            final java.util.function.Consumer<T> consumer = (a) -> {fn.accept(a);};
-            return w(f.thenAcceptAsync(consumer,promiseExecuter));
-        }
-
-        @Override public Promise<Void> thenRun(Runnable action)
-        {
-            return w(f.thenRunAsync( action,promiseExecuter));
-        }
-
-        @Override public <U, V> Promise<V> thenCombine(Promise<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn)
-        {
-            final java.util.function.BiFunction<? super T, ? super U, ? extends V> bifn = (t,u) -> fn.apply(t,u);
-            final CompletionStage<? extends U> v = v(other);
-            return w(f.thenCombineAsync(v,bifn, promiseExecuter));
-        }
-
-        @Override public <U> Promise<Void> thenAcceptBoth(Promise<? extends U> other, BiConsumer<? super T, ? super U> fn)
-        {
-            final java.util.function.BiConsumer<? super T, ? super U> biConsumer = (t,u) -> {fn.accept(t,u);};
-            final CompletionStage<? extends U> v = v(other);
-            return w(f.thenAcceptBothAsync(v,biConsumer,promiseExecuter));
-        }
-
-        @Override public Promise<Void> runAfterBoth(Promise<?> other, Runnable action)
-        {
-            return w(f.runAfterBothAsync( v(other),action, promiseExecuter));
-        }
-
-        @Override public <U> Promise<U> applyToEither(Promise<? extends T> other, Function<? super T, U> fn)
+        @Override
+        public <U> Promise<U> thenApply(Function<? super T, ? extends U> fn)
         {
             final java.util.function.Function<? super T, ? extends U> fun = (t) ->
             {
@@ -367,21 +343,116 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
                     throw new PromiseRuntimeException(e);
                 }
             };
-            return w(f.applyToEitherAsync( v(other),fun,promiseExecuter));
+            return w(f.thenApplyAsync(fun, promiseExecuter));
         }
 
-        @Override public Promise<Void> acceptEither(Promise<? extends T> other, Consumer<? super T> fn)
+        @Override
+        public Promise<Void> thenAccept(Consumer<? super T> fn)
         {
-            final java.util.function.Consumer<? super T> action = (t) -> fn.accept(t);
-            return w(f.acceptEitherAsync( v(other),action,promiseExecuter));
+            final java.util.function.Consumer<T> consumer = (a) ->
+            {
+                try
+                {
+                    fn.accept(a);
+                }
+                catch (Exception e)
+                {
+                    throw new PromiseRuntimeException(e);
+                }
+            };
+            return w(f.thenAcceptAsync(consumer, promiseExecuter));
         }
 
-        @Override public Promise<Void> runAfterEither(Promise<?> other, Runnable fn)
+        @Override
+        public Promise<Void> thenRun(Runnable action)
         {
-            return w(f.runAfterEitherAsync( v(other),fn,promiseExecuter));
+            return w(f.thenRunAsync(action, promiseExecuter));
         }
 
-        @Override public <U> Promise<U> thenCompose(Function<? super T, ? extends Promise<U>> fn)
+        @Override
+        public <U, V> Promise<V> thenCombine(Promise<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn)
+        {
+            final java.util.function.BiFunction<? super T, ? super U, ? extends V> bifn = (t, u) ->
+            {
+                try
+                {
+                    return fn.apply(t, u);
+                }
+                catch (Exception e)
+                {
+                    throw new PromiseRuntimeException(e);
+                }
+            };
+            final CompletionStage<? extends U> v = v(other);
+            return w(f.thenCombineAsync(v, bifn, promiseExecuter));
+        }
+
+        @Override
+        public <U> Promise<Void> thenAcceptBoth(Promise<? extends U> other, BiConsumer<? super T, ? super U> fn)
+        {
+            final java.util.function.BiConsumer<? super T, ? super U> biConsumer = (t, u) ->
+            {
+                try
+                {
+                    fn.accept(t, u);
+                }
+                catch (Exception e)
+                {
+                    throw new PromiseRuntimeException(e);
+                }
+            };
+            final CompletionStage<? extends U> v = v(other);
+            return w(f.thenAcceptBothAsync(v, biConsumer, promiseExecuter));
+        }
+
+        @Override
+        public Promise<Void> runAfterBoth(Promise<?> other, Runnable action)
+        {
+            return w(f.runAfterBothAsync(v(other), action, promiseExecuter));
+        }
+
+        @Override
+        public <U> Promise<U> applyToEither(Promise<? extends T> other, Function<? super T, U> fn)
+        {
+            final java.util.function.Function<? super T, ? extends U> fun = (t) ->
+            {
+                try
+                {
+                    return fn.apply(t);
+                }
+                catch (Exception e)
+                {
+                    throw new PromiseRuntimeException(e);
+                }
+            };
+            return w(f.applyToEitherAsync(v(other), fun, promiseExecuter));
+        }
+
+        @Override
+        public Promise<Void> acceptEither(Promise<? extends T> other, Consumer<? super T> fn)
+        {
+            final java.util.function.Consumer<? super T> action = (t) ->
+            {
+                try
+                {
+                    fn.accept(t);
+                }
+                catch (Exception e)
+                {
+                    throw new PromiseRuntimeException(e);
+                }
+            };
+            return w(f.acceptEitherAsync(v(other), action, promiseExecuter));
+        }
+
+        @Override
+        public Promise<Void> runAfterEither(Promise<?> other, Runnable fn)
+        {
+            return w(f.runAfterEitherAsync(v(other), fn, promiseExecuter));
+        }
+
+        @Override
+        public <U> Promise<U> thenCompose(Function<? super T, ? extends Promise<U>> fn)
         {
             final java.util.function.Function<? super T, ? extends CompletionStage<U>> fun = (t) ->
             {
@@ -394,21 +465,23 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
                     throw new PromiseRuntimeException(e);
                 }
             };
-            return w(f.thenComposeAsync(fun,promiseExecuter));
+            return w(f.thenComposeAsync(fun, promiseExecuter));
         }
 
-        @Override public Promise<T> exceptionally(Function<Throwable, ? extends T> fn)
+        @Override
+        public Promise<T> exceptionally(Function<Throwable, ? extends T> fn)
         {
-            final java.util.function.Function<Throwable, ? extends T>  fun = (t) ->{
+            final java.util.function.Function<Throwable, ? extends T> fun = (t) ->
+            {
                 try
                 {
-                    if(t instanceof PromiseRuntimeException)
+                    if (t instanceof PromiseRuntimeException)
                     {
                         return fn.apply(t.getCause());
                     }
                     return fn.apply(t);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     throw new PromiseRuntimeException(e);
                 }
@@ -416,32 +489,57 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
             return w(f.exceptionally(fun));
         }
 
-        @Override public Promise<T> whenComplete(BiConsumer<? super T, ? super Throwable> fn)
+        @Override
+        public Promise<T> whenComplete(BiConsumer<? super T, ? super Throwable> fn)
         {
-            final java.util.function.BiConsumer<? super T, ? super Throwable> bifn = (t,u) -> fn.accept(t,u);
+            final java.util.function.BiConsumer<? super T, ? super Throwable> bifn = (t, u) ->
+            {
+                try
+                {
+                    fn.accept(t, u);
+                }
+                catch (Exception e)
+                {
+                    throw new PromiseRuntimeException(e);
+                }
+            };
             return w(f.whenCompleteAsync(bifn, promiseExecuter));
         }
 
-        @Override public <U> Promise<U> handle(BiFunction<? super T, Throwable, ? extends U> fn)
+        @Override
+        public <U> Promise<U> handle(BiFunction<? super T, Throwable, ? extends U> fn)
         {
-            final java.util.function.BiFunction<? super T, Throwable, ? extends U> bifn = (t,u) -> fn.apply(t,u);
-            return w(f.handleAsync(bifn,promiseExecuter));
+            final java.util.function.BiFunction<? super T, Throwable, ? extends U> bifn = (t, u) ->
+            {
+                try
+                {
+                    return fn.apply(t, u);
+                }
+                catch (Exception e)
+                {
+                    throw new PromiseRuntimeException(e);
+                }
+            };
+            return w(f.handleAsync(bifn, promiseExecuter));
         }
 
     }
 
-    @Override public <T> Promise<T> supply(Callable<T> supplier)
+    @Override
+    public <T> Promise<T> supply(Callable<T> supplier)
     {
         return supply(supplier, promiseExecuter);
     }
 
     private <T> Promise<T> supply(final Callable<T> supplier, Executor executor)
     {
-        if (supplier == null) throw new NullPointerException();
-        CompletableFuture<T> future =new CompletableFuture<T>();
+        if (supplier == null)
+            throw new NullPointerException();
+        CompletableFuture<T> future = new CompletableFuture<T>();
         executor.execute(new Runnable()
         {
-            @Override public void run()
+            @Override
+            public void run()
             {
                 final T t;
                 try
@@ -462,11 +560,13 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
 
     private <Void> Promise<Void> run(final Command command, Executor executor)
     {
-        if (command == null) throw new NullPointerException();
-        CompletableFuture<Void> future =new CompletableFuture<Void>();
+        if (command == null)
+            throw new NullPointerException();
+        CompletableFuture<Void> future = new CompletableFuture<Void>();
         executor.execute(new Runnable()
         {
-            @Override public void run()
+            @Override
+            public void run()
             {
                 try
                 {
@@ -482,16 +582,16 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
         return promise;
     }
 
-    @Override public <T> Promise<T> supplyProxy( Callable<T> supplier)
+    @Override
+    public <T> Promise<T> supplyProxy(Callable<T> supplier)
     {
         return supply(supplier, promiseExecuter);
     }
 
-    @Override public Promise<Void> run(Command command)
+    @Override
+    public Promise<Void> run(Command command)
     {
-        return run( command, promiseExecuter);
+        return run(command, promiseExecuter);
     }
 
-
-    
 }

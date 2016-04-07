@@ -102,15 +102,24 @@ public abstract class GwtCommandScheduler implements CommandScheduler
         @Override
         public Promise<Void> thenAccept(Consumer<? super T> action)
         {
+            final GwtPromise<Void> nextPromise = new GwtPromise<Void>();
             if (result != null)
             {
-                action.accept(result);
+                try
+                {
+                    action.accept(result);
+                    nextPromise.complete(null);
+                }
+                catch (Exception e)
+                {
+                    nextPromise.abort(e);
+                }
             }
             else
             {
                 this.action = action;
             }
-            return new GwtPromise<Void>();
+            return nextPromise;
         }
 
         @Override
@@ -184,7 +193,14 @@ public abstract class GwtCommandScheduler implements CommandScheduler
             this.result = result;
             if (action != null)
             {
-                action.accept(result);
+                try
+                {
+                    action.accept(result);
+                }
+                catch (Exception e)
+                {
+                    // FIXME
+                }
             }
         }
 
