@@ -10,27 +10,27 @@ public interface Promise<T>
 {
     <U> Promise<U> thenApply(Function<? super T, ? extends U> fn);
 
-    Promise<Void> thenAccept(Consumer<? super T> action);
+    Promise<Void> thenAccept(Consumer<? super T> fn);
 
-    Promise<Void> thenRun(Runnable action);
+    Promise<Void> thenRun(Runnable fn);
 
     <U, V> Promise<V> thenCombine(Promise<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn);
 
-    <U> Promise<Void> thenAcceptBoth(Promise<? extends U> other, BiConsumer<? super T, ? super U> action);
+    <U> Promise<Void> thenAcceptBoth(Promise<? extends U> other, BiConsumer<? super T, ? super U> fn);
 
-    Promise<Void> runAfterBoth(Promise<?> other, Runnable action);
+    Promise<Void> runAfterBoth(Promise<?> other, Runnable fn);
 
     <U> Promise<U> applyToEither(Promise<? extends T> other, Function<? super T, U> fn);
 
-    Promise<Void> acceptEither(Promise<? extends T> other, Consumer<? super T> action);
+    Promise<Void> acceptEither(Promise<? extends T> other, Consumer<? super T> fn);
 
-    Promise<Void> runAfterEither(Promise<?> other, Runnable action);
+    Promise<Void> runAfterEither(Promise<?> other, Runnable fn);
 
     <U> Promise<U> thenCompose(Function<? super T, ? extends Promise<U>> fn);
 
     Promise<T> exceptionally(Function<Throwable, ? extends T> fn);
 
-    Promise<T> whenComplete(BiConsumer<? super T, ? super Throwable> action);
+    Promise<T> whenComplete(BiConsumer<? super T, ? super Throwable> fn);
 
     <U> Promise<U> handle(BiFunction<? super T, Throwable, ? extends U> fn);
 
