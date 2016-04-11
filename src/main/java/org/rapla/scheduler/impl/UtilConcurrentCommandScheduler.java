@@ -15,6 +15,7 @@ import org.rapla.scheduler.Cancelable;
 import org.rapla.scheduler.Command;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.ResolvedPromise;
 
 public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
 {
@@ -363,7 +364,28 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
 
         protected <T> CompletionStage<T> v(final Promise<T> promise)
         {
-            return ((MyPromise) promise).f;
+            if (promise instanceof MyPromise)
+            {
+                return ((MyPromise) promise).f;
+            }
+            else if (promise instanceof ResolvedPromise)
+            {
+                CompletableFuture<T> future = new CompletableFuture<T>();
+                try
+                {
+                    final T t = ((ResolvedPromise<T>) promise).get();
+                    future.complete( t );
+                }
+                catch (Throwable throwable)
+                {
+                    future.completeExceptionally( throwable);
+                }
+                return future;
+            }
+            else
+            {
+                throw new IllegalArgumentException("Promise implementation " + promise.getClass() +" not supported.");
+            }
         }
 
         @Override

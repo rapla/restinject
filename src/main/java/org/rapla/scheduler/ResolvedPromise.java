@@ -16,6 +16,15 @@ public class ResolvedPromise<T> implements Promise<T>
         this.ex = throwable;
     }
 
+    public T get() throws Throwable
+    {
+        if ( ex != null)
+        {
+            throw ex;
+        }
+        return t;
+    }
+
     @Override public <U> Promise<U> thenApply(Function<? super T, ? extends U> fn)
     {
         if ( ex == null)
