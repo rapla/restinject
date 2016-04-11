@@ -2,6 +2,7 @@ package org.rapla.scheduler;
 
 public class ResolvedPromise<T> implements Promise<T>
 {
+    final public static ResolvedPromise<Void> VOID_PROMISE = new ResolvedPromise<Void>((Void) null);
     final T t;
     final Throwable ex;
     public ResolvedPromise(T t)
