@@ -59,23 +59,29 @@ public class DaggerModuleCreator
     {
         private final String interfaceName;
         private final String className;
+        private final String id;
 
-        protected Generated(String interfaceName, String className)
+        public Generated(String interfaceName, String className, String id)
         {
+            super();
             this.interfaceName = interfaceName;
             this.className = className;
+            this.id = id;
         }
 
-        @Override public int hashCode()
+        @Override
+        public int hashCode()
         {
             final int prime = 31;
             int result = 1;
             result = prime * result + ((className == null) ? 0 : className.hashCode());
+            result = prime * result + ((id == null) ? 0 : id.hashCode());
             result = prime * result + ((interfaceName == null) ? 0 : interfaceName.hashCode());
             return result;
         }
 
-        @Override public boolean equals(Object obj)
+        @Override
+        public boolean equals(Object obj)
         {
             if (this == obj)
                 return true;
@@ -91,6 +97,13 @@ public class DaggerModuleCreator
             }
             else if (!className.equals(other.className))
                 return false;
+            if (id == null)
+            {
+                if (other.id != null)
+                    return false;
+            }
+            else if (!id.equals(other.id))
+                return false;
             if (interfaceName == null)
             {
                 if (other.interfaceName != null)
@@ -102,7 +115,6 @@ public class DaggerModuleCreator
         }
 
     }
-
     enum Scopes
     {
         Server("Server", "server.dagger"),
@@ -625,11 +637,11 @@ public class DaggerModuleCreator
             {
                 if (implementingClass.endsWith(GwtProxyCreator.PROXY_SUFFIX))
                 {
-                    generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, Scopes.Gwt);
+                    generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, Scopes.Gwt, "gwt");
                 }
                 else if (implementingClass.endsWith(JavaClientProxyCreator.PROXY_SUFFIX))
                 {
-                    generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, Scopes.JavaClient);
+                    generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, Scopes.JavaClient, "javaClient");
                 }
                 else if (implementingClassTypeElement != null)
                 {
@@ -670,7 +682,7 @@ public class DaggerModuleCreator
                     {
                         final TypeElement implClass = implementingClassTypeElement;
                         final Generated generated = new Generated(implementingClassTypeElement.getQualifiedName().toString(),
-                                implClass.getQualifiedName().toString());
+                                implClass.getQualifiedName().toString(), implementingClassTypeElement.getAnnotation(Path.class).value());
                         if (notGenerated(Scopes.Server, generated))
                         {
                             SourceWriter moduleWriter = getWriter(Scopes.Server, generated);
@@ -742,9 +754,9 @@ public class DaggerModuleCreator
         return "@javax.annotation.Generated(\"" + generatorName + "\")";
     }
 
-    private void generateProxyMethods(String interfaceName, String implementingClass, TypeElement interfaceClassTypeElement, Scopes sourceWriterIndex)
+    private void generateProxyMethods(String interfaceName, String implementingClass, TypeElement interfaceClassTypeElement, Scopes sourceWriterIndex, String id)
     {
-        final Generated generated = new Generated(interfaceName, implementingClass);
+        final Generated generated = new Generated(interfaceName, implementingClass, id);
         if (notGenerated(sourceWriterIndex, generated))
         {
             final SourceWriter sourceWriter = getWriter(sourceWriterIndex, generated);
@@ -801,7 +813,7 @@ public class DaggerModuleCreator
     {
         final InjectionContext[] context = annotation.context();
         final Types typeUtils = processingEnvironment.getTypeUtils();
-        final Generated generated = new Generated(interfaceTypeElement.getQualifiedName().toString(), "emtpy");
+        final Generated generated = new Generated(interfaceTypeElement.getQualifiedName().toString(), "emtpy", annotation.id());
         //final TypeMirror asTypeImpl = typeUtils.erasure(implementingClassTypeElement.asType());
         //final TypeMirror asTypeOf = typeUtils.erasure(defaultImplementationOf.asType());
         //boolean assignable = typeUtils.isAssignable(asTypeImpl, asTypeOf);
@@ -861,11 +873,12 @@ public class DaggerModuleCreator
     private BitSet generateDefaultImplementation(final String artifactName, final TypeElement implementingClassTypeElement, final TypeElement interfaceTypeElement,
             final DefaultImplementation defaultImplementation)
     {
+        final String id = "DefaultImplementation";
         if(interfaceTypeElement.getQualifiedName().toString().equals(Path.class.getCanonicalName()))
         {
             final TypeElement implClass = implementingClassTypeElement;
             final Generated generated = new Generated(implementingClassTypeElement.getQualifiedName().toString(),
-                    implClass.getQualifiedName().toString());
+                    implClass.getQualifiedName().toString(), id);
             if (notGenerated(Scopes.Server, generated))
             {
                 SourceWriter moduleWriter = getWriter(Scopes.Server, generated);
@@ -880,7 +893,7 @@ public class DaggerModuleCreator
         final InjectionContext[] context = defaultImplementation.context();
         final Types typeUtils = processingEnvironment.getTypeUtils();
         final Generated generated = new Generated(interfaceTypeElement.getQualifiedName().toString(),
-                implementingClassTypeElement.getQualifiedName().toString());
+                implementingClassTypeElement.getQualifiedName().toString(), id);
         final TypeElement defaultImplementationOf = getDefaultImplementationOf(defaultImplementation);
         final TypeMirror asTypeImpl = typeUtils.erasure(implementingClassTypeElement.asType());
         final TypeMirror asTypeOf = typeUtils.erasure(defaultImplementationOf.asType());
@@ -1016,7 +1029,7 @@ public class DaggerModuleCreator
         }
         final InjectionContext[] context = extensionPoint.context();
         final TypeElement defaultImpl = ((TypeElement) typeUtils.asElement(typeUtils.erasure(implementingClassTypeElement.asType())));
-        final Generated generated = new Generated(interfaceElementType.getQualifiedName().toString(), defaultImpl.getQualifiedName().toString());
+        final Generated generated = new Generated(interfaceElementType.getQualifiedName().toString(), defaultImpl.getQualifiedName().toString(), extension.id());
         if (InjectionContext.isInjectableOnGwt(context))
         {
             if (notGenerated(Scopes.Gwt, generated))
