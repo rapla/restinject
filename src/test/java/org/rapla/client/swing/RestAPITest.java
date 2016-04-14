@@ -8,6 +8,7 @@ import org.eclipse.jetty.server.Server;
 import org.rapla.rest.client.EntryPointFactory;
 import org.rapla.rest.client.swing.BasicRaplaHTTPConnector;
 import org.rapla.rest.client.swing.HTTPConnector;
+import org.rapla.rest.client.swing.HTTPConnector.HttpCallResult;
 import org.rapla.rest.client.swing.HTTPJsonConnector;
 import org.rapla.server.ServletTestContainer;
 
@@ -72,8 +73,8 @@ public class RestAPITest extends  TestCase {
             //callObj.addProperty("password", password);
             String emptyAuthenticationToken = null;
             Map<String, String> additionalHeaders = new HashMap<>();
-            JsonElement resultBody = connector.sendGet(methodURL,  emptyAuthenticationToken, additionalHeaders);
-            String resultObject = resultBody.getAsString();
+            HttpCallResult resultBody = connector.sendGet(methodURL,  emptyAuthenticationToken, additionalHeaders);
+            String resultObject = resultBody.parseJson().getAsString();
             //authenticationToken = resultObject.get("accessToken").getAsString();
             //String validity = resultObject.get("validUntil").getAsString();
             assertEquals("Hello admin",resultObject);
@@ -99,8 +100,8 @@ public class RestAPITest extends  TestCase {
             String emptyAuthenticationToken = null;
             String body = "";
             Map<String, String> additionalHeaders = new HashMap<>();
-            String resultBody = connector.sendCallWithString("GET",methodURL, body, emptyAuthenticationToken,"text/html", additionalHeaders);
-            assertEquals("Hello admin",resultBody);
+            HttpCallResult resultBody = connector.sendCallWithString("GET",methodURL, body, emptyAuthenticationToken,"text/html", additionalHeaders);
+            assertEquals("Hello admin",resultBody.getResult());
         }
 
     }

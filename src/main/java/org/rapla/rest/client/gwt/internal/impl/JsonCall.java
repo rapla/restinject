@@ -14,17 +14,22 @@
 
 package org.rapla.rest.client.gwt.internal.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.rapla.rest.client.AsyncCallback;
 import org.rapla.rest.client.ExceptionDeserializer;
+import org.rapla.rest.client.SerializableExceptionInformation;
+import org.rapla.rest.client.SerializableExceptionInformation.SerializableExceptionStacktraceInformation;
+import org.rapla.rest.client.gwt.AbstractJsonProxy;
 import org.rapla.rest.client.gwt.internal.JsonUtil;
 import org.rapla.rest.client.gwt.internal.RemoteJsonException;
 import org.rapla.rest.client.gwt.internal.ServerUnavailableException;
 import org.rapla.rest.client.gwt.internal.event.RpcCompleteEvent;
 import org.rapla.rest.client.gwt.internal.event.RpcStartEvent;
-import org.rapla.rest.client.AsyncCallback;
 import org.rapla.rest.client.internal.JsonConstants;
 
 import com.google.gwt.core.client.JavaScriptObject;
@@ -37,7 +42,6 @@ import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.user.client.rpc.InvocationException;
 import com.google.gwt.user.client.rpc.StatusCodeException;
 import com.google.gwt.xhr.client.XMLHttpRequest;
-import org.rapla.rest.client.gwt.AbstractJsonProxy;
 
 public abstract class JsonCall<T> implements RequestCallback {
     protected static final JavaScriptObject jsonParser;
@@ -252,23 +256,32 @@ public abstract class JsonCall<T> implements RequestCallback {
                 return;
             }
             System.out.println("Checking error.");
-            if (r.error() != null) {
+            if (sc != Response.SC_OK) {
+                
                 Exception e = null;
-            	final ExceptionDeserializer exceptionDeserializer = proxy.getExceptionDeserializer();
-				if(exceptionDeserializer != null){
-            		final RpcError error = r.error();
-					final Data data = error.data();
-					final String exception = data != null ? data.exception() : null;
-					final String message = error.message();
-					String[] paramObj = data.params();
-					final List<String> parameter = paramObj != null ? Arrays.asList(paramObj) : null;
-					e = exceptionDeserializer.deserializeException(exception, message, parameter);
-            	}
-				if(e == null) {
-					final String errmsg = r.error().message();
-					e=new RemoteJsonException(errmsg, r.error().code(),
-	                        new JSONObject(r.error()).get("data"));
-				}
+                final ExceptionDeserializer exceptionDeserializer = proxy.getExceptionDeserializer();
+                final String message = r.message();
+                if (exceptionDeserializer != null)
+                {
+                    final ArrayList<String> messages = new ArrayList<>(Arrays.asList(r.messages()));
+                    ArrayList<SerializableExceptionStacktraceInformation> stacktrace = new ArrayList<>();
+                    final Data[] data = r.data();
+                    if(data != null)
+                    {
+                        for (Data ste : data)
+                        {
+                            stacktrace.add(new SerializableExceptionStacktraceInformation(ste.className(), ste.methodName(), ste.lineNumber(), ste.fileName()));
+                        }
+                    }
+                    final String exceptionClass = r.exceptionClass();
+                    SerializableExceptionInformation exceptionInformation = new SerializableExceptionInformation(message, exceptionClass, messages, stacktrace);
+                    e = exceptionDeserializer.deserializeException(exceptionInformation);
+                }
+                if (e == null)
+                {
+                    final String errmsg = message;
+                    e = new RemoteJsonException(errmsg, sc, new JSONObject(r));
+                }
                 RpcCompleteEvent.fire(this);
                 callback.onFailure(e);
                 return;
@@ -326,28 +339,24 @@ public abstract class JsonCall<T> implements RequestCallback {
         protected RpcResult() {
         }
 
-        final native RpcError error()/*-{ return this.error; }-*/;
-
-    }
-
-    private static class RpcError extends JavaScriptObject {
-        protected RpcError() {
-        }
-
         final native String message()/*-{ return this.message; }-*/;
+
+        final native String exceptionClass()/*-{ return this.exceptionClass; }-*/;
+        
+        final native String[] messages()/*-{ return this.message; }-*/;
 
         final native int code()/*-{ return this.code; }-*/;
         
-        final native Data data()/*-{ return this.data}-*/;
+        final native Data[] data()/*-{ return this.data}-*/;
     }
-    
+
     private static class Data extends JavaScriptObject{
     	
     	protected Data() {
     	}
-    	
-    	final native String exception()/*-{return this.exception}-*/;
-
-		final native String[] params()/*-{return this.params}-*/;
+		final native String className()/*-{return this.className}-*/;
+		final native String methodName()/*-{return this.methodName}-*/;
+		final native int lineNumber()/*-{return this.lineNumber}-*/;
+		final native String fileName()/*-{return this.fileName}-*/;
     }
 }

@@ -16,52 +16,60 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+
 public class HTTPConnector
 {
-    public String sendCallWithString(String requestMethod, URL methodURL,String body, String authenticationToken, Map<String, String>additionalHeaders) throws IOException, ProtocolException, UnsupportedEncodingException {
-        return sendCallWithString(requestMethod,methodURL,body,authenticationToken,"application/json", additionalHeaders);
+    public HttpCallResult sendCallWithString(String requestMethod, URL methodURL, String body, String authenticationToken,
+            Map<String, String> additionalHeaders) throws IOException, ProtocolException, UnsupportedEncodingException
+    {
+        return sendCallWithString(requestMethod, methodURL, body, authenticationToken, "application/json", additionalHeaders);
     }
 
-    public String sendCallWithString(String requestMethod, URL methodURL,String body, String authenticationToken,String accept, Map<String, String>additionalHeaders) throws IOException, ProtocolException, UnsupportedEncodingException {
-        HttpURLConnection conn = (HttpURLConnection)methodURL.openConnection();
+    public HttpCallResult sendCallWithString(String requestMethod, URL methodURL, String body, String authenticationToken, String accept,
+            Map<String, String> additionalHeaders) throws IOException, ProtocolException, UnsupportedEncodingException
+    {
+        HttpURLConnection conn = (HttpURLConnection) methodURL.openConnection();
         for (Entry<String, String> additionalHeader : additionalHeaders.entrySet())
         {
             conn.setRequestProperty(additionalHeader.getKey(), additionalHeader.getValue());
         }
-        if ( !requestMethod.equals("POST") && !requestMethod.equals("GET"))
+        if (!requestMethod.equals("POST") && !requestMethod.equals("GET"))
         {
             conn.setRequestMethod("POST");
             // we tunnel all non POST or GET requests to avoid proxy filtering (e.g. URLConnection does not allow PATCH)
-            conn.setRequestProperty("X-HTTP-Method-Override",requestMethod);
+            conn.setRequestProperty("X-HTTP-Method-Override", requestMethod);
         }
         else
         {
             conn.setRequestMethod(requestMethod);
         }
-        conn.setUseCaches( false );
+        conn.setUseCaches(false);
         conn.setRequestProperty("Accept-Encoding", "gzip, deflate");
         conn.setRequestProperty("Content-Type", "application/json" + ";charset=utf-8");
         conn.setRequestProperty("Accept", accept);
-        if ( authenticationToken != null)
+        if (authenticationToken != null)
         {
-            conn.setRequestProperty("Authorization", "Bearer "  + authenticationToken);
+            conn.setRequestProperty("Authorization", "Bearer " + authenticationToken);
         }
         conn.setReadTimeout(60000); //set timeout to 60 seconds
         conn.setConnectTimeout(50000); //set connect timeout to 50 seconds
         conn.setDoOutput(true);
         conn.connect();
-        
-        if ( requestMethod.equals("PUT") ||requestMethod.equals("POST") ||requestMethod.equals("PATCH"))
+
+        if (requestMethod.equals("PUT") || requestMethod.equals("POST") || requestMethod.equals("PATCH"))
         {
             OutputStream outputStream = null;
             Writer wr = null;
             try
             {
-                outputStream= conn.getOutputStream();
-                wr = new OutputStreamWriter(outputStream,"UTF-8");
-                if (  body != null)
+                outputStream = conn.getOutputStream();
+                wr = new OutputStreamWriter(outputStream, "UTF-8");
+                if (body != null)
                 {
-                    wr.write( body);
+                    wr.write(body);
                     wr.flush();
                 }
                 else
@@ -71,11 +79,11 @@ public class HTTPConnector
             }
             finally
             {
-                if ( wr != null)
+                if (wr != null)
                 {
                     wr.close();
                 }
-                if ( outputStream  != null)
+                if (outputStream != null)
                 {
                     outputStream.close();
                 }
@@ -83,60 +91,94 @@ public class HTTPConnector
         }
         else
         {
-            
+
         }
         String resultString;
+        final int responseCode = conn.getResponseCode();
         {
             InputStream inputStream = null;
             try
             {
-                if(conn.getResponseCode() != 200)
+                if (responseCode != 200)
                 {
                     inputStream = conn.getErrorStream();
                 }
                 else
                 {
                     String encoding = conn.getContentEncoding();
-                    if (encoding != null && encoding.equalsIgnoreCase("gzip")) 
+                    if (encoding != null && encoding.equalsIgnoreCase("gzip"))
                     {
                         inputStream = new GZIPInputStream(conn.getInputStream());
                     }
-                    else if (encoding != null && encoding.equalsIgnoreCase("deflate")) {
+                    else if (encoding != null && encoding.equalsIgnoreCase("deflate"))
+                    {
                         inputStream = new InflaterInputStream(conn.getInputStream(), new Inflater(true));
                     }
-                    else {
+                    else
+                    {
                         inputStream = conn.getInputStream();
                     }
                 }
-                resultString = readResultToString( inputStream);
+                resultString = readResultToString(inputStream);
             }
             finally
             {
-                if ( inputStream != null)
+                if (inputStream != null)
                 {
                     inputStream.close();
                 }
             }
         }
-        return resultString;
+        return new HttpCallResult(resultString, responseCode);
     }
 
-    private String readResultToString(InputStream input) throws IOException {
-        InputStreamReader in = new InputStreamReader( input,"UTF-8");
+    private String readResultToString(InputStream input) throws IOException
+    {
+        InputStreamReader in = new InputStreamReader(input, "UTF-8");
         char[] buf = new char[4096];
         StringBuffer buffer = new StringBuffer();
-        while ( true )
+        while (true)
         {
-            int  len = in.read(buf);
-            if ( len == -1)
+            int len = in.read(buf);
+            if (len == -1)
             {
                 break;
             }
-            buffer.append( buf, 0,len );
+            buffer.append(buf, 0, len);
         }
         String result = buffer.toString();
         in.close();
         return result;
+    }
+
+    public static class HttpCallResult
+    {
+
+        private final String result;
+        private final int responseCode;
+
+        public HttpCallResult(String result, int responseCode)
+        {
+            this.result = result;
+            this.responseCode = responseCode;
+        }
+
+        public JsonElement parseJson() throws JsonParseException
+        {
+            JsonParser jsonParser = new JsonParser();
+            JsonElement parsed = jsonParser.parse(result);
+            return parsed;
+        }
+
+        public String getResult()
+        {
+            return result;
+        }
+
+        public int getResponseCode()
+        {
+            return responseCode;
+        }
     }
 
 }

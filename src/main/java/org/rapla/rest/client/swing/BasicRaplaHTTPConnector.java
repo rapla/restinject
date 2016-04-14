@@ -14,11 +14,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.Executor;
+
+import javax.ws.rs.core.Response;
 
 import org.rapla.rest.client.EntryPointFactory;
-import org.rapla.rest.client.gwt.MockProxy;
 import org.rapla.rest.client.ExceptionDeserializer;
+import org.rapla.rest.client.SerializableExceptionInformation;
+import org.rapla.rest.client.SerializableExceptionInformation.SerializableExceptionStacktraceInformation;
+import org.rapla.rest.client.gwt.MockProxy;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -103,7 +106,7 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
     public interface CustomConnector extends ExceptionDeserializer
     {
         String reauth(BasicRaplaHTTPConnector proxy) throws Exception;
-        Exception deserializeException(String classname, String s, List<String> params);
+        Exception deserializeException(SerializableExceptionInformation exceptionInformation);
         Class[] getNonPrimitiveClasses();
         Exception getConnectError(IOException ex);
         String getAccessToken();
@@ -164,60 +167,49 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
 
     private Exception deserializeExceptionObject(JsonObject result)
     {
-        JsonObject errorElement = result.getAsJsonObject("error");
-        JsonObject data = errorElement.getAsJsonObject("data");
-        JsonElement message = errorElement.get("message");
-        @SuppressWarnings("unused") JsonElement code = errorElement.get("code");
-        if (data != null)
+        try
         {
-            JsonArray paramObj = (JsonArray) data.get("params");
-            JsonElement jsonElement = data.get("exception");
-            JsonElement stacktrace = data.get("stacktrace");
-            if (jsonElement != null)
+            final Gson jsonMapper = createJsonMapper();
+            final SerializableExceptionInformation deserializedException = jsonMapper.fromJson(result, SerializableExceptionInformation.class);
+            final Exception ex = customConnector.deserializeException(deserializedException);
+            try
             {
-                String classname = jsonElement.getAsString();
-                List<String> params = new ArrayList<String>();
-                if (paramObj != null)
+                final ArrayList<SerializableExceptionStacktraceInformation> stacktrace = deserializedException.getStacktrace();
+                if (stacktrace != null)
                 {
-                    for (JsonElement param : paramObj)
+                    List<StackTraceElement> trace = new ArrayList<StackTraceElement>();
+                    for (SerializableExceptionStacktraceInformation element : stacktrace)
                     {
-                        params.add(param.toString());
+                        final StackTraceElement ste = new StackTraceElement(element.getClassName(), element.getMethodName(), element.getFileName(),
+                                element.getLineNumber());
+                        trace.add(ste);
                     }
+                    ex.setStackTrace(trace.toArray(new StackTraceElement[] {}));
                 }
-                Exception ex = customConnector.deserializeException(classname, message.toString(), params);
-                try
-                {
-                    if (stacktrace != null)
-                    {
-                        List<StackTraceElement> trace = new ArrayList<StackTraceElement>();
-                        for (JsonElement element : stacktrace.getAsJsonArray())
-                        {
-                            StackTraceElement ste = createJsonMapper().fromJson(element, StackTraceElement.class);
-                            trace.add(ste);
-                        }
-                        ex.setStackTrace(trace.toArray(new StackTraceElement[] {}));
-                    }
-                }
-                catch (Exception ex3)
-                {
-                    // Can't get stacktrace
-                }
-                return ex;
             }
+            catch (Exception ex3)
+            {
+                // Can't get stacktrace
+            }
+            return ex;
         }
-        return new RaplaConnectException(message.toString());
+        catch(Exception e)
+        {
+            // unexpected exception occured, so throw RaplaConnectException
+            return new RaplaConnectException(e.getMessage());
+        }
     }
 
-    synchronized protected JsonElement sendCall_(String requestMethod, URL methodURL, JsonElement jsonObject,Map<String, String>additionalHeaders) throws Exception
+    synchronized protected HttpCallResult sendCall_(String requestMethod, URL methodURL, JsonElement jsonObject,Map<String, String>additionalHeaders) throws Exception
     {
         String authenticationToken = customConnector.getAccessToken();
         return sendCall_(requestMethod, methodURL, jsonObject, authenticationToken, additionalHeaders);
     }
 
-    synchronized protected JsonElement sendCall_(String requestMethod, URL methodURL, JsonElement jsonObject, String authenticationToken,Map<String, String>additionalHeaders) throws Exception
+    synchronized protected HttpCallResult sendCall_(String requestMethod, URL methodURL, JsonElement jsonObject, String authenticationToken,Map<String, String>additionalHeaders) throws Exception
     {
 
-        JsonElement resultMessage;
+        HttpCallResult resultMessage;
         try
         {
             resultMessage = sendCall(requestMethod, methodURL, jsonObject, authenticationToken, additionalHeaders);
@@ -256,14 +248,15 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
     }
 
 
-    protected void checkError(JsonElement resultMessage) throws Exception
+    protected void checkError(HttpCallResult resultMessage) throws Exception
     {
-        if(resultMessage.isJsonObject())
+        if(resultMessage.getResponseCode() != Response.Status.OK.getStatusCode())
         {
-            JsonElement errorElement = resultMessage.getAsJsonObject().get("error");
-            if (errorElement != null)
+            
+            JsonElement errorElement = resultMessage.parseJson();
+            if (errorElement != null && errorElement.isJsonObject())
             {
-                Exception ex = deserializeExceptionObject(resultMessage.getAsJsonObject());
+                Exception ex = deserializeExceptionObject(errorElement.getAsJsonObject());
                 throw ex;
             }
             
@@ -285,8 +278,9 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         }
     }
 
-    protected Object getResult(JsonElement resultElement, Class resultType, Class container) throws RaplaConnectException
+    protected Object getResult(HttpCallResult result, Class resultType, Class container) throws RaplaConnectException
     {
+        final JsonElement resultElement = result.parseJson();
         Object resultObject;
         if (container != null)
         {

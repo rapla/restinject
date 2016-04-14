@@ -1,12 +1,11 @@
 package org.rapla.client.swing;
 
+import java.io.IOException;
+
+import org.rapla.rest.client.SerializableExceptionInformation;
 import org.rapla.rest.client.gwt.MockProxy;
 import org.rapla.rest.client.swing.BasicRaplaHTTPConnector;
 import org.rapla.rest.client.swing.RaplaConnectException;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.Executor;
 
 class MyCustomConnector implements BasicRaplaHTTPConnector.CustomConnector
 {
@@ -23,9 +22,9 @@ class MyCustomConnector implements BasicRaplaHTTPConnector.CustomConnector
         return accessToken;
     }
 
-    @Override public Exception deserializeException(String classname, String s, List<String> params)
+    @Override public Exception deserializeException(SerializableExceptionInformation exceptionInformations)
     {
-        return new Exception(classname + " " + s + " " + params);
+        return new Exception(exceptionInformations.getClass() + " " + exceptionInformations.getMessage() + " " + exceptionInformations.getMessages());
         // throw new Au
     }
 

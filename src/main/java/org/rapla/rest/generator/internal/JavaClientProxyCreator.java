@@ -46,6 +46,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 
 import org.rapla.inject.generator.internal.SourceWriter;
+import org.rapla.rest.client.swing.HTTPConnector.HttpCallResult;
 
 public class JavaClientProxyCreator implements SerializerClasses
 {
@@ -207,6 +208,7 @@ public class JavaClientProxyCreator implements SerializerClasses
         pw.println("import com.google.gson.JsonObject;");
         pw.println("import com.google.gson.JsonElement;");
         pw.println("import java.net.URL;");
+        pw.println("import " + HttpCallResult.class.getCanonicalName() + ";");
         pw.println("import " + Map.class.getCanonicalName() + ";");
         pw.println("import " + HashMap.class.getCanonicalName() + ";");
         pw.println("import " + AbstractJsonJavaProxy + ";");
@@ -530,7 +532,7 @@ public class JavaClientProxyCreator implements SerializerClasses
         {
             methodType = "GET";
         }
-        w.println("JsonElement resultMessage = sendCall_(\"" + methodType + "\", methodURL, element, additionalHeaders);");
+        w.println("HttpCallResult resultMessage = sendCall_(\"" + methodType + "\", methodURL, element, additionalHeaders);");
         w.println("Class resultType = " + resultClassname + ".class;");
         w.println("Class containerClass = " + containerClass + ";");
         w.println("final Object result = getResult(resultMessage, resultType, containerClass);");
