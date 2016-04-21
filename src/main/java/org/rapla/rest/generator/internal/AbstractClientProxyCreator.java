@@ -367,7 +367,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
                 final boolean boxedCharacter = SerializerCreator.isBoxedCharacter(paramType);
                 final boolean jsonPrimitive = SerializerCreator.isJsonPrimitive(paramType) || SerializerCreator.isBoxedPrimitive(paramType);
                 final boolean jsonString = SerializerCreator.isJsonString(paramType);
-                if ( jsonPrimitive)
+                if ( jsonPrimitive && !jsonString)
                 {
                     w.println("{");
                 }
