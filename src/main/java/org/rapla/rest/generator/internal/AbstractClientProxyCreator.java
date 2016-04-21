@@ -364,12 +364,20 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
             if (queryAnnotation != null || pathAnnotation != null || headerAnnotation != null)
             {
-                w.println("if (" + pname + " != null) {");
-                w.indent();
-                w.println("final StringBuilder param= new StringBuilder();");
                 final boolean boxedCharacter = SerializerCreator.isBoxedCharacter(paramType);
                 final boolean jsonPrimitive = SerializerCreator.isJsonPrimitive(paramType) || SerializerCreator.isBoxedPrimitive(paramType);
                 final boolean jsonString = SerializerCreator.isJsonString(paramType);
+                if ( jsonPrimitive)
+                {
+                    w.println("{");
+                }
+                else
+                {
+                    w.println("if (" + pname + " != null) {");
+                }
+                w.indent();
+                w.println("final StringBuilder param= new StringBuilder();");
+
                 if (boxedCharacter)
                 {
                     w.println( "param.append(" + pname + ".toString());");
