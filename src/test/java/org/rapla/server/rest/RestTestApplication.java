@@ -16,6 +16,7 @@ import org.rapla.server.rest.exception.RestExceptionMapper;
 import org.rapla.server.rest.listener.RestDaggerListener.RaplaRestDaggerContextProvider;
 import org.rapla.server.rest.provider.GsonReader;
 import org.rapla.server.rest.provider.GsonWriter;
+import org.rapla.server.rest.provider.JsonParamConverterProvider;
 import org.rapla.server.rest.provider.WildcardWriter;
 import org.rapla.server.rest.provider.XmlReader;
 import org.rapla.server.rest.provider.XmlWriter;
@@ -41,6 +42,7 @@ public class RestTestApplication extends Application
         classes.add(ExampleWithParameterArrayImpl.class);
         classes.add(RaplaRestDaggerContextProvider.class);
         classes.add(RestExceptionMapper.class);
+        classes.add(JsonParamConverterProvider.class);
         this.classes = Collections.unmodifiableSet(classes);
     }
 
