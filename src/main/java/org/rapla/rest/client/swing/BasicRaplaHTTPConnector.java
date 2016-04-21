@@ -2,7 +2,6 @@ package org.rapla.rest.client.swing;
 
 import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
@@ -18,6 +17,7 @@ import java.util.Set;
 
 import javax.ws.rs.core.Response;
 
+import org.rapla.rest.client.AuthenticationException;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.EntryPointFactory;
 import org.rapla.rest.client.SerializableExceptionInformation;
@@ -420,14 +420,5 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
     //
     //        }
     //    }
-
-    public static class AuthenticationException extends Exception
-    {
-        public AuthenticationException(String message)
-        {
-            super(message);
-        }
-    }
-
 
 }
