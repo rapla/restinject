@@ -21,6 +21,7 @@ import com.google.gwt.http.client.RequestBuilder.Method;
 import com.google.gwt.user.client.rpc.RpcRequestBuilder;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 import org.rapla.rest.client.AsyncCallback;
+import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.EntryPointFactory;
 import org.rapla.rest.client.ExceptionDeserializer;
 import org.rapla.rest.client.gwt.internal.impl.JsonCall;
@@ -28,6 +29,7 @@ import org.rapla.rest.client.gwt.internal.impl.JsonCall20HttpGet;
 import org.rapla.rest.client.gwt.internal.impl.JsonCall20HttpPost;
 import org.rapla.rest.client.gwt.internal.impl.ResultDeserializer;
 
+import javax.ws.rs.HttpMethod;
 import java.util.Map;
 
 /**
@@ -45,6 +47,29 @@ public abstract class AbstractJsonProxy implements ServiceDefTarget
     private static EntryPointFactory serviceEntryPointFactory;
     private static ExceptionDeserializer exceptionDeserializer;
     private String path;
+    final private CustomConnector connector;
+
+    public AbstractJsonProxy(CustomConnector connector)
+    {
+        this.connector = connector;
+    }
+
+    public MockProxy getMockProxy()
+    {
+        return connector.getMockProxy();
+    }
+
+    public String getMockAccessToken()
+    {
+        return connector.getAccessToken();
+    }
+
+    public boolean isMock()
+    {
+        return connector.getMockProxy() != null;
+    }
+
+
 
     public static EntryPointFactory getServiceEntryPointFactory()
     {
@@ -66,7 +91,7 @@ public abstract class AbstractJsonProxy implements ServiceDefTarget
         return exceptionDeserializer;
     }
 
-    @Override public String getServiceEntryPoint()
+    public String getServiceEntryPoint()
     {
         return url;
     }
@@ -85,14 +110,6 @@ public abstract class AbstractJsonProxy implements ServiceDefTarget
     {
         if (builder != null)
             throw new UnsupportedOperationException("A RemoteJsonService does not use the RpcRequestBuilder, so this method is unsupported.");
-        /**
-         * From the gwt docs:
-         *
-         * Calling this method with a null value will reset any custom behavior to
-         * the default implementation.
-         *
-         * If builder == null, we just ignore this invocation.
-         */
     }
 
     protected void setPath(String path)
@@ -104,7 +121,9 @@ public abstract class AbstractJsonProxy implements ServiceDefTarget
         return path;
     }
 
-    protected <T> T doInvoke(final Method requestMethodType, final String methodName, final String reqData, final Map<String, String> additionalHeaders, final ResultDeserializer<T> ser)
+
+
+    protected <T> T doInvoke(final String requestMethodType, final String path, final String reqData, final Map<String, String> additionalHeaders, final ResultDeserializer<T> ser)
             throws Exception
     {
         if (serviceEntryPointFactory != null)
@@ -119,9 +138,9 @@ public abstract class AbstractJsonProxy implements ServiceDefTarget
 
         if (url == null)
         {
-            throw new NoServiceEntryPointSpecifiedException();
+            throw new ServiceDefTarget.NoServiceEntryPointSpecifiedException();
         }
-        JsonCall<T> newJsonCall = newJsonCall(requestMethodType, methodName, additionalHeaders, reqData, ser);
+        JsonCall<T> newJsonCall = newJsonCall(requestMethodType, path, additionalHeaders, reqData, ser);
         if (token != null)
         {
             newJsonCall.setToken(token);
@@ -138,33 +157,21 @@ public abstract class AbstractJsonProxy implements ServiceDefTarget
         }
     }
 
-    protected <T> JsonCall<T> newJsonCall(Method requestMethodType, String methodName, Map<String, String>additionalHeaders, final String reqData, final ResultDeserializer<T> ser)
+    protected <T> JsonCall<T> newJsonCall(String requestMethodType, String methodName, Map<String, String>additionalHeaders, final String reqData, final ResultDeserializer<T> ser)
     {
-        if(requestMethodType == RequestBuilder.POST)
-        {
-            return new JsonCall20HttpPost<>(this, methodName, additionalHeaders, reqData, ser);
-        }
-        else if (requestMethodType == RequestBuilder.GET)
+        if(requestMethodType.equals(HttpMethod.GET))
         {
             return new JsonCall20HttpGet<>(this, methodName, additionalHeaders, reqData, ser);
+        }
+        else if(requestMethodType.equals(HttpMethod.POST))
+        {
+            return new JsonCall20HttpPost<>(this, methodName, additionalHeaders, reqData, ser);
         }
         else
         {
             throw new IllegalArgumentException("request method not implemented: " + requestMethodType);
         }
     }
-
-    protected static native JavaScriptObject hostPageCacheGetOnce(String name)
-  /*-{
-      var r = $wnd[name];
-      $wnd[name] = null;
-      return r ? {result: r} : null;
-  }-*/;
-
-    protected static native JavaScriptObject hostPageCacheGetMany(String name)
-  /*-{
-      return $wnd[name] ? {result: $wnd[name]} : null;
-  }-*/;
 
     public static void setAuthThoken(String token)
     {

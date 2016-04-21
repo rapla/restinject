@@ -1,6 +1,7 @@
 package org.rapla.client.swing;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -13,6 +14,7 @@ import org.junit.Assert;
 import org.rapla.common.AnnotationProcessingTest;
 import org.rapla.common.AnnotationProcessingTest.Parameter;
 import org.rapla.common.AnnotationProcessingTest.Result;
+import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.EntryPointFactory;
 import org.rapla.rest.client.swing.BasicRaplaHTTPConnector;
 import org.rapla.scheduler.Promise;
@@ -26,13 +28,15 @@ public class SwingPromiseTest extends TestCase
 
     Server server;
 
-    BasicRaplaHTTPConnector.CustomConnector connector = new MyCustomConnector();
+    CustomConnector connector = new MyCustomConnector();
     UtilConcurrentCommandScheduler scheduler;
+    private Map<String, String> paramMap = new LinkedHashMap<>();
 
     @Override
     protected void setUp() throws Exception
     {
         super.setUp();
+        paramMap.put("greeting","World");
         scheduler = new UtilConcurrentCommandScheduler()
         {
             @Override
@@ -144,7 +148,7 @@ public class SwingPromiseTest extends TestCase
     {
         final Semaphore semaphore = new Semaphore(0);
         AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        final Promise<Map<String, Set<String>>> supply = scheduler.supply(() -> test.complex());
+        final Promise<Map<String, Set<String>>> supply = scheduler.supply(() -> test.complex(paramMap));
         supply.thenApply((map) ->
         {
             return map.keySet();
@@ -161,7 +165,7 @@ public class SwingPromiseTest extends TestCase
         final Semaphore semaphore = new Semaphore(0);
         AnnotationProcessingTest test = createAnnotationProcessingProxy();
         final AtomicReference<Map<String, Set<String>>> result = new AtomicReference<Map<String, Set<String>>>(null);
-        final Promise<Map<String, Set<String>>> supply = scheduler.supply(() -> test.complex());
+        final Promise<Map<String, Set<String>>> supply = scheduler.supply(() -> test.complex(paramMap));
         supply.thenApply((map) ->
         {
             // assume setting in data model
@@ -183,8 +187,8 @@ public class SwingPromiseTest extends TestCase
         final Semaphore semaphore = new Semaphore(0);
         AnnotationProcessingTest test = createAnnotationProcessingProxy();
         AtomicReference<Map<String, Set<String>>> result = new AtomicReference<Map<String, Set<String>>>(null);
-        final Promise<Map<String, Set<String>>> promise1 = scheduler.supplyProxy(() -> test.complex());
-        final Promise<Map<String, Set<String>>> promise2 = scheduler.supplyProxy(() -> test.complex());
+        final Promise<Map<String, Set<String>>> promise1 = scheduler.supplyProxy(() -> test.complex(paramMap));
+        final Promise<Map<String, Set<String>>> promise2 = scheduler.supplyProxy(() -> test.complex(paramMap));
         promise1.thenCombine(promise2, (map1, map2) ->
         {
             final Set<String> keySet1 = map1.keySet();
@@ -201,7 +205,7 @@ public class SwingPromiseTest extends TestCase
     {
         final Semaphore semaphore = new Semaphore(0);
         AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        final Promise<Map<String, Set<String>>> promise = scheduler.supplyProxy(() -> test.complex());
+        final Promise<Map<String, Set<String>>> promise = scheduler.supplyProxy(() -> test.complex(paramMap));
         final AtomicReference<Map> result1 = new AtomicReference<Map>();
         promise.thenCompose((map) ->
         {

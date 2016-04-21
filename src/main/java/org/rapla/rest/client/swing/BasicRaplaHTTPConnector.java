@@ -1,11 +1,12 @@
 package org.rapla.rest.client.swing;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -17,8 +18,8 @@ import java.util.Set;
 
 import javax.ws.rs.core.Response;
 
+import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.EntryPointFactory;
-import org.rapla.rest.client.ExceptionDeserializer;
 import org.rapla.rest.client.SerializableExceptionInformation;
 import org.rapla.rest.client.SerializableExceptionInformation.SerializableExceptionStacktraceInformation;
 import org.rapla.rest.client.gwt.MockProxy;
@@ -67,7 +68,7 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         BasicRaplaHTTPConnector.serviceEntryPointFactory = serviceEntryPointFactory;
     }
 
-    final private CustomConnector customConnector;
+    final protected CustomConnector customConnector;
 
     protected String getMockAccessToken()
     {
@@ -80,10 +81,32 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         gsonBuilder = JSONParserWrapper.defaultGsonBuilder(customConnector.getNonPrimitiveClasses()).disableHtmlEscaping();
     }
 
-    private JsonElement serializeArguments(Object arg)
+    protected String serializeArgument(Object arg)
     {
-        Gson serializer = gsonBuilder.create();
-        return serializer.toJsonTree(arg);
+        final String result;
+        if(arg != null)
+        {
+            Gson gson = gsonBuilder.disableHtmlEscaping().create();
+            result = gson.toJson( arg);
+        }
+        else
+        {
+            result = "";
+        }
+        return result;
+    }
+
+    protected String serializeArgumentUrl(Object arg)
+    {
+        final String result = serializeArgument( arg);
+        try
+        {
+            return URLEncoder.encode( result,"UTF-8");
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            return result;
+        }
     }
 
     /*
@@ -102,16 +125,6 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
 
     }
     */
-
-    public interface CustomConnector extends ExceptionDeserializer
-    {
-        String reauth(BasicRaplaHTTPConnector proxy) throws Exception;
-        Exception deserializeException(SerializableExceptionInformation exceptionInformation);
-        Class[] getNonPrimitiveClasses();
-        Exception getConnectError(IOException ex);
-        String getAccessToken();
-        MockProxy getMockProxy();
-    }
 
     private Gson createJsonMapper()
     {
@@ -165,12 +178,19 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         return result;
     }
 
-    private Exception deserializeExceptionObject(JsonObject result)
+    private Exception deserializeExceptionObject(HttpCallResult resultMessage)
     {
+
+        JsonElement errorElement = resultMessage.parseJson();
+        if (errorElement == null || !errorElement.isJsonObject())
+        {
+            return new RaplaConnectException(resultMessage.getResponseCode() + ":" + resultMessage.getResult());
+        }
+
         try
         {
             final Gson jsonMapper = createJsonMapper();
-            final SerializableExceptionInformation deserializedException = jsonMapper.fromJson(result, SerializableExceptionInformation.class);
+            SerializableExceptionInformation deserializedException = jsonMapper.fromJson(errorElement, SerializableExceptionInformation.class);
             final Exception ex = customConnector.deserializeException(deserializedException);
             try
             {
@@ -206,6 +226,49 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         return sendCall_(requestMethod, methodURL, jsonObject, authenticationToken, additionalHeaders);
     }
 
+
+
+    synchronized protected HttpCallResult sendCallWithString_(String requestMethod, URL methodURL, String body, String authenticationToken,Map<String, String>additionalHeaders) throws Exception
+    {
+        HttpCallResult resultMessage;
+        try
+        {
+            resultMessage = sendCallWithString(requestMethod, methodURL, body, authenticationToken, additionalHeaders);
+        }
+        catch (SocketException ex)
+        {
+            throw customConnector.getConnectError(ex);
+        }
+        catch (UnknownHostException ex)
+        {
+            throw customConnector.getConnectError(ex);
+        }
+        catch (FileNotFoundException ex)
+        {
+            throw customConnector.getConnectError(ex);
+        }
+        try
+        {
+            checkError(resultMessage);
+        }
+        catch (AuthenticationException ex)
+        {
+            String newAuthCode = customConnector.reauth(this.getClass());
+            // try the same call again with the new result, this time with no auth code failed fallback
+            if ( newAuthCode != null )
+            {
+                resultMessage = sendCallWithString_("POST", methodURL, body, newAuthCode, additionalHeaders);
+                checkError(resultMessage);
+            }
+            else
+            {
+                throw ex;
+            }
+        }
+        return resultMessage;
+    }
+
+
     synchronized protected HttpCallResult sendCall_(String requestMethod, URL methodURL, JsonElement jsonObject, String authenticationToken,Map<String, String>additionalHeaders) throws Exception
     {
 
@@ -232,7 +295,7 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         }
         catch (AuthenticationException ex)
         {
-            String newAuthCode = customConnector.reauth(this);
+            String newAuthCode = customConnector.reauth(this.getClass());
             // try the same call again with the new result, this time with no auth code failed fallback
             if ( newAuthCode != null )
             {
@@ -252,14 +315,9 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
     {
         if(resultMessage.getResponseCode() != Response.Status.OK.getStatusCode())
         {
-            
-            JsonElement errorElement = resultMessage.parseJson();
-            if (errorElement != null && errorElement.isJsonObject())
-            {
-                Exception ex = deserializeExceptionObject(errorElement.getAsJsonObject());
-                throw ex;
-            }
-            
+
+            Exception ex = deserializeExceptionObject(resultMessage);
+            throw ex;
         }
     }
 
@@ -324,35 +382,24 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
         return resultObject;
     }
 
-    public Method findMethod(Class<?> service, String methodName)
-    {
-        Method method = null;
-        for (Method m : service.getMethods())
-        {
-            if (m.getName().equals(methodName))
-            {
-                method = m;
-            }
-        }
-        if (method == null)
-        {
-            throw new IllegalStateException("Method " + methodName + " not found in " + service.getClass());
-        }
-        return method;
-    }
+//
+//    public Method findMethod(Class<?> service, String methodName)
+//    {
+//        Method method = null;
+//        for (Method m : service.getMethods())
+//        {
+//            if (m.getName().equals(methodName))
+//            {
+//                method = m;
+//            }
+//        }
+//        if (method == null)
+//        {
+//            throw new IllegalStateException("Method " + methodName + " not found in " + service.getClass());
+//        }
+//        return method;
+//    }
 
-    public JsonElement serializeCall(Object arg)
-    {
-//        Class<?>[] parameterTypes = method.getParameterTypes();
-        JsonElement params = serializeArguments(arg);
-        return params;
-//        JsonObject element = new JsonObject();
-//        element.addProperty("rest", "2.0");
-//        element.addProperty("method", method.getName());
-//        element.add("params", params);
-//        element.addProperty("id", "1");
-//        return element;
-    }
 
     //    private void addParams(Appendable writer, Map<String,String> args ) throws IOException
     //    {

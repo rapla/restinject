@@ -52,13 +52,13 @@ public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
     }
 
     @Override
-    public Map<String, Set<String>> complex()
+    public Map<String, Set<String>> complex(Map<String,String> param)
     {
 
         Map<String, Set<String>> list = new LinkedHashMap<>();
         Set<String> set = new LinkedHashSet<String>();
         set.add("Hello");
-        set.add("World");
+        set.add(param.get("greeting"));
         list.put("greeting", set);
         return list;
     }

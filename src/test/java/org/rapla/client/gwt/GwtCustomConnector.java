@@ -1,18 +1,28 @@
-package org.rapla.client.swing;
+package org.rapla.client.gwt;
 
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.InjectionContext;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.SerializableExceptionInformation;
 import org.rapla.rest.client.gwt.MockProxy;
 import org.rapla.rest.client.swing.RaplaConnectException;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 
-
-class MyCustomConnector implements CustomConnector
+@DefaultImplementation(of=CustomConnector.class,context = InjectionContext.gwt)
+@Singleton
+public class GwtCustomConnector implements CustomConnector
 {
 
     String accessToken;
+    @Inject
+    public GwtCustomConnector()
+    {
+
+    }
 
     @Override public String reauth(Class proxy) throws Exception
     {
@@ -29,27 +39,6 @@ class MyCustomConnector implements CustomConnector
         String aClass = exceptionInformations.getExceptionClass();
         if ( aClass != null)
         {
-            try
-            {
-                final Class<?> aClass1 = Class.forName(aClass);
-                Constructor<?> constructor = aClass1.getConstructor(String.class);
-                if (constructor != null)
-                {
-                    return (Exception)constructor.newInstance(exceptionInformations.getMessage());
-                }
-                else
-                {
-                    constructor = aClass1.getConstructor();
-                    if ( constructor != null)
-                    {
-                        return (Exception) constructor.newInstance();
-                    }
-                }
-            }
-            catch ( Exception ex)
-            {
-
-            }
         }
         return new Exception(aClass + " " + exceptionInformations.getMessage() + " " + exceptionInformations.getMessages());
         // throw new Au

@@ -3,11 +3,13 @@ package org.rapla.client.gwt;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import org.rapla.common.AnnotationProcessingTest;
 import org.rapla.scheduler.Promise;
 import org.rapla.scheduler.CommandScheduler;
 
+@Singleton
 public class Bootstrap
 {
     private final AnnotationProcessingTest webservice;

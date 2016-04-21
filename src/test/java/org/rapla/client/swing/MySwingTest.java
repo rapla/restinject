@@ -2,7 +2,9 @@ package org.rapla.client.swing;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.jetty.server.Server;
@@ -11,6 +13,7 @@ import org.rapla.common.AnnotationProcessingTest;
 import org.rapla.common.AnnotationProcessingTest_JavaJsonProxy;
 import org.rapla.common.AnnotationSimpleProcessingTest;
 import org.rapla.common.AnnotationSimpleProcessingTest_JavaJsonProxy;
+import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.EntryPointFactory;
 import org.rapla.rest.client.swing.BasicRaplaHTTPConnector;
 import org.rapla.server.ServletTestContainer;
@@ -21,7 +24,11 @@ public class MySwingTest extends TestCase
 {
     Server server;
 
-    BasicRaplaHTTPConnector.CustomConnector connector = new MyCustomConnector();
+    CustomConnector connector = new MyCustomConnector();
+    private Map<String, String> paramMap = new LinkedHashMap<>();
+    {
+        paramMap.put("greeting","World");
+    }
 
     @Override
     protected void setUp() throws Exception
@@ -84,7 +91,7 @@ public class MySwingTest extends TestCase
     public void test4() throws Exception
     {
         AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
-        final Set<String> greeting = test.complex().get("greeting");
+        final Set<String> greeting = test.complex(paramMap).get("greeting");
         assertEquals(2, greeting.size());
         final Iterator<String> iterator = greeting.iterator();
         assertEquals("Hello", iterator.next());

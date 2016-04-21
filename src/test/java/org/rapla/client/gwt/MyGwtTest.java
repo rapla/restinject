@@ -16,6 +16,8 @@ import com.google.gwt.junit.client.GWTTestCase;
 
 import dagger.Component;
 
+import javax.inject.Singleton;
+
 public class MyGwtTest extends GWTTestCase
 {
 
@@ -31,6 +33,7 @@ public class MyGwtTest extends GWTTestCase
     }
     
     @Component(modules= org.rapla.client.gwt.dagger.DaggerRaplaGwtModule.class)
+    @Singleton
     public interface BootstrapInterface {
         Bootstrap getBootstrap();
     }
@@ -68,7 +71,7 @@ public class MyGwtTest extends GWTTestCase
     public void testGwtCall() throws Exception
     {
 
-        final Bootstrap bootstrap = DaggerMyGwtTest_BootstrapInterface.create().getBootstrap();
+        final Bootstrap bootstrap = createBootstrap();
         AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
         final AnnotationProcessingTest.Result result = bootstrap.call(p);
@@ -80,11 +83,16 @@ public class MyGwtTest extends GWTTestCase
         assertEquals("2", ids.get(1));
     }
 
+    private Bootstrap createBootstrap()
+    {
+        return DaggerMyGwtTest_BootstrapInterface.create().getBootstrap();
+    }
+
     AnnotationProcessingTest.Result asyncResult;
 
     public void testGwtPromiseCall() throws Exception
     {
-        final Bootstrap bootstrap = DaggerMyGwtTest_BootstrapInterface.create().getBootstrap();
+        final Bootstrap bootstrap = createBootstrap();
         AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
         CommandScheduler scheduler = new GwtCommandScheduler()

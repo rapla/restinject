@@ -14,6 +14,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
 
+import org.rapla.rest.client.SerializableExceptionInformation;
 import org.rapla.rest.client.swing.JSONParserWrapper;
 
 import com.google.gson.Gson;
@@ -54,21 +55,7 @@ public class GsonWriter<T> implements MessageBodyWriter<T>
         if( t instanceof Throwable)
         {
             Throwable exception = (Throwable)t;
-            final JsonObject obj = new JsonObject();
-            obj.addProperty("message", exception.getMessage());
-            JsonArray stackTrace = new JsonArray();
-            for (StackTraceElement el : exception.getStackTrace())
-            {
-                JsonElement jsonRep = gson.toJsonTree(el);
-                stackTrace.add(jsonRep);
-            }
-            final JsonObject data = new JsonObject();
-            data.addProperty("exception", exception.getClass().getName());
-            data.add("stacktrace", stackTrace);
-            obj.add("data", data);
-            final JsonObject wrapper = new JsonObject();
-            wrapper.add("error", obj);
-            json = gson.toJson(wrapper);
+            json = gson.toJson(new SerializableExceptionInformation(exception));
         }
         else
         {
