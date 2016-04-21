@@ -16,6 +16,10 @@ import javax.ws.rs.core.MediaType;
 @Path("AnnotationProcessingTest")
 public interface AnnotationProcessingTest
 {
+
+    @GET
+    List<Result> sayHello6();
+
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     List<Result> sayHello(Parameter param);

@@ -1,6 +1,7 @@
 package org.rapla.server;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -60,6 +61,14 @@ public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
         set.add("Hello");
         set.add(param.get("greeting"));
         list.put("greeting", set);
+        return list;
+    }
+
+    @Override public List<Result> sayHello6()
+    {
+        final Parameter param = new Parameter();
+        param.setActionIds(Arrays.asList(new Integer[]{1}));
+        List<Result> list = sayHello3(param);
         return list;
     }
 }

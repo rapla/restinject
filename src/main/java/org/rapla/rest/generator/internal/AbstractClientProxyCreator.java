@@ -232,11 +232,6 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
     }
 
-    private String getJsonCallClassName(final TreeLogger logger) throws UnableToCompleteException
-    {
-        return JsonCall20HttpPost;
-    }
-
     private void generateProxyMethods(final TreeLogger logger, final SourceWriter srcWriter) throws UnableToCompleteException
     {
         final List<ExecutableElement> methods = getMethods(processingEnvironment);
@@ -248,7 +243,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
     protected String[] writeSerializers(SourceWriter w, List<? extends VariableElement> params, TypeMirror resultType)
     {
-        return new String[1];
+        return new String[params.size() + 1];
     }
 
     protected void generateProxyMethod(@SuppressWarnings("unused") final TreeLogger logger, final ExecutableElement method, final SourceWriter w)
@@ -256,10 +251,8 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
     {
         w.println();
         final List<? extends VariableElement> params = method.getParameters();
-        final TypeMirror callback = method.getReturnType();// params[params.length - 1];
+        final TypeMirror callback = method.getReturnType();
         TypeMirror resultType = callback;
-        //    final JClassType resultType =
-        //        callback.isParameterized().getTypeArgs()[0];
         final String[] serializerFields = writeSerializers(w, params, resultType);
         String resultField = serializerFields[serializerFields.length - 1];
         resultField = resultField != null ? resultField : "";
@@ -388,51 +381,12 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
                         if (jsonString)
                         {
                             w.println("param.append(" + pname + ");");
-                            //w.print( pname );
                         }
                         else
                         {
                             w.println("param.append(" + pname + " + \"\");");
-//                            w.print(  pname + "+\"\"");
                         }
                     }
-                    //                    else if ((headerAnnotation != null || queryAnnotation!= null ) &&(SerializerCreator.isArray(paramType) || typeUtils.isAssignable(paramType, CollectionType)))
-                    //                    {
-                    //                        if ( pathAnnotation != null)
-                    //                        {
-                    //                            throw new UnableToCompleteException("Path annotation is not allowed for non primitive arguments " + className + "." + methodName + "." + pname);
-                    //                        }
-                    //                        // TODO list of complex objects
-                    //                        w.println("{");
-                    //                        w.indent();
-                    //                        w.println("boolean first = true;");
-                    //                        w.println(StringBuilder.class.getCanonicalName() + " sb = new " + StringBuilder.class.getCanonicalName() + "();");
-                    //                        w.println("for(" + paramType.toString() + " listParam:" + pname + ") {");
-                    //
-                    //                        w.println("if(first) {");
-                    //                        w.indent();
-                    //                        w.println("first = false;");
-                    //                        w.outdent();
-                    //                        w.println("} else {");
-                    //                        String name = queryAnnotation != null ? queryAnnotation.value() : headerAnnotation.value() ;
-                    //                        w.println("sb.append(\"&" + name + "=\");");
-                    //                        w.println("}");
-                    //                        w.indent();
-                    //                        //asd&selection=peta&selection=qwe
-                    //                        //?selection=asd&selection=peta&selection=qwe
-                    //                        //        ?selection=
-                    //                        w.outdent();
-                    //                        w.println("} ");
-                    //                        w.indent();
-                    //                        TypeMirror listParamType = null;
-                    //                        final String encodedParam = writeEncoder(listParamType,"listParam");
-                    //                        w.println("sb.append(" + encodedParam +");");
-                    //                        w.outdent();
-                    //                        w.println("}");
-                    //                        w.outdent();
-                    //                        w.println("param" + i + " = sb.toString();");
-                    //                        w.println("}");
-                    //                    }
                     else
                     {
                         writeEncoded(w,paramType, pname, serializerFields[i]);
@@ -544,13 +498,11 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
     protected void writeBody(SourceWriter w,TypeMirror paramType, String pname, String serializerField)
     {
         w.println( "postBody.append(serializeArgument(" + pname + "));");
-        //return  pname + " != null ? " + pname + ".toString() : \"\"";
     }
 
     protected void writeEncoded(SourceWriter writer,TypeMirror paramType, String pname, String serializedField)
     {
         writer.print("param.append(serializeArgumentUrl(" + pname + "));");
-        //return  pname + " != null ? " + pname + ".toString() : \"\"";
     }
 
     private String getProxyQualifiedName()
