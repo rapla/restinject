@@ -99,7 +99,7 @@ public class HTTPConnector
             InputStream inputStream = null;
             try
             {
-                if (responseCode != 200)
+                if (responseCode != 200 && responseCode != 204)
                 {
                     inputStream = conn.getErrorStream();
                 }

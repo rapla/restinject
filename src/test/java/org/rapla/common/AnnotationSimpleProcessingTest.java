@@ -14,6 +14,7 @@ public interface AnnotationSimpleProcessingTest
 {
     @GET
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+    @Path("sayHello")
     String sayHello(@QueryParam("param") String param);
     
     @GET

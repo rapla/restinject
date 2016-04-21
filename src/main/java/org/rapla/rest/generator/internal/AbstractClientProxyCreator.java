@@ -61,10 +61,9 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
     public String create(final TreeLogger logger) throws UnableToCompleteException
     {
-        checkMethods(logger, processingEnvironment);
-
         TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
         String interfaceName = erasedType.getQualifiedName().toString();
+        checkMethods(logger, processingEnvironment, interfaceName);
 
         final SourceWriter srcWriter = getSourceWriter(logger, interfaceName);
         if (srcWriter == null)
@@ -81,17 +80,17 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         return getProxyQualifiedName();
     }
 
-    private void checkMethods(final TreeLogger logger, final ProcessingEnvironment processingEnvironment) throws UnableToCompleteException
+    private void checkMethods(final TreeLogger logger, final ProcessingEnvironment processingEnvironment, String interfaceName) throws UnableToCompleteException
     {
-        final Set<String> declaredNames = new HashSet<String>();
+        //final Set<String> declaredNames = new HashSet<String>();
         final List<ExecutableElement> methods = getMethods(processingEnvironment);
         for (final ExecutableElement m : methods)
         {
             final String methodName = m.getSimpleName().toString();
-            if (!declaredNames.add(methodName))
-            {
-                invalid(logger, "Overloading method " + methodName + " not supported");
-            }
+//            if (!declaredNames.add(methodName))
+//            {
+//                invalid(logger, "Overloading method " + interfaceName + "." + methodName + " not supported");
+//            }
             final List<? extends VariableElement> params = m.getParameters();
 
             for (VariableElement p : params)

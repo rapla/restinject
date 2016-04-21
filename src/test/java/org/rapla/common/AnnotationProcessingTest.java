@@ -16,25 +16,34 @@ import javax.ws.rs.core.MediaType;
 @Path("AnnotationProcessingTest")
 public interface AnnotationProcessingTest
 {
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("dontSayHello")
+    void dontSayHello();
 
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("sayHello6")
     List<Result> sayHello6();
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
+    @Path("sayHello")
     List<Result> sayHello(Parameter param);
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("hello2")
+    @Path("sayHello2")
     Result sayHello2(Parameter param);
 
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
+    @Path("sayHello3")
     List<Result> sayHello3(Parameter param);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Path("complex")
     Map<String, Set<String>> complex(@QueryParam("param") Map<String,String> test);
 
     public static class Result {

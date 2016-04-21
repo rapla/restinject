@@ -56,6 +56,8 @@ public class MySwingTest extends TestCase
     public void test() throws Exception
     {
         AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
+        test.dontSayHello();
+
         AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
         final List<AnnotationProcessingTest.Result> resultList = test.sayHello(p);
@@ -66,6 +68,8 @@ public class MySwingTest extends TestCase
         assertEquals("2", ids.get(1));
         test.sayHello2(p);
         test.sayHello3(p);
+
+
     }
 
     public void test3() throws Exception

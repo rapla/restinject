@@ -23,6 +23,12 @@ public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
     }
 
     @Override
+    public void dontSayHello()
+    {
+
+    }
+
+    @Override
     public List<Result> sayHello(Parameter param)
     {
         List<Result> list = sayHello3(param);

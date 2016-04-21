@@ -17,6 +17,7 @@ import java.util.Set;
 
 import javax.ws.rs.core.Response;
 
+import com.google.gson.JsonParseException;
 import org.rapla.rest.client.AuthenticationException;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.EntryPointFactory;
@@ -181,7 +182,15 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
     private Exception deserializeExceptionObject(HttpCallResult resultMessage)
     {
 
-        JsonElement errorElement = resultMessage.parseJson();
+        JsonElement errorElement;
+        try
+        {
+            errorElement = resultMessage.parseJson();
+        }
+        catch (JsonParseException ex)
+        {
+            errorElement = null;
+        }
         if (errorElement == null || !errorElement.isJsonObject())
         {
             return new RaplaConnectException(resultMessage.getResponseCode() + ":" + resultMessage.getResult());
@@ -313,7 +322,8 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
 
     protected void checkError(HttpCallResult resultMessage) throws Exception
     {
-        if(resultMessage.getResponseCode() != Response.Status.OK.getStatusCode())
+        final int responseCode = resultMessage.getResponseCode();
+        if(responseCode != Response.Status.OK.getStatusCode() && responseCode != Response.Status.NO_CONTENT.getStatusCode())
         {
 
             Exception ex = deserializeExceptionObject(resultMessage);
@@ -338,6 +348,10 @@ public class BasicRaplaHTTPConnector extends HTTPJsonConnector
 
     protected Object getResult(HttpCallResult result, Class resultType, Class container) throws RaplaConnectException
     {
+        if ( resultType.equals( void.class))
+        {
+            return null;
+        }
         final JsonElement resultElement = result.parseJson();
         Object resultObject;
         if (container != null)

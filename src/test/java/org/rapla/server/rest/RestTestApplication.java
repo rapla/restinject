@@ -9,6 +9,7 @@ import javax.ws.rs.core.Application;
 import org.rapla.common.EnumJsonServiceImpl;
 import org.rapla.common.ExampleWithParameterArrayImpl;
 import org.rapla.common.SimpleServiceImpl;
+import org.rapla.rest.server.HttpMethodOverrideProvider;
 import org.rapla.server.AnnotationProcessingTestImpl;
 import org.rapla.server.AnnotationSimpleProcessingTestImpl;
 import org.rapla.server.MyRestPage;
@@ -29,6 +30,7 @@ public class RestTestApplication extends Application
     public RestTestApplication()
     {
         final HashSet<Class<?>> classes = new HashSet<>();
+        classes.add(HttpMethodOverrideProvider.class);
         classes.add(GsonReader.class);
         classes.add(GsonWriter.class);
         classes.add(WildcardWriter.class);
