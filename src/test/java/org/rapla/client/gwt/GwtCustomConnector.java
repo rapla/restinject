@@ -5,12 +5,11 @@ import org.rapla.inject.InjectionContext;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.SerializableExceptionInformation;
 import org.rapla.rest.client.gwt.MockProxy;
-import org.rapla.rest.client.swing.RaplaConnectException;
+import org.rapla.rest.client.RaplaConnectException;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 
 @DefaultImplementation(of=CustomConnector.class,context = InjectionContext.gwt)
 @Singleton

@@ -14,7 +14,6 @@
 
 package org.rapla.rest.generator.internal;
 
-import com.google.gwt.http.client.RequestBuilder;
 import org.rapla.inject.generator.internal.SourceWriter;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -51,7 +50,7 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
         pw.println("import com.google.gwt.core.client.JavaScriptObject;");
         pw.println("import " + ResultDeserializer + ";");
         pw.println("import com.google.gwt.core.client.GWT;");
-        pw.println("import " + RequestBuilder.class.getCanonicalName() + ";");
+        pw.println("import " + RequestBuilder + ";");
         return superClass;
     }
 
@@ -154,6 +153,7 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
                     w.print(serializerCreator.serializerFor(pType));
                 else
                     w.print(JsonSerializer);
+                //                    w.print(serializerCreator.serializerFor(pType));
                 w.print(" ");
                 w.print(serializerFields[i]);
                 w.print(" = ");

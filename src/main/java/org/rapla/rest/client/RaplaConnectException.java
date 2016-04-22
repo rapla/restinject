@@ -1,4 +1,4 @@
-package org.rapla.rest.client.swing;
+package org.rapla.rest.client;
 
 public class RaplaConnectException extends Exception {
 

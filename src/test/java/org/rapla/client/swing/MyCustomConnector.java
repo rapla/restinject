@@ -3,7 +3,7 @@ package org.rapla.client.swing;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.SerializableExceptionInformation;
 import org.rapla.rest.client.gwt.MockProxy;
-import org.rapla.rest.client.swing.RaplaConnectException;
+import org.rapla.rest.client.RaplaConnectException;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;

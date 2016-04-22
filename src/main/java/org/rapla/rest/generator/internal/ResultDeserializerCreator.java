@@ -14,7 +14,6 @@
 
 package org.rapla.rest.generator.internal;
 
-import com.google.gwt.core.client.JavaScriptObject;
 import org.rapla.inject.generator.internal.SourceWriter;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -177,7 +176,7 @@ class ResultDeserializerCreator
             return null;
         }
         pw.println("package " + pkgName + ";");
-        pw.println("import " + JavaScriptObject.class.getCanonicalName() + ";");
+        pw.println("import " + SerializerClasses.JavaScriptObject + ";");
         pw.println("import " + SerializerClasses.ResultDeserializer + ";");
         pw.println(getGeneratorString());
         pw.println("public class " + simpleName + " extends " + SerializerClasses.ArrayResultDeserializer + " implements "

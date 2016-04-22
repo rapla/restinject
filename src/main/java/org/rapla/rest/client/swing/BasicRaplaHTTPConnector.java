@@ -21,6 +21,7 @@ import com.google.gson.JsonParseException;
 import org.rapla.rest.client.AuthenticationException;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.EntryPointFactory;
+import org.rapla.rest.client.RaplaConnectException;
 import org.rapla.rest.client.SerializableExceptionInformation;
 import org.rapla.rest.client.SerializableExceptionInformation.SerializableExceptionStacktraceInformation;
 import org.rapla.rest.client.gwt.MockProxy;

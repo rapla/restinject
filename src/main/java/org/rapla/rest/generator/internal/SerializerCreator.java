@@ -41,9 +41,6 @@ import javax.tools.JavaFileObject;
 
 import org.rapla.inject.generator.internal.SourceWriter;
 
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsonUtils;
-
 class SerializerCreator implements SerializerClasses
 {
 
@@ -328,7 +325,8 @@ class SerializerCreator implements SerializerClasses
         }
     }
 
-    String serializerFor(final TypeMirror t)
+
+    public String serializerFor(final TypeMirror t)
     {
         if (isArray(t))
         {
@@ -654,7 +652,7 @@ class SerializerCreator implements SerializerClasses
                 w.indent();
                 w.println(docomma);
                 w.println(doname);
-                w.println("sb.append(" + JsonUtils.class.getCanonicalName() + ".escapeValue(" + doget + "));");
+                w.println("sb.append(" + JsonUtils + ".escapeValue(" + doget + "));");
                 w.outdent();
                 w.println("}");
                 w.println();
@@ -1016,8 +1014,7 @@ class SerializerCreator implements SerializerClasses
 
         pw.println("package " + pkgName + ";");
         pw.println();
-        addImport(pw, JavaScriptObject.class.getCanonicalName());
-        addImport(pw, JavaScriptObject.class.getCanonicalName());
+        addImport(pw, JavaScriptObject);
         addImport(pw, JsonSerializer);
         String superclass;
         if (isEnum(targetType.asType()))
