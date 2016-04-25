@@ -4,12 +4,12 @@ public interface SerializerClasses
 {
     String JavaScriptObject = "com.google.gwt.core.client.JavaScriptObject";
     String JsonUtils = "com.google.gwt.core.client.JsonUtils";
-    String AbstractJsonJavaProxy= "org.rapla.rest.client.swing.BasicRaplaHTTPConnector";
-    String AbstractJsonProxy= "org.rapla.rest.client.gwt.AbstractJsonProxy";
+    String AbstractJsonProxy= "org.rapla.rest.client.AbstractJsonProxy";
 
     String ResultDeserializer= "org.rapla.rest.client.gwt.internal.impl.ResultDeserializer";
     String ArrayResultDeserializer= "org.rapla.rest.client.gwt.internal.impl.ArrayResultDeserializer";
-
+    String JavaJsonSerializer = "org.rapla.rest.client.swing.JavaJsonSerializer";
+    String JsonCall= "org.rapla.rest.client.gwt.internal.impl.JsonCall";
     String JsonSerializer= "org.rapla.rest.client.gwt.internal.impl.JsonSerializer";
     String JsonSerializer_simple= "JsonSerializer";
 

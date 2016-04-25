@@ -4,11 +4,10 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.gson.JsonParser;
 import org.eclipse.jetty.server.Server;
-import org.rapla.rest.client.EntryPointFactory;
-import org.rapla.rest.client.swing.BasicRaplaHTTPConnector;
 import org.rapla.rest.client.swing.HTTPConnector;
-import org.rapla.rest.client.swing.HTTPConnector.HttpCallResult;
+import org.rapla.client.swing.JsonRemoteConnector.CallResult;
 import org.rapla.rest.client.swing.HTTPJsonConnector;
 import org.rapla.server.ServletTestContainer;
 
@@ -29,13 +28,6 @@ public class RestAPITest extends  TestCase {
         super.setUp();
         server = ServletTestContainer.createServer();
         server.start();
-        BasicRaplaHTTPConnector.setServiceEntryPointFactory(new EntryPointFactory()
-        {
-            @Override public String getEntryPoint(String interfaceName, String relativePath)
-            {
-                return "http://localhost:8052/" + "rest/" + (relativePath != null ? relativePath : interfaceName);
-            }
-        });
     }
 
     @Override protected void tearDown() throws Exception
@@ -58,7 +50,7 @@ public class RestAPITest extends  TestCase {
                 TestCase.assertEquals(o1, o2);
             }
         };
-        URL baseUrl = new URL("http://localhost:8052/rest/");
+        URL baseUrl = new URL("http://localhost:8052/rapla/");
         String username = "admin";
         String password = "secret";
         HTTPJsonConnector connector = new HTTPJsonConnector();
@@ -73,8 +65,10 @@ public class RestAPITest extends  TestCase {
             //callObj.addProperty("password", password);
             String emptyAuthenticationToken = null;
             Map<String, String> additionalHeaders = new HashMap<>();
-            HttpCallResult resultBody = connector.sendGet(methodURL,  emptyAuthenticationToken, additionalHeaders);
-            String resultObject = resultBody.parseJson().getAsString();
+            CallResult resultBody = connector.sendGet(methodURL,  emptyAuthenticationToken, additionalHeaders);
+            JsonParser jsonParser = new JsonParser();
+            final JsonElement parse = jsonParser.parse(resultBody.getResult());
+            String resultObject = parse.getAsString();
             //authenticationToken = resultObject.get("accessToken").getAsString();
             //String validity = resultObject.get("validUntil").getAsString();
             assertEquals("Hello admin",resultObject);
@@ -84,7 +78,7 @@ public class RestAPITest extends  TestCase {
 
     public void testHtml() throws Exception
     {
-        URL baseUrl = new URL("http://localhost:8052/rest/");
+        URL baseUrl = new URL("http://localhost:8052/rapla/");
         String username ="admin";
         String password= "secret";
         HTTPConnector connector = new HTTPConnector();
@@ -100,7 +94,7 @@ public class RestAPITest extends  TestCase {
             String emptyAuthenticationToken = null;
             String body = "";
             Map<String, String> additionalHeaders = new HashMap<>();
-            HttpCallResult resultBody = connector.sendCallWithString("GET",methodURL, body, emptyAuthenticationToken,"text/html", additionalHeaders);
+            CallResult resultBody = connector.sendCallWithString("GET",methodURL, body, emptyAuthenticationToken,"text/html", additionalHeaders);
             assertEquals("Hello admin",resultBody.getResult());
         }
 

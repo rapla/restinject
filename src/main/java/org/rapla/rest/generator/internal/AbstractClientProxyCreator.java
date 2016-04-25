@@ -1,8 +1,9 @@
 package org.rapla.rest.generator.internal;
 
+import org.rapla.client.swing.JsonRemoteConnector;
 import org.rapla.inject.generator.internal.SourceWriter;
 import org.rapla.rest.client.CustomConnector;
-import org.rapla.rest.client.swing.HTTPConnector;
+import org.rapla.rest.client.swing.JavaClientServerConnector;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -42,7 +43,9 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
     protected TypeElement svcInf;
     protected SerializerCreator serializerCreator;
     protected ResultDeserializerCreator deserializerCreator;
-    String generatorName;
+    protected String generatorName;
+    protected int instanceField;
+
 
     public AbstractClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName)
     {
@@ -183,22 +186,22 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         pw.println("import " + Map.class.getCanonicalName() + ";");
         pw.println("import " + HashMap.class.getCanonicalName() + ";");
         pw.println("import " + CustomConnector.class.getCanonicalName() + ";");
-        final String superClass = writeImports(pw);
+        pw.println("import " + AbstractJsonProxy + ";");
+        writeImports( pw);
         pw.println();
         pw.println(getGeneratorString());
-        pw.println("public class " + className + " extends " + superClass + " implements " + interfaceName);
+        pw.println("public class " + className + " extends " + AbstractJsonProxy + " implements " + interfaceName);
         pw.println("{");
         pw.indent();
         return pw;
     }
 
-    protected String writeImports(SourceWriter pw)
+    protected void writeImports(SourceWriter pw)
     {
-        final String superClass = AbstractJsonJavaProxy;
-        pw.println("import " + superClass + ";");
+        pw.println("import " + JavaClientServerConnector.class.getCanonicalName() + ";");
         pw.println("import java.net.URL;");
-        pw.println("import " + HTTPConnector.HttpCallResult.class.getCanonicalName() + ";");
-        return superClass;
+        pw.println("import " + JavaJsonSerializer + ";");
+        pw.println("import " + JsonRemoteConnector.CallResult.class.getCanonicalName() + ";");
     }
 
     private void generateProxyConstructor(@SuppressWarnings("unused") final TreeLogger logger, final SourceWriter w, String interfaceName)
@@ -222,11 +225,6 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
             w.outdent();
             w.println("}");
         }
-        w.println(interfaceName + " createMock(){");
-        w.indent();
-        w.println("return getMockProxy().create(" + interfaceName + ".class, getMockAccessToken());");
-        w.outdent();
-        w.println("}");
 
     }
 
@@ -241,7 +239,41 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
     protected String[] writeSerializers(SourceWriter w, List<? extends VariableElement> params, TypeMirror resultType)
     {
-        return new String[params.size() + 1];
+        String containerClass = "null";
+        final String resultClassname;
+        {
+            if ((resultType instanceof DeclaredType) && ((DeclaredType) resultType).getTypeArguments() != null && !((DeclaredType) resultType)
+                    .getTypeArguments().isEmpty())
+            {
+                final DeclaredType resultType1 = (DeclaredType) resultType;
+                //final List<? extends TypeMirror> typeArguments = resultType1.getTypeArguments();
+                TypeMirror typeMirror = resultType1;
+                {
+                    TypeMirror erasedType = SerializerCreator.getErasedType(typeMirror, processingEnvironment);
+                    containerClass = erasedType.toString() + ".class";
+                }
+                {
+                    final List<? extends TypeMirror> typeArguments1 = ((DeclaredType) typeMirror).getTypeArguments();
+                    final TypeMirror innerType = typeArguments1.get(typeArguments1.size() - 1);
+                    final TypeMirror erasedType = SerializerCreator.getErasedType(innerType, processingEnvironment);
+                    resultClassname = erasedType.toString();
+                }
+            }
+            else
+            {
+                resultClassname = resultType.toString();
+            }
+        }
+        String serialzerName = "serializer_" + instanceField++;
+        w.println("JavaJsonSerializer " + serialzerName+ " = new JavaJsonSerializer(() -> connector, " + resultClassname + ".class, "+ containerClass + ");");
+
+        final int argLength = params.size();
+        final String[] strings = new String[argLength + 1];
+        for ( int i=0;i<strings.length;i++)
+        {
+            strings[i] = serialzerName;
+        }
+        return strings;
     }
 
     protected void generateProxyMethod(@SuppressWarnings("unused") final TreeLogger logger, final ExecutableElement method, final SourceWriter w)
@@ -335,18 +367,15 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         w.println("try{");
         w.indent();
         final String s = "return";
-        w.println("if ( isMock() ) {" + (hasReturn ? "return" : "") + " createMock()." + methodName + "(" + argsBuilder.toString() + "); }");
-
         w.println("java.lang.String subPath = \"" + (method.getAnnotation(Path.class) != null ? method.getAnnotation(Path.class).value() : "") + "\";");
         w.println("final Map<java.lang.String, java.lang.String>additionalHeaders = new HashMap<>();");
         final String className = svcInf.getQualifiedName().toString();
         boolean firstQueryParam = true;
         final Types typeUtils = processingEnvironment.getTypeUtils();
-        final DeclaredType CollectionType;
-        {
-            final Elements elementUtils = processingEnvironment.getElementUtils();
-            CollectionType = typeUtils.getDeclaredType(elementUtils.getTypeElement(Collection.class.getCanonicalName()));
-        }
+        final Elements elementUtils = processingEnvironment.getElementUtils();
+
+        final DeclaredType CollectionType = typeUtils.getDeclaredType(elementUtils.getTypeElement(Collection.class.getCanonicalName()));
+        final DeclaredType RuntimeExeption = typeUtils.getDeclaredType(elementUtils.getTypeElement(RuntimeException.class.getCanonicalName()));
         String postParamName = null;
         w.println("StringBuilder postBody = new StringBuilder();");
 
@@ -468,7 +497,8 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         {
             throw new UnableToCompleteException("No accessor annotation on pubic method " + className + "." + methodName);
         }
-        writeCall(w, resultType, resultField, containerClass, resultClassname, className, methodType);
+        w.println("String methodUrl = getMethodUrl( subPath);");
+        writeCall(w, resultType, resultField, methodType);
         if (hasReturn)
         {
             w.println("return (" + cast + ") result;");
@@ -477,8 +507,13 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         w.outdent();
         w.println("} catch (Exception ex) {");
         w.indent();
+        w.println("if ( ex instanceof RuntimeException ) throw (RuntimeException) ex;");
         for (TypeMirror exception : thrownTypes)
         {
+            if ( typeUtils.isAssignable( exception, RuntimeExeption ))
+            {
+                continue;
+            }
             String exName = exception.toString();
             w.println("if ( ex instanceof " + exName + " ) throw (" + exName + ") ex;");
         }
@@ -490,25 +525,22 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
     }
 
-    protected void writeCall(SourceWriter w, TypeMirror resultType, String resultField, String containerClass, String resultClassname, String className,
+    protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField,
             String methodType)
     {
-        w.println("URL methodURL = getMethodUrl(\"" + className + "\", subPath);");
-        w.println("HttpCallResult resultMessage = sendCallWithString_(\"" + methodType
-                + "\", methodURL, postBody.toString(), customConnector.getAccessToken(),additionalHeaders);");
-        w.println("Class resultType = " + resultClassname + ".class;");
-        w.println("Class containerClass = " + containerClass + ";");
-        w.println("final Object result = getResult(resultMessage, resultType, containerClass);");
+        w.println("Object result = new JavaClientServerConnector(  ).send(connector,\"" + methodType
+                + "\", methodUrl, postBody.toString(),additionalHeaders," + resultDeserialzerField + ");");
+        //w.println("final Object result = httpConnector.getResult(resultMessage, resultType, containerClass);");
     }
 
     protected void writeBody(SourceWriter w,TypeMirror paramType, String pname, String serializerField)
     {
-        w.println( "postBody.append(serializeArgument(" + pname + "));");
+        w.println( "postBody.append(" + serializerField + ".serializeArgument(" + pname + "));");
     }
 
     protected void writeEncoded(SourceWriter writer,TypeMirror paramType, String pname, String serializedField)
     {
-        writer.print("param.append(serializeArgumentUrl(" + pname + "));");
+        writer.print("param.append("+ serializedField + ".serializeArgumentUrl(" + pname + "));");
     }
 
     private String getProxyQualifiedName()

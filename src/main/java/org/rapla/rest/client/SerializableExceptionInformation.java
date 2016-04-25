@@ -1,10 +1,10 @@
 package org.rapla.rest.client;
 
-import java.util.ArrayList;
-
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.ArrayList;
+import java.util.List;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -63,8 +63,8 @@ public class SerializableExceptionInformation
 
     private String message;
     private String exceptionClass;
-    private ArrayList<String> messages;
-    private ArrayList<SerializableExceptionStacktraceInformation> stacktrace;
+    private List<String> messages;
+    private List<SerializableExceptionStacktraceInformation> stacktrace;
 
     public SerializableExceptionInformation()
     {
@@ -83,7 +83,7 @@ public class SerializableExceptionInformation
         }
     }
 
-    public SerializableExceptionInformation(String message, String exceptionClass, ArrayList<String> messages, ArrayList<SerializableExceptionStacktraceInformation> stacktrace)
+    public SerializableExceptionInformation(String message, String exceptionClass, List<String> messages, List<SerializableExceptionStacktraceInformation> stacktrace)
     {
         this.message = message;
         this.exceptionClass = exceptionClass;
@@ -101,12 +101,12 @@ public class SerializableExceptionInformation
         return message;
     }
 
-    public ArrayList<String> getMessages()
+    public List<String> getMessages()
     {
         return messages;
     }
 
-    public ArrayList<SerializableExceptionStacktraceInformation> getStacktrace()
+    public List<SerializableExceptionStacktraceInformation> getStacktrace()
     {
         return stacktrace;
     }

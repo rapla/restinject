@@ -27,7 +27,6 @@ import java.util.List;
 public class GwtProxyCreator extends AbstractClientProxyCreator
 {
     public static final String PROXY_SUFFIX = "_GwtJsonProxy";
-    private int instanceField;
 
     public GwtProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName)
     {
@@ -42,16 +41,14 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
 
 
     @Override
-    protected String writeImports(SourceWriter pw)
+    protected void writeImports(SourceWriter pw)
     {
-        final String superClass = AbstractJsonProxy;
-        pw.println("import " + superClass + ";");
         pw.println("import " + JsonSerializer + ";");
         pw.println("import com.google.gwt.core.client.JavaScriptObject;");
         pw.println("import " + ResultDeserializer + ";");
         pw.println("import com.google.gwt.core.client.GWT;");
         pw.println("import " + RequestBuilder + ";");
-        return superClass;
+        pw.println("import " + JsonCall + ";");
     }
 
     @Override protected void writeBody(SourceWriter w,TypeMirror paramType, String pName,String serializerField)
@@ -116,15 +113,15 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
     }
 
     @Override
-    protected void writeCall(SourceWriter w, TypeMirror resultType, String resultField, String containerClass, String resultClassname, String className, String methodType)
+    protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType)
     {
-        w.print("Object result = doInvoke(");
+        w.print("Object result = JsonCall.doInvoke(");
         w.print("\""+methodType+ "\"");
-        w.print(", subPath, postBody.toString(), additionalHeaders,");
+        w.print(", methodUrl, postBody.toString(), additionalHeaders,");
         if ((resultType instanceof DeclaredType) && ((DeclaredType) resultType).getTypeArguments() != null
                 && !((DeclaredType) resultType).getTypeArguments().isEmpty())
         {
-            w.print(resultField);
+            w.print(resultDeserialzerField);
         }
         else if (resultType.getKind() == TypeKind.VOID)
         {
@@ -134,7 +131,7 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
         {
             deserializerCreator.generateDeserializerReference(resultType, w);
         }
-        w.print(");");
+        w.print(", connector);");
         w.println(" ");
     }
 

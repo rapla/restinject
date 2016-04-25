@@ -16,19 +16,17 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
+import org.rapla.client.swing.JsonRemoteConnector;
 
-public class HTTPConnector
+public class HTTPConnector implements JsonRemoteConnector
 {
-    public HttpCallResult sendCallWithString(String requestMethod, URL methodURL, String body, String authenticationToken,
+    public CallResult sendCallWithString(String requestMethod, URL methodURL, String body, String authenticationToken,
             Map<String, String> additionalHeaders) throws IOException, ProtocolException, UnsupportedEncodingException
     {
         return sendCallWithString(requestMethod, methodURL, body, authenticationToken, "application/json", additionalHeaders);
     }
 
-    public HttpCallResult sendCallWithString(String requestMethod, URL methodURL, String body, String authenticationToken, String accept,
+    public CallResult sendCallWithString(String requestMethod, URL methodURL, String body, String authenticationToken, String accept,
             Map<String, String> additionalHeaders) throws IOException, ProtocolException, UnsupportedEncodingException
     {
         HttpURLConnection conn = (HttpURLConnection) methodURL.openConnection();
@@ -129,7 +127,7 @@ public class HTTPConnector
                 }
             }
         }
-        return new HttpCallResult(resultString, responseCode);
+        return new CallResult(resultString, responseCode);
     }
 
     private String readResultToString(InputStream input) throws IOException
@@ -149,36 +147,6 @@ public class HTTPConnector
         String result = buffer.toString();
         in.close();
         return result;
-    }
-
-    public static class HttpCallResult
-    {
-
-        private final String result;
-        private final int responseCode;
-
-        public HttpCallResult(String result, int responseCode)
-        {
-            this.result = result;
-            this.responseCode = responseCode;
-        }
-
-        public JsonElement parseJson() throws JsonParseException
-        {
-            JsonParser jsonParser = new JsonParser();
-            JsonElement parsed = jsonParser.parse(result);
-            return parsed;
-        }
-
-        public String getResult()
-        {
-            return result;
-        }
-
-        public int getResponseCode()
-        {
-            return responseCode;
-        }
     }
 
 }

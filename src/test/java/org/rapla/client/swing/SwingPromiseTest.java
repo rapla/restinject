@@ -15,8 +15,6 @@ import org.rapla.common.AnnotationProcessingTest;
 import org.rapla.common.AnnotationProcessingTest.Parameter;
 import org.rapla.common.AnnotationProcessingTest.Result;
 import org.rapla.rest.client.CustomConnector;
-import org.rapla.rest.client.EntryPointFactory;
-import org.rapla.rest.client.swing.BasicRaplaHTTPConnector;
 import org.rapla.scheduler.Promise;
 import org.rapla.scheduler.impl.UtilConcurrentCommandScheduler;
 import org.rapla.server.ServletTestContainer;
@@ -66,14 +64,6 @@ public class SwingPromiseTest extends TestCase
         };
         server = ServletTestContainer.createServer();
         server.start();
-        BasicRaplaHTTPConnector.setServiceEntryPointFactory(new EntryPointFactory()
-        {
-            @Override
-            public String getEntryPoint(String interfaceName, String relativePath)
-            {
-                return "http://localhost:8052/" + "rest/" + (relativePath != null ? relativePath : interfaceName);
-            }
-        });
     }
 
     protected AnnotationProcessingTest createAnnotationProcessingProxy()

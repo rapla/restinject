@@ -6,7 +6,7 @@ import java.util.List;
 import org.rapla.common.AnnotationProcessingTest;
 import org.rapla.common.ComponentStarter;
 import org.rapla.rest.client.EntryPointFactory;
-import org.rapla.rest.client.gwt.AbstractJsonProxy;
+import org.rapla.rest.client.AbstractJsonProxy;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.Promise;
 import org.rapla.scheduler.client.gwt.GwtCommandScheduler;
@@ -41,31 +41,6 @@ public class MyGwtTest extends GWTTestCase
     @Override protected void gwtSetUp() throws Exception
     {
         super.gwtSetUp();
-        AbstractJsonProxy.setServiceEntryPointFactory(new EntryPointFactory()
-        {
-            @Override public String getEntryPoint(String interfaceName, String relativePath)
-            {
-                String moduleBase = GWT.getModuleBaseURL();//.replaceAll("/org.rapla.GwtTest.JUnit","");
-                int port = 59683;
-//                try
-//                {
-//                    port = new URL(s).getPort();
-//                }
-//                catch ( Exception ex)
-//                {
-//                }
-//                final String s1 = "http://192.168.0.102:" + port + "/rest/AnnotationProcessingTest";
-//                System.out.println("Entry point " + s1 );
-//                return s1;
-
-                String s= moduleBase + "rest/";
-                String url = s + (relativePath != null ? relativePath : interfaceName);
-                System.out.println("module base '" + moduleBase + "', entry point " + url + " for relativPath " + relativePath + " and interface " + interfaceName);
-                return url;
-
-            }
-        });
-
     }
 
     public void testGwtCall() throws Exception

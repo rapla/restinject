@@ -24,7 +24,7 @@ public interface AnnotationProcessingTest
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("sayHello6")
-    List<Result> sayHello6();
+    List<Result> sayHello6() throws Exception;
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)

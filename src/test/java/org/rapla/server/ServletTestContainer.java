@@ -33,7 +33,7 @@ public class ServletTestContainer
 //        context.setInitParameter("resteasy.servlet.mapping.prefix", "/rest");
 //        context.setInitParameter("resteasy.use.builtin.providers", "false");
 //        context.setInitParameter("javax.ws.rs.Application", RestTestApplication.class.getCanonicalName());
-        context.addServlet(new ServletHolder(TestServlet.class), "/rest/*");
+        context.addServlet(new ServletHolder(TestServlet.class), "/rapla/*");
         //context.addServlet(new ServletHolder(org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher.class), "/rest/*");
 //        context.addServlet(new ServletHolder(mainServlet), "/*");
         //context.addFilter(InjectionFilter.class, "/rest/*", EnumSet.copyOf(Arrays.asList(DispatcherType.values())));

@@ -57,7 +57,7 @@ public class TestServlet extends HttpServlet
             {
                 switch ( name)
                 {
-                    case "resteasy.servlet.mapping.prefix": return getPrefix() + "/rest";
+                    case "resteasy.servlet.mapping.prefix": return getPrefix() + "/rapla";
                     case "resteasy.use.builtin.providers": return  "false";
                     case "javax.ws.rs.Application": return RestTestApplication.class.getCanonicalName();
                 }

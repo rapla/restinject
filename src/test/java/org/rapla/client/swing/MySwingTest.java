@@ -14,8 +14,6 @@ import org.rapla.common.AnnotationProcessingTest_JavaJsonProxy;
 import org.rapla.common.AnnotationSimpleProcessingTest;
 import org.rapla.common.AnnotationSimpleProcessingTest_JavaJsonProxy;
 import org.rapla.rest.client.CustomConnector;
-import org.rapla.rest.client.EntryPointFactory;
-import org.rapla.rest.client.swing.BasicRaplaHTTPConnector;
 import org.rapla.server.ServletTestContainer;
 
 import junit.framework.TestCase;
@@ -36,14 +34,6 @@ public class MySwingTest extends TestCase
         super.setUp();
         server = ServletTestContainer.createServer();
         server.start();
-        BasicRaplaHTTPConnector.setServiceEntryPointFactory(new EntryPointFactory()
-        {
-            @Override
-            public String getEntryPoint(String interfaceName, String relativePath)
-            {
-                return "http://localhost:8052/" + "rest/" + (relativePath != null ? relativePath : interfaceName);
-            }
-        });
     }
 
     @Override

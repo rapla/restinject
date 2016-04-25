@@ -13,27 +13,34 @@ public class HTTPJsonConnector extends HTTPConnector
         super();
     }
 
-    public HttpCallResult sendPost(URL methodURL, JsonElement jsonObject, String authenticationToken, Map<String, String>additionalHeaders) throws IOException,JsonParseException {
+    public CallResult sendPost(URL methodURL, JsonElement jsonObject, String authenticationToken, Map<String, String>additionalHeaders) throws IOException,JsonParseException {
         return sendCall("POST", methodURL, jsonObject, authenticationToken, additionalHeaders);
     }
 
-    public HttpCallResult sendGet(URL methodURL, String authenticationToken, Map<String, String>additionalHeaders) throws IOException,JsonParseException  {
+    public CallResult sendGet(URL methodURL, String authenticationToken, Map<String, String>additionalHeaders) throws IOException,JsonParseException  {
         return sendCall("GET", methodURL, null, authenticationToken, additionalHeaders);
     }
 
-    public HttpCallResult sendPut(URL methodURL, JsonElement jsonObject, String authenticationToken,Map<String, String>additionalHeaders) throws IOException,JsonParseException  {
+    public CallResult sendPut(URL methodURL, JsonElement jsonObject, String authenticationToken,Map<String, String>additionalHeaders) throws IOException,JsonParseException  {
         return sendCall("PUT", methodURL, jsonObject, authenticationToken, additionalHeaders);
     }
 
-    public HttpCallResult sendPatch(URL methodURL, JsonElement jsonObject, String authenticationToken,Map<String, String>additionalHeaders) throws IOException,JsonParseException  {
+    public CallResult sendPatch(URL methodURL, JsonElement jsonObject, String authenticationToken,Map<String, String>additionalHeaders) throws IOException,JsonParseException  {
         return sendCall("PATCH", methodURL, jsonObject, authenticationToken, additionalHeaders);
     }
 
-    public HttpCallResult sendDelete(URL methodURL, String authenticationToken,Map<String, String>additionalHeaders) throws IOException,JsonParseException  {
+    public CallResult sendDelete(URL methodURL, String authenticationToken,Map<String, String>additionalHeaders) throws IOException,JsonParseException  {
         return sendCall("DELETE", methodURL, null, authenticationToken, additionalHeaders);
     }
 
-    protected HttpCallResult sendCall(String requestMethod, URL methodURL, JsonElement jsonObject, String authenticationToken,Map<String, String>additionalHeaders) throws  IOException,JsonParseException   {
+    protected CallResult sendCall(String requestMethod, URL methodURL, JsonElement jsonObject, String authenticationToken,Map<String, String>additionalHeaders) throws  IOException,JsonParseException   {
+        final String body = jsonToString(jsonObject);
+        CallResult callResult = sendCallWithString(requestMethod, methodURL, body, authenticationToken, additionalHeaders);
+        return callResult;
+    }
+
+    protected String jsonToString(JsonElement jsonObject)
+    {
         final String body;
         if(jsonObject != null)
         {
@@ -44,11 +51,7 @@ public class HTTPJsonConnector extends HTTPConnector
         {
             body = "";
         }
-        HttpCallResult callResult = sendCallWithString(requestMethod, methodURL, body, authenticationToken, additionalHeaders);
-        return callResult;
+        return body;
     }
-
-   
-
 
 }

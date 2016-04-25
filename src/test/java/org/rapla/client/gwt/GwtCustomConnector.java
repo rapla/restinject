@@ -1,5 +1,6 @@
 package org.rapla.client.gwt;
 
+import com.google.gwt.core.client.GWT;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
 import org.rapla.rest.client.CustomConnector;
@@ -22,6 +23,7 @@ public class GwtCustomConnector implements CustomConnector
     {
 
     }
+
 
     @Override public String reauth(Class proxy) throws Exception
     {
@@ -48,13 +50,8 @@ public class GwtCustomConnector implements CustomConnector
         return new Class[0];
     }
 
-    @Override public Exception getConnectError(IOException ex)
+    @Override public String getFullQualifiedUrl(String relativePath)
     {
-        return new RaplaConnectException("Connection Error " + ex.getMessage());
-    }
-
-    @Override public MockProxy getMockProxy()
-    {
-        return null;
+        return GWT.getModuleBaseURL() + "rapla/" + relativePath;
     }
 }

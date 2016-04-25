@@ -1,6 +1,6 @@
 package org.rapla.rest.client;
 
-public class RaplaConnectException extends Exception {
+public class RaplaConnectException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 

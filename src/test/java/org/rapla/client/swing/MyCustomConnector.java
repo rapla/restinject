@@ -2,10 +2,7 @@ package org.rapla.client.swing;
 
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.SerializableExceptionInformation;
-import org.rapla.rest.client.gwt.MockProxy;
-import org.rapla.rest.client.RaplaConnectException;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 
 
@@ -60,13 +57,9 @@ class MyCustomConnector implements CustomConnector
         return new Class[0];
     }
 
-    @Override public Exception getConnectError(IOException ex)
-    {
-        return new RaplaConnectException("Connection Error " + ex.getMessage());
-    }
 
-    @Override public MockProxy getMockProxy()
+    @Override public String getFullQualifiedUrl(String relativePath)
     {
-        return null;
+        return "http://localhost:8052/rapla/" + relativePath;
     }
 }
