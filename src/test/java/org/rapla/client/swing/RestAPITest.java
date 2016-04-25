@@ -7,7 +7,7 @@ import java.util.Map;
 import com.google.gson.JsonParser;
 import org.eclipse.jetty.server.Server;
 import org.rapla.rest.client.swing.HTTPConnector;
-import org.rapla.client.swing.JsonRemoteConnector.CallResult;
+import org.rapla.rest.client.swing.JsonRemoteConnector.CallResult;
 import org.rapla.rest.client.swing.HTTPJsonConnector;
 import org.rapla.server.ServletTestContainer;
 

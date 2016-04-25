@@ -16,8 +16,6 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
-import org.rapla.client.swing.JsonRemoteConnector;
-
 public class HTTPConnector implements JsonRemoteConnector
 {
     public CallResult sendCallWithString(String requestMethod, URL methodURL, String body, String authenticationToken,

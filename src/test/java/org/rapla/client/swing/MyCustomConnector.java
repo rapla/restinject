@@ -6,7 +6,7 @@ import org.rapla.rest.client.SerializableExceptionInformation;
 import java.lang.reflect.Constructor;
 
 
-class MyCustomConnector implements CustomConnector
+public class MyCustomConnector implements CustomConnector
 {
 
     String accessToken;

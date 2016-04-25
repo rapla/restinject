@@ -1,4 +1,4 @@
-package org.rapla.client.swing;
+package org.rapla.rest.client.swing;
 
 import java.net.URL;
 import java.util.Map;

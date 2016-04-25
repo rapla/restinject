@@ -1,6 +1,6 @@
 package org.rapla.rest.generator.internal;
 
-import org.rapla.client.swing.JsonRemoteConnector;
+import org.rapla.rest.client.swing.JsonRemoteConnector;
 import org.rapla.inject.generator.internal.SourceWriter;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.swing.JavaClientServerConnector;

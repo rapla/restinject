@@ -1,6 +1,5 @@
 package org.rapla.rest.client.swing;
 
-import org.rapla.client.swing.JsonRemoteConnector;
 import org.rapla.rest.client.AuthenticationException;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.ExceptionDeserializer;
