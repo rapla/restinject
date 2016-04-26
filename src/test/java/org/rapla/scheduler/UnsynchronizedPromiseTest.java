@@ -1,23 +1,22 @@
-package org.rapla.client;
+package org.rapla.scheduler;
 
 import junit.framework.TestCase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.rapla.scheduler.Promise;
-import org.rapla.scheduler.client.SingleThreadedPromise;
+import org.rapla.scheduler.impl.UnsynchronizedPromise;
 import org.rapla.scheduler.impl.UtilConcurrentCommandScheduler;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-@RunWith(JUnit4.class) public class SingleThreadedPromiseTest
+@RunWith(JUnit4.class) public class UnsynchronizedPromiseTest
 {
     @Test public void testAccept1() throws Exception
     {
         String text = "Hello World";
-        SingleThreadedPromise<String> promise = new SingleThreadedPromise<String>();
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
 
         Semaphore semaphore = new Semaphore(0);
         AtomicReference<String> acceptedText = new AtomicReference<String>();
@@ -88,7 +87,7 @@ import java.util.concurrent.atomic.AtomicReference;
     @Test public void testAccept2() throws Exception
     {
         String text = "Hello World";
-        SingleThreadedPromise<String> promise = new SingleThreadedPromise<String>();
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
         AtomicReference<String> acceptedText = new AtomicReference<String>();
         promise.complete(text);
         promise.thenAccept((t) -> {
@@ -100,7 +99,7 @@ import java.util.concurrent.atomic.AtomicReference;
     @Test public void testApply1() throws Exception
     {
         String text = "Hello World";
-        SingleThreadedPromise<String> promise = new SingleThreadedPromise<String>();
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
         Semaphore semaphore = new Semaphore(0);
         AtomicReference<String> acceptedText = new AtomicReference<String>();
         promise.thenApply((t) -> {
@@ -117,7 +116,7 @@ import java.util.concurrent.atomic.AtomicReference;
     @Test public void testApply2() throws Exception
     {
         String text = "Hello World";
-        SingleThreadedPromise<String> promise = new SingleThreadedPromise<String>();
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
         Semaphore semaphore = new Semaphore(0);
         AtomicReference<String> acceptedText = new AtomicReference<String>();
         promise.complete(text);
@@ -131,7 +130,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
     @Test public void testExceptionaly1() throws Exception
     {
-        SingleThreadedPromise<String> promise = new SingleThreadedPromise<String>();
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
         String text = "Fehler";
         Semaphore semaphore = new Semaphore(0);
         AtomicReference<Throwable> acceptedText = new AtomicReference<Throwable>();
@@ -147,7 +146,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
     @Test public void testExceptionaly2() throws Exception
     {
-        SingleThreadedPromise<String> promise = new SingleThreadedPromise<String>();
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
         String text = "Fehler";
         AtomicReference<Throwable> acceptedText = new AtomicReference<Throwable>();
         Semaphore semaphore = new Semaphore(0);
@@ -163,7 +162,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
     @Test public void testExceptionaly3() throws Exception
     {
-        SingleThreadedPromise<String> promise = new SingleThreadedPromise<String>();
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
         String text = "Fallback";
         AtomicReference<String> acceptedText = new AtomicReference<String>();
         Semaphore semaphore = new Semaphore(0);
@@ -179,8 +178,8 @@ import java.util.concurrent.atomic.AtomicReference;
     @Test public void testCombine1() throws Exception
     {
         String text = "Hello World";
-        SingleThreadedPromise<String> promise = new SingleThreadedPromise<String>();
-        SingleThreadedPromise<String> promise2 = new SingleThreadedPromise<String>();
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
+        UnsynchronizedPromise<String> promise2 = new UnsynchronizedPromise<String>();
         Semaphore semaphore = new Semaphore(0);
         AtomicReference<String> acceptedText = new AtomicReference<String>();
         promise.thenCombine(promise2, (t1, t2) -> t1 +" "+ t2).thenAccept((t) -> {
@@ -196,8 +195,8 @@ import java.util.concurrent.atomic.AtomicReference;
     @Test public void testCombine2() throws Exception
     {
         String text = "Hello World";
-        SingleThreadedPromise<String> promise = new SingleThreadedPromise<String>();
-        SingleThreadedPromise<String> promise2 = new SingleThreadedPromise<String>();
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
+        UnsynchronizedPromise<String> promise2 = new UnsynchronizedPromise<String>();
         Semaphore semaphore = new Semaphore(0);
         AtomicReference<String> acceptedText = new AtomicReference<String>();
         promise.thenCombine(promise2, (t1, t2) -> t1 +" "+ t2).thenAccept((t) -> {
@@ -213,8 +212,8 @@ import java.util.concurrent.atomic.AtomicReference;
     @Test public void testCombine3() throws Exception
     {
         String text = "Hello World";
-        SingleThreadedPromise<String> promise = new SingleThreadedPromise<String>();
-        SingleThreadedPromise<String> promise2 = new SingleThreadedPromise<String>();
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
+        UnsynchronizedPromise<String> promise2 = new UnsynchronizedPromise<String>();
         Semaphore semaphore = new Semaphore(0);
         AtomicReference<String> acceptedText = new AtomicReference<String>();
         promise2.complete("World");
@@ -230,8 +229,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
     @Test public void testCombineWithException1() throws Exception
     {
-        SingleThreadedPromise<String> promise = new SingleThreadedPromise<String>();
-        SingleThreadedPromise<String> promise2 = new SingleThreadedPromise<String>();
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
+        UnsynchronizedPromise<String> promise2 = new UnsynchronizedPromise<String>();
         Semaphore semaphore = new Semaphore(0);
         AtomicReference<String> acceptedText = new AtomicReference<String>();
         promise.complete("Hello");
@@ -247,8 +246,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
     @Test public void testCombineWithException2() throws Exception
     {
-        SingleThreadedPromise<String> promise = new SingleThreadedPromise<String>();
-        SingleThreadedPromise<String> promise2 = new SingleThreadedPromise<String>();
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
+        UnsynchronizedPromise<String> promise2 = new UnsynchronizedPromise<String>();
         Semaphore semaphore = new Semaphore(0);
         AtomicReference<String> acceptedText = new AtomicReference<String>();
         promise2.complete("Hello");
@@ -265,12 +264,12 @@ import java.util.concurrent.atomic.AtomicReference;
     @Test public void testCompose() throws Exception
     {
         String text = "Hello World";
-        SingleThreadedPromise<String> promise = new SingleThreadedPromise<String>();
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
 
         Semaphore semaphore = new Semaphore(0);
         AtomicReference<String> acceptedText = new AtomicReference<String>();
         promise.thenCompose((t)-> {
-            SingleThreadedPromise<String> promise2 = new SingleThreadedPromise<String>();
+            UnsynchronizedPromise<String> promise2 = new UnsynchronizedPromise<String>();
             promise2.complete(t + " World");
             semaphore.release();
             return promise2;

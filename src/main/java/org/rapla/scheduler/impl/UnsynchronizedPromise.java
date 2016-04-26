@@ -1,15 +1,16 @@
-package org.rapla.scheduler.client;
+package org.rapla.scheduler.impl;
 
 import org.rapla.scheduler.Promise;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SingleThreadedPromise<T> implements Promise<T>
+public class UnsynchronizedPromise<T> implements Promise<T>
 {
+
     enum State
     {
-        fullfilled,
+        fulfilled,
         rejected,
         pending
     }
@@ -17,16 +18,28 @@ public class SingleThreadedPromise<T> implements Promise<T>
     Object result;
     Promise other;
     Throwable exception;
-    List<SingleThreadedPromise> listeners;
+    List<UnsynchronizedPromise> listeners;
     State state = State.pending;
     BiFunction<Object, Object, Object> fn;
     Function<Throwable, ? extends Object> exFn;
 
-    public SingleThreadedPromise()
+    public UnsynchronizedPromise()
     {
     }
 
-    private SingleThreadedPromise(SingleThreadedPromise parent, Consumer fn)
+    protected UnsynchronizedPromise(T result)
+    {
+        this.result = result;
+        state = State.fulfilled;
+    }
+
+    protected UnsynchronizedPromise(Throwable ex)
+    {
+        this.exception = ex;
+        state = State.rejected;
+    }
+
+    private UnsynchronizedPromise(UnsynchronizedPromise parent, Consumer fn)
     {
         this(parent, (act) -> {
             fn.accept(act);
@@ -34,7 +47,7 @@ public class SingleThreadedPromise<T> implements Promise<T>
         });
     }
 
-    private SingleThreadedPromise(SingleThreadedPromise parent, Runnable fn)
+    private UnsynchronizedPromise(UnsynchronizedPromise parent, Runnable fn)
     {
         this(parent, (act) -> {
             fn.run();
@@ -42,7 +55,7 @@ public class SingleThreadedPromise<T> implements Promise<T>
         });
     }
 
-    //    private SingleThreadedPromise(SingleThreadedPromise parent, Runnable fn, Promise other)
+    //    private UnsynchronizedPromise(UnsynchronizedPromise parent, Runnable fn, Promise other)
     //    {
     //        this(parent, (act) -> {
     //            fn.run();
@@ -50,7 +63,7 @@ public class SingleThreadedPromise<T> implements Promise<T>
     //        }, other);
     //    }
     //
-    //    private SingleThreadedPromise(SingleThreadedPromise parent, BiConsumer fn,Promise other)
+    //    private UnsynchronizedPromise(UnsynchronizedPromise parent, BiConsumer fn,Promise other)
     //    {
     //        this(parent, (act) -> {
     //            fn.accept(act);
@@ -58,18 +71,18 @@ public class SingleThreadedPromise<T> implements Promise<T>
     //        }, other);
     //    }
 
-    private SingleThreadedPromise(Function<Throwable, ? extends Object> exFn, SingleThreadedPromise parent)
+    private UnsynchronizedPromise(Function<Throwable, ? extends Object> exFn, UnsynchronizedPromise parent)
     {
         this.exFn = exFn;
         parent.initState(this, null);
     }
 
-    private SingleThreadedPromise(SingleThreadedPromise parent, Function<Object, Object> fn)
+    private UnsynchronizedPromise(UnsynchronizedPromise parent, Function<Object, Object> fn)
     {
         this(parent, (a1, a2) -> fn.apply(a1), null);
     }
 
-    private SingleThreadedPromise(SingleThreadedPromise parent, Promise other, Runnable fn)
+    private UnsynchronizedPromise(UnsynchronizedPromise parent, Promise other, Runnable fn)
     {
         this(parent, (a, b) -> {
             fn.run();
@@ -77,7 +90,7 @@ public class SingleThreadedPromise<T> implements Promise<T>
         }, other);
     }
 
-    private SingleThreadedPromise(SingleThreadedPromise parent, Promise other, BiConsumer<Object, Object> fn)
+    private UnsynchronizedPromise(UnsynchronizedPromise parent, Promise other, BiConsumer<Object, Object> fn)
     {
         this(parent, (a, b) -> {
             fn.accept(a, b);
@@ -85,7 +98,7 @@ public class SingleThreadedPromise<T> implements Promise<T>
         }, other);
     }
 
-    private SingleThreadedPromise(SingleThreadedPromise parent, BiFunction<Object, Object, Object> fn, Promise other)
+    private UnsynchronizedPromise(UnsynchronizedPromise parent, BiFunction<Object, Object, Object> fn, Promise other)
     {
         this.fn = fn;
         this.other = other;
@@ -112,14 +125,14 @@ public class SingleThreadedPromise<T> implements Promise<T>
     {
         if (listeners != null)
         {
-            for (SingleThreadedPromise listener : listeners)
+            for (UnsynchronizedPromise listener : listeners)
             {
                 listener.completed(result, ex);
             }
         }
     }
 
-    private void initState(SingleThreadedPromise nextPromise, Promise other)
+    private void initState(UnsynchronizedPromise nextPromise, Promise other)
     {
         if (state != State.pending)
         {
@@ -148,32 +161,32 @@ public class SingleThreadedPromise<T> implements Promise<T>
 
     @Override public <U> Promise<U> thenApply(Function<? super T, ? extends U> fn)
     {
-        return new SingleThreadedPromise(this, fn);
+        return new UnsynchronizedPromise(this, fn);
     }
 
     @Override public Promise<Void> thenAccept(Consumer<? super T> action)
     {
-        return new SingleThreadedPromise(this, action);
+        return new UnsynchronizedPromise(this, action);
     }
 
     @Override public Promise<Void> thenRun(Runnable action)
     {
-        return new SingleThreadedPromise(this, action);
+        return new UnsynchronizedPromise(this, action);
     }
 
     @Override public <U, V> Promise<V> thenCombine(Promise<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn)
     {
-        return new SingleThreadedPromise(this, fn, other);
+        return new UnsynchronizedPromise(this, fn, other);
     }
 
     @Override public <U> Promise<Void> thenAcceptBoth(Promise<? extends U> other, BiConsumer<? super T, ? super U> fn)
     {
-        return new SingleThreadedPromise(this, other, fn);
+        return new UnsynchronizedPromise(this, other, fn);
     }
 
     @Override public Promise<Void> runAfterBoth(Promise<?> other, Runnable fn)
     {
-        return new SingleThreadedPromise(this, other, fn);
+        return new UnsynchronizedPromise(this, other, fn);
     }
 
     @Override public <U> Promise<U> applyToEither(Promise<? extends T> other, Function<? super T, U> fn)
@@ -211,7 +224,7 @@ public class SingleThreadedPromise<T> implements Promise<T>
 
     @Override public <U> Promise<U> thenCompose(Function<? super T, ? extends Promise<U>> fn)
     {
-        final SingleThreadedPromise<U> resultPromise = new SingleThreadedPromise<>();
+        final UnsynchronizedPromise<U> resultPromise = new UnsynchronizedPromise<>();
         this.thenAccept((r) -> {
             final Promise<U> apply = fn.apply(r);
             apply.thenAccept((r2) -> {
@@ -229,16 +242,14 @@ public class SingleThreadedPromise<T> implements Promise<T>
 
     @Override public Promise<T> exceptionally(Function<Throwable, ? extends T> fn)
     {
-        return new SingleThreadedPromise<T>(fn, this);
+        return new UnsynchronizedPromise<T>(fn, this);
     }
-
-
 
     private void changeState(Object result, Object result2, Throwable ex)
     {
         if (state != State.pending)
         {
-            throw new RuntimeException("Promise already fullfilled");
+            throw new RuntimeException("Promise already " +state.name());
         }
         if (ex != null)
         {
@@ -277,7 +288,7 @@ public class SingleThreadedPromise<T> implements Promise<T>
                 }
             }
         }
-        state = exception == null ? State.fullfilled : State.rejected;
+        state = exception == null ? State.fulfilled : State.rejected;
         fireComplete(this.result, exception);
     }
 

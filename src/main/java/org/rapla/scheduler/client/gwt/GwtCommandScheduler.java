@@ -8,7 +8,7 @@ import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.Promise;
 
 import com.google.gwt.core.client.Scheduler;
-import org.rapla.scheduler.client.SingleThreadedPromise;
+import org.rapla.scheduler.impl.UnsynchronizedPromise;
 
 public abstract class GwtCommandScheduler implements CommandScheduler
 {
@@ -91,7 +91,7 @@ public abstract class GwtCommandScheduler implements CommandScheduler
     @Override
     public <T> Promise<T> supply(final Callable<T> supplier)
     {
-        final SingleThreadedPromise<T> promise = new SingleThreadedPromise<T>();
+        final UnsynchronizedPromise<T> promise = new UnsynchronizedPromise<T>();
         Scheduler.get().scheduleFinally(() ->
         {
             try
@@ -110,7 +110,7 @@ public abstract class GwtCommandScheduler implements CommandScheduler
     @Override
     public Promise<Void> run(final Command supplier)
     {
-        final SingleThreadedPromise<Void> promise = new SingleThreadedPromise<Void>();
+        final UnsynchronizedPromise<Void> promise = new UnsynchronizedPromise<Void>();
         Scheduler.get().scheduleFinally(() ->
         {
             try
@@ -129,7 +129,7 @@ public abstract class GwtCommandScheduler implements CommandScheduler
     @Override
     public <T> Promise<T> supplyProxy(final Callable<T> supplier)
     {
-        final SingleThreadedPromise<T> promise = new SingleThreadedPromise<T>();
+        final UnsynchronizedPromise<T> promise = new UnsynchronizedPromise<T>();
         Scheduler.get().scheduleFinally(() ->
         {
             JsonCall.registerSingleThreadedCallback( new AsyncCallback<T>()
