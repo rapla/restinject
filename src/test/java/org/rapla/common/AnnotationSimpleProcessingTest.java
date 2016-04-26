@@ -26,4 +26,49 @@ public interface AnnotationSimpleProcessingTest
     @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
     @Path("exception")
     List<String> exception();
+
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+    @Path("sendString")
+    String sendString(@QueryParam("str")String param);
+
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+    @Path("sendInt")
+    Integer sendInt(@QueryParam("Int")Integer param);
+
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+    @Path("sendPrimInt")
+    int sendPrimInt(@QueryParam("int")int param);
+    
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+    @Path("sendBool")
+    Boolean sendBool(@QueryParam("Bool")Boolean param);
+    
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+    @Path("sendPrimBool")
+    boolean sendPrimBool(@QueryParam("bool")boolean param);
+    
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+    @Path("sendPrimDouble")
+    double sendPrimDouble(@QueryParam("double")double param);
+    
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+    @Path("sendDouble")
+    Double sendDouble(@QueryParam("double")Double param);
+    
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+    @Path("sendChar")
+    Character sendChar(@QueryParam("char")Character param);
+
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+    @Path("sendPrimChar")
+    char sendPrimChar(@QueryParam("char")char param);
 }

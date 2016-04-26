@@ -11,7 +11,7 @@ import org.rapla.common.AnnotationSimpleProcessingTest;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
 
-@DefaultImplementation(context=InjectionContext.server, of=AnnotationSimpleProcessingTest.class)
+@DefaultImplementation(context = InjectionContext.server, of = AnnotationSimpleProcessingTest.class)
 public class AnnotationSimpleProcessingTestImpl implements AnnotationSimpleProcessingTest
 {
     @Inject
@@ -44,5 +44,67 @@ public class AnnotationSimpleProcessingTestImpl implements AnnotationSimpleProce
     public List<String> exception()
     {
         throw new RuntimeException("Something went wrong");
+    }
+
+    @Override
+    public Boolean sendBool(Boolean param)
+    {
+        return param != null ? !param : null;
+    }
+
+    @Override
+    public Double sendDouble(Double param)
+    {
+        return param != null ? -1 * param : null;
+    }
+
+    @Override
+    public Integer sendInt(Integer param)
+    {
+        return param != null ? -1 * param : null;
+    }
+
+    @Override
+    public boolean sendPrimBool(boolean param)
+    {
+        return !param;
+    }
+
+    @Override
+    public double sendPrimDouble(double param)
+    {
+        return -1 * param;
+    }
+
+    @Override
+    public int sendPrimInt(int param)
+    {
+        return -1 * param;
+    }
+
+    @Override
+    public String sendString(String param)
+    {
+        return param;
+    }
+    
+    @Override
+    public Character sendChar(Character param)
+    {
+        if(param == null)
+        {
+            return param;
+        }
+        final char charValue = param.charValue();
+        int charInt = (int)charValue;
+        int nextCharInt = charInt + 1;
+        Character nextChar = Character.toChars(nextCharInt)[0];
+        return nextChar;
+    }
+    
+    @Override
+    public char sendPrimChar(char param)
+    {
+        return sendChar(param);
     }
 }

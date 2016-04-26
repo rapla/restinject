@@ -1,10 +1,5 @@
 package org.rapla.client;
 
-import org.junit.Test;
-import org.rapla.common.AnnotationProcessingTest;
-import org.rapla.common.AnnotationSimpleProcessingTest;
-import org.rapla.rest.client.CustomConnector;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -14,6 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.Test;
+import org.rapla.common.AnnotationProcessingTest;
+import org.rapla.common.AnnotationSimpleProcessingTest;
+import org.rapla.rest.client.CustomConnector;
+
 public abstract class AbstractProxyTest
 {
     protected Map<String, String> paramMap = new LinkedHashMap<>();
@@ -22,7 +22,7 @@ public abstract class AbstractProxyTest
     protected abstract CustomConnector createConnector();
 
     {
-        paramMap.put("greeting","World");
+        paramMap.put("greeting", "World");
     }
 
     protected abstract AnnotationProcessingTest createAnnotationProcessingProxy();
@@ -47,10 +47,10 @@ public abstract class AbstractProxyTest
         test.sayHello2(p);
         test.sayHello3(p);
 
-
     }
 
     abstract public void assertEq(Object o1, Object o2);
+
     abstract public void fail_(String message);
 
     @Test
@@ -60,7 +60,7 @@ public abstract class AbstractProxyTest
         final String message = "hello";
         final String result = test.sayHello(message);
         System.out.println("result");
-        assertEq(Boolean.TRUE,(Boolean)result.startsWith(message));
+        assertEq(Boolean.TRUE, (Boolean) result.startsWith(message));
     }
 
     @Test
@@ -105,13 +105,95 @@ public abstract class AbstractProxyTest
     public void testCollections() throws Exception
     {
         AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        Collection<String> primiteCollection = Arrays.asList(new String[] {"Hello", "World"});
+        Collection<String> primiteCollection = Arrays.asList(new String[] { "Hello", "World" });
         Collection<AnnotationProcessingTest.Parameter> complectCollection = new LinkedHashSet<>();
-        complectCollection.add( new AnnotationProcessingTest.Parameter());
+        complectCollection.add(new AnnotationProcessingTest.Parameter());
         final AnnotationProcessingTest.Parameter param2 = new AnnotationProcessingTest.Parameter();
-        param2.setCasts( primiteCollection);
+        param2.setCasts(primiteCollection);
         complectCollection.add(param2);
         final String greeting = test.collecions(primiteCollection, complectCollection);
-        assertEq("Made[Hello, World],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=null}, Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello, World]}]", greeting);
+        assertEq(
+                "Made[Hello, World],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=null}, Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello, World]}]",
+                greeting);
+    }
+
+    @Test
+    public void testEncoding() throws Exception
+    {
+        String stringWithDifficultCharacters = "#äöüßÖÄÜ\"+<>!§$%&(=&\\)";
+        final String result = createAnnotationSimpleProxy().sayHello(stringWithDifficultCharacters);
+        final String substring = result.substring(0, stringWithDifficultCharacters.length());
+        assertEq(stringWithDifficultCharacters, substring);
+    }
+
+    @Test
+    public void testPrimitiveString() throws Exception
+    {
+        String param = "another param";
+        final String result = createAnnotationSimpleProxy().sendString(param);
+        assertEq(param, result);
+    }
+
+    @Test
+    public void testDouble() throws Exception
+    {
+        Double param = new Double(-2.0);
+        final Double result = createAnnotationSimpleProxy().sendDouble(param);
+        assertEq(param, -1 * result);
+    }
+
+    @Test
+    public void testPrimDouble() throws Exception
+    {
+        double param = 12.;
+        final double result = createAnnotationSimpleProxy().sendPrimDouble(param);
+        assertEq(param, -1 * result);
+    }
+
+    @Test
+    public void testBoolean() throws Exception
+    {
+        Boolean param = Boolean.FALSE;
+        final Boolean result = createAnnotationSimpleProxy().sendBool(param);
+        assertEq(param, !result);
+    }
+
+    @Test
+    public void testPrimBoolean() throws Exception
+    {
+        boolean param = true;
+        final boolean result = createAnnotationSimpleProxy().sendPrimBool(param);
+        assertEq(param, !result);
+    }
+
+    @Test
+    public void testInt() throws Exception
+    {
+        Integer param = new Integer(42);
+        final Integer result = createAnnotationSimpleProxy().sendInt(param);
+        assertEq(param, -1 * result);
+    }
+
+    @Test
+    public void testPrimInt() throws Exception
+    {
+        int param = 24;
+        final int result = createAnnotationSimpleProxy().sendPrimInt(param);
+        assertEq(param, -1 * result);
+    }
+    @Test
+    public void testChar() throws Exception
+    {
+        Character param = new Character('a');
+        final Character result = createAnnotationSimpleProxy().sendChar(param);
+        assertEq(new Character('b'), result);
+    }
+    
+    @Test
+    public void testPrimChar() throws Exception
+    {
+        char param = 'c';
+        final char result = createAnnotationSimpleProxy().sendPrimChar(param);
+        assertEq('d', result);
     }
 }
