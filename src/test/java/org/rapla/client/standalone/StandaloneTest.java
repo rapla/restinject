@@ -69,13 +69,9 @@ public class StandaloneTest extends AbstractProxyTest
             {
                 try
                 {
-                    final long start = System.currentTimeMillis();
                     final ByteArrayBuffer requestsBuffer;
                     requestsBuffer = new ByteArrayBuffer(rawHttpRequest.getBytes("UTF-8"));
                     final String responses = connector.getResponses(requestsBuffer, false).toString("UTF-8");
-                    final long end = System.currentTimeMillis();
-                    System.out.println(responses);
-                    System.out.println("Took" + (end - start) + "ms");
                     return responses;
                 }
                 catch (Exception e)
