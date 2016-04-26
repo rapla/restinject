@@ -188,12 +188,4 @@ public abstract class AbstractProxyTest
         final Character result = createAnnotationSimpleProxy().sendChar(param);
         assertEq(new Character('b'), result);
     }
-    
-    @Test
-    public void testPrimChar() throws Exception
-    {
-        char param = 'c';
-        final char result = createAnnotationSimpleProxy().sendPrimChar(param);
-        assertEq('d', result);
-    }
 }

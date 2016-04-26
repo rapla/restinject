@@ -66,9 +66,4 @@ public interface AnnotationSimpleProcessingTest
     @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
     @Path("sendChar")
     Character sendChar(@QueryParam("char")Character param);
-
-    @GET
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    @Path("sendPrimChar")
-    char sendPrimChar(@QueryParam("char")char param);
 }

@@ -101,10 +101,4 @@ public class AnnotationSimpleProcessingTestImpl implements AnnotationSimpleProce
         Character nextChar = Character.toChars(nextCharInt)[0];
         return nextChar;
     }
-    
-    @Override
-    public char sendPrimChar(char param)
-    {
-        return sendChar(param);
-    }
 }
