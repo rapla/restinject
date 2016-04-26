@@ -72,9 +72,9 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
     {
         TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
         String interfaceName = erasedType.getQualifiedName().toString();
-        checkMethods(logger, processingEnvironment, interfaceName);
+        checkMethods(logger, processingEnvironment);
 
-        final SourceWriter srcWriter = getSourceWriter(logger, interfaceName);
+        final SourceWriter srcWriter = getSourceWriter(interfaceName);
         if (srcWriter == null)
         {
             return getProxyQualifiedName();
@@ -89,7 +89,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         return getProxyQualifiedName();
     }
 
-    private void checkMethods(final TreeLogger logger, final ProcessingEnvironment processingEnvironment, String interfaceName) throws UnableToCompleteException
+    private void checkMethods(final TreeLogger logger, final ProcessingEnvironment processingEnvironment) throws UnableToCompleteException
     {
         final List<ExecutableElement> methods = getMethods(processingEnvironment);
         for (final ExecutableElement m : methods)
@@ -151,15 +151,13 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         return modifiers.contains(Modifier.FINAL) || modifiers.contains(Modifier.PRIVATE) || methodClass.equals("java.lang.Object");
     }
 
-    protected SourceWriter getSourceWriter(final TreeLogger logger, String interfaceName) throws UnableToCompleteException
+    protected SourceWriter getSourceWriter( String interfaceName) throws UnableToCompleteException
     {
         final String pkgName = processingEnvironment.getElementUtils().getPackageOf(svcInf).getQualifiedName().toString();
         SourceWriter pw;
         final String className = svcInf.getSimpleName().toString() + getProxySuffix();
         try
         {
-            //String pathname = pkgName.replaceAll("\\.", "/") + "/" + className;
-            //File file = new File(pathname);
             String name = svcInf.getQualifiedName() + getProxySuffix();
             JavaFileObject sourceFile = processingEnvironment.getFiler().createSourceFile(name, svcInf);
             pw = new SourceWriter(sourceFile.openWriter());
@@ -206,7 +204,6 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
             w.println("public " + getProxySimpleName() + "(CustomConnector customConnector) {");
             w.indent();
             w.println("super(customConnector);");
-            //            TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
             String path = relPath.value();
             w.println("setPath(\"" + path + "\");");
             w.outdent();
@@ -247,7 +244,6 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         for (int i = 0; i < params.size(); i++)
         {
             final VariableElement param = params.get(i);
-            String pname = param.getSimpleName().toString();
             if (needsComma)
             {
                 w.print(", ");
@@ -258,11 +254,8 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
                 needsComma = true;
             }
             w.print("final ");
-            //final TypeElement paramType = (TypeElement) processingEnvironment.getTypeUtils().asElement(param.asType());
             w.print(param.asType().toString());
             w.print(" ");
-
-            //nameFactory.addName(pname);
             w.print("p" + i);
             argsBuilder.append("p" + i);
         }

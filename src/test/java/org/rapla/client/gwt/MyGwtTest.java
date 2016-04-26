@@ -159,11 +159,6 @@ public class MyGwtTest extends GWTTestCase
         genericTest.testChar();
     }
 
-    public void testPrimChar() throws Exception
-    {
-        genericTest.testPrimChar();
-    }
-
     public void testGwtCall() throws Exception
     {
 

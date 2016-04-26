@@ -45,7 +45,7 @@ public class JsonParamConverterProvider implements ParamConverterProvider
     @Override
     public <T> ParamConverter<T> getConverter(Class<T> rawType, Type genericType, Annotation[] annotations)
     {
-        if (!rawType.isPrimitive())
+        if (!rawType.isPrimitive() && !String.class.isAssignableFrom(rawType))
         {
             return new JsonParamConverter<T>(genericType);
         }

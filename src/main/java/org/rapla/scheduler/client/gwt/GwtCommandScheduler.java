@@ -8,6 +8,7 @@ import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.Promise;
 
 import com.google.gwt.core.client.Scheduler;
+import org.rapla.scheduler.client.SingleThreadedPromise;
 
 public abstract class GwtCommandScheduler implements CommandScheduler
 {
@@ -90,7 +91,7 @@ public abstract class GwtCommandScheduler implements CommandScheduler
     @Override
     public <T> Promise<T> supply(final Callable<T> supplier)
     {
-        final GwtPromise<T> promise = new GwtPromise<T>();
+        final SingleThreadedPromise<T> promise = new SingleThreadedPromise<T>();
         Scheduler.get().scheduleFinally(() ->
         {
             try
@@ -109,7 +110,7 @@ public abstract class GwtCommandScheduler implements CommandScheduler
     @Override
     public Promise<Void> run(final Command supplier)
     {
-        final GwtPromise<Void> promise = new GwtPromise<Void>();
+        final SingleThreadedPromise<Void> promise = new SingleThreadedPromise<Void>();
         Scheduler.get().scheduleFinally(() ->
         {
             try
@@ -128,7 +129,7 @@ public abstract class GwtCommandScheduler implements CommandScheduler
     @Override
     public <T> Promise<T> supplyProxy(final Callable<T> supplier)
     {
-        final GwtPromise<T> promise = new GwtPromise<T>();
+        final SingleThreadedPromise<T> promise = new SingleThreadedPromise<T>();
         Scheduler.get().scheduleFinally(() ->
         {
             JsonCall.registerSingleThreadedCallback( new AsyncCallback<T>()
@@ -169,115 +170,5 @@ public abstract class GwtCommandScheduler implements CommandScheduler
     }
 
     abstract protected void warn(String message, Exception e);
-
-    static class GwtPromise<T> implements Promise<T>
-    {
-        T result;
-        Throwable exception;
-        Consumer<? super T> action;
-
-        @Override public <U> Promise<U> thenApply(Function<? super T, ? extends U> fn)
-        {
-            return null;
-        }
-
-        @Override public Promise<Void> thenAccept(Consumer<? super T> action)
-        {
-            final GwtPromise<Void> nextPromise = new GwtPromise<Void>();
-            if (result != null)
-            {
-                try
-                {
-                    action.accept(result);
-                    nextPromise.complete(null);
-                }
-                catch (Exception e)
-                {
-                    nextPromise.abort(e);
-                }
-            }
-            else
-            {
-                this.action = action;
-            }
-            return nextPromise;
-        }
-
-        @Override public Promise<Void> thenRun(Runnable action)
-        {
-            return null;
-        }
-
-        @Override public <U, V> Promise<V> thenCombine(Promise<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn)
-        {
-            return null;
-        }
-
-        @Override public <U> Promise<Void> thenAcceptBoth(Promise<? extends U> other, BiConsumer<? super T, ? super U> action)
-        {
-            return null;
-        }
-
-        @Override public Promise<Void> runAfterBoth(Promise<?> other, Runnable action)
-        {
-            return null;
-        }
-
-        @Override public <U> Promise<U> applyToEither(Promise<? extends T> other, Function<? super T, U> fn)
-        {
-            return null;
-        }
-
-        @Override public Promise<Void> acceptEither(Promise<? extends T> other, Consumer<? super T> action)
-        {
-            return null;
-        }
-
-        @Override public Promise<Void> runAfterEither(Promise<?> other, Runnable action)
-        {
-            return null;
-        }
-
-        @Override public <U> Promise<U> thenCompose(Function<? super T, ? extends Promise<U>> fn)
-        {
-            return null;
-        }
-
-        @Override public Promise<T> exceptionally(Function<Throwable, ? extends T> fn)
-        {
-            return null;
-        }
-
-        @Override public Promise<T> whenComplete(BiConsumer<? super T, ? super Throwable> action)
-        {
-            return null;
-        }
-
-        @Override public <U> Promise<U> handle(BiFunction<? super T, Throwable, ? extends U> fn)
-        {
-            return null;
-        }
-
-        public void complete(T result)
-        {
-            this.result = result;
-            if (action != null)
-            {
-                try
-                {
-                    action.accept(result);
-                }
-                catch (Exception e)
-                {
-                    // FIXME
-                }
-            }
-        }
-
-        public void abort(Throwable ex)
-        {
-            this.exception = ex;
-        }
-    }
 
 }

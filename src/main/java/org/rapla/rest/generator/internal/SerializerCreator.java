@@ -47,7 +47,6 @@ class SerializerCreator implements SerializerClasses
 {
 
     private final ProcessingEnvironment processingEnvironment;
-    //private final NameFactory nameFactory;
     private static final String SER_SUFFIX = "_JsonSerializer";
     private static final Comparator<Element> FIELD_COMP = new Comparator<Element>()
     {
@@ -70,10 +69,6 @@ class SerializerCreator implements SerializerClasses
         defaultSerializers.put(String.class.getCanonicalName(), JavaLangString_JsonSerializer);
         defaultSerializers.put(Integer.class.getCanonicalName(), JavaLangInteger_JsonSerializer);
         defaultSerializers.put(Date.class.getCanonicalName(), JavaUtilDate_JsonSerializer);
-        //    defaultSerializers.put(java.sql.Date.class.getCanonicalName(),
-        //        JavaSqlDate_JsonSerializer.class.getCanonicalName());
-        //    defaultSerializers.put(java.sql.Timestamp.class.getCanonicalName(),
-        //        JavaSqlTimestamp_JsonSerializer.class.getCanonicalName());
         parameterizedSerializers.put(List.class.getCanonicalName(), ListSerializer);
         parameterizedSerializers.put(Map.class.getCanonicalName(), ObjectMapSerializer);
         parameterizedSerializers.put(Set.class.getCanonicalName(), SetSerializer);
@@ -107,7 +102,7 @@ class SerializerCreator implements SerializerClasses
             recursivelyCreateSerializers(logger, type);
             final String sn = getSerializerQualifiedName(targetType);
             //final TypeMirror erasedType = getErasedType(type, processingEnvironment);
-            final String qname = targetType  != null ? targetType.getQualifiedName().toString() : type.toString();
+            final String qname = targetType != null ? targetType.getQualifiedName().toString() : type.toString();
             if (!generatedSerializers.containsKey(qname))
             {
                 generatedSerializers.put(qname, sn);
@@ -116,22 +111,22 @@ class SerializerCreator implements SerializerClasses
             {
                 return sn;
             }
-            final SourceWriter srcWriter = getSourceWriter(logger,targetType);
+            final SourceWriter srcWriter = getSourceWriter(logger, targetType);
 
             if (!isAbstract(type))
             {
-                generateSingleton(srcWriter,targetType);
+                generateSingleton(srcWriter, targetType);
             }
             if (isEnum(type))
             {
-                generateEnumFromJson(srcWriter,targetType);
+                generateEnumFromJson(srcWriter, targetType);
             }
             else
             {
                 generateInstanceMembers(srcWriter, targetType);
-                generatePrintJson(srcWriter,targetType);
-                generateFromJson(srcWriter,targetType);
-                generateGetSets(srcWriter,targetType);
+                generatePrintJson(srcWriter, targetType);
+                generateFromJson(srcWriter, targetType);
+                generateGetSets(srcWriter, targetType);
             }
             srcWriter.outdent();
             srcWriter.println("}");
@@ -230,12 +225,6 @@ class SerializerCreator implements SerializerClasses
             throw new UnableToCompleteException("Type 'long' not supported in JSON encoding");
         }
 
-        //    if (type.isPrimitive() == JPrimitiveType.VOID) {
-        //      logger.log(TreeLogger.ERROR,
-        //          "Type 'void' not supported in JSON encoding", null);
-        //      throw new UnableToCompleteException();
-        //    }
-
         if (isEnum(type))
         {
             return;
@@ -281,7 +270,6 @@ class SerializerCreator implements SerializerClasses
                 checkCanSerialize(logger, t);
             }
             String erasedClassName = getErasedType(type, processingEnvironment).toString();
-            //|| erasedClassName.equals(FutureResult.getClass().getCanonicalName()
             if (parameterizedSerializers.containsKey(erasedClassName))
             {
                 return;
@@ -317,7 +305,7 @@ class SerializerCreator implements SerializerClasses
             throw new UnableToCompleteException("Abstract type " + qsn + " not supported here");
         }
         final TypeElement element = (TypeElement) processingEnvironment.getTypeUtils().asElement(ct);
-        if(element != null)
+        if (element != null)
         {
             for (final VariableElement f : sortFields(element))
             {
@@ -326,7 +314,6 @@ class SerializerCreator implements SerializerClasses
             }
         }
     }
-
 
     public String serializerFor(final TypeMirror t)
     {
@@ -396,7 +383,7 @@ class SerializerCreator implements SerializerClasses
         return false;
     }
 
-    private void generateSingleton(final SourceWriter w,TypeElement targetType)
+    private void generateSingleton(final SourceWriter w, TypeElement targetType)
     {
         w.print("public static final ");
         final String serializerSimpleName = getSerializerSimpleName(targetType);
@@ -483,12 +470,9 @@ class SerializerCreator implements SerializerClasses
                 generateSerializerReference(typeParameterElement, w, useProviders);
             }
             w.print(")");
-
         }
         else
         {
-            //      String sourceName = type.getQualifiedSourceName();
-
             w.print(serializerFor + ".INSTANCE" + (useProviders ? "_PROVIDER" : ""));
         }
     }
