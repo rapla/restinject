@@ -14,17 +14,20 @@
 
 package org.rapla.rest.generator.internal;
 
-import org.rapla.inject.generator.internal.SourceWriter;
+import java.io.IOException;
+import java.util.HashMap;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.tools.JavaFileObject;
-import java.io.IOException;
-import java.util.HashMap;
+
+import org.rapla.inject.generator.internal.SourceWriter;
 
 /**
  * Creator of ResultDeserializers. Actually, only object arrays have created
@@ -239,16 +242,11 @@ class ResultDeserializerCreator
 
     private String getPrimitiveSerializerName(TypeMirror targetType)
     {
-        final String serializerName;
-        final String primitiveClassName = targetType.toString().toUpperCase();
-        if("INT".equals(primitiveClassName))
-        {
-            serializerName = "INTEGER";
-        }
-        else
-        {
-            serializerName = primitiveClassName;
-        }
+        final Types typeUtils = processingEnvironment.getTypeUtils();
+        final TypeElement boxedClass = typeUtils.boxedClass((PrimitiveType) targetType);
+        final Name simpleName = boxedClass.getSimpleName();
+        final String string = simpleName.toString();
+        final String serializerName = string.toUpperCase();
         return serializerName;
     }
 }
