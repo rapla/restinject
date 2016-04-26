@@ -60,7 +60,7 @@ public class StandaloneTest extends AbstractProxyTest
         server.stop();
     }
 
-    JsonRemoteConnector createConnector(LocalConnector connector)
+    JsonRemoteConnector createConnector(final LocalConnector connector)
     {
         return new AbstractLocalJsonConnector()
         {
