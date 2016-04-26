@@ -28,8 +28,5 @@ public abstract class EnumSerializer<T extends Enum<?>> extends
     sb.append(o.name());
     sb.append('"');
   }
-  @Override
-  public T fromResult(JavaScriptObject responseObject) {
-    return fromJson(responseObject.toString());
-  }
+
 }

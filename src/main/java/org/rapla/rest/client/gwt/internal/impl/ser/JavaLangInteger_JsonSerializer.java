@@ -38,8 +38,4 @@ public final class JavaLangInteger_JsonSerializer extends
     sb.append(o);
   }
 
-  @Override
-  public Integer fromResult(JavaScriptObject responseObject) {
-    return PrimitiveResultDeserializers.intResult(responseObject);
-  }
 }

@@ -24,5 +24,6 @@ import com.google.gwt.core.client.JavaScriptObject;
  * @param <T> the result type of an RPC call.
  */
 public interface ResultDeserializer<T> {
-  public T fromResult(JavaScriptObject responseObject);
+  //public T fromResult(JavaScriptObject responseObject);
+  public T fromJson(Object responseObject);
 }

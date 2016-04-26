@@ -86,11 +86,6 @@ public class StringMapSerializer<V> extends
     return r;
   }
 
-  @Override
-  public Map<String, V> fromResult(final JavaScriptObject response) {
-    return fromJson(response);
-  }
-
   private native void copy(Map<String, V> r, JavaScriptObject jsObject)
   /*-{
     for (var key in jsObject) {

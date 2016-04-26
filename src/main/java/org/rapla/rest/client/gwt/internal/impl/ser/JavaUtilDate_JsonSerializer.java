@@ -48,9 +48,4 @@ public final class JavaUtilDate_JsonSerializer extends
     sb.append(string);
     sb.append('"');
   }
-
-  @Override
-  public Date fromResult(JavaScriptObject responseObject) {
-    return fromJson(PrimitiveResultDeserializers.stringResult(responseObject));
-  }
 }

@@ -20,9 +20,11 @@ import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
+import com.google.gwt.http.client.URL;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.user.client.rpc.InvocationException;
 import com.google.gwt.user.client.rpc.StatusCodeException;
+import com.google.gwt.user.server.rpc.RPC;
 import com.google.gwt.xhr.client.XMLHttpRequest;
 import org.rapla.rest.client.AsyncCallback;
 import org.rapla.rest.client.CustomConnector;
@@ -90,8 +92,8 @@ public class JsonCall<T> implements RequestCallback
     protected final ExceptionDeserializer exceptionDeserializer;
     protected final String url;
     protected final String body;
-    protected final ResultDeserializer<T> resultDeserializer;
     protected int attempts;
+    protected final ResultDeserializer<T> resultDeserializer;
 
     private String token;
     private final Map<String, String> additionalHeaders;
@@ -276,12 +278,12 @@ public class JsonCall<T> implements RequestCallback
         System.out.println("Response " + responseText + " for "  + contentType + " Status " + statusText + " [" +  sc +"]");
         if (isJsonBody(contentType))
         {
-            final RpcResult r;
+            final Object result;
             try
             {
                 System.out.println("Parsing " + responseText);
-                r = parse(jsonParser, responseText);
-                System.out.println("Response parsed " + r);
+                result = parse(jsonParser, responseText);
+                System.out.println("Response parsed " + result);
             }
             catch (RuntimeException e)
             {
@@ -293,10 +295,11 @@ public class JsonCall<T> implements RequestCallback
             {
 
                 Exception e = null;
-                final String message = r.message();
-                final List<String> messages = r.messages() != null ?new ArrayList<>(Arrays.asList(r.messages())) : Collections.emptyList();
+                RpcResult rpcResult = (RpcResult) result;
+                final String message = rpcResult.message();
+                final List<String> messages = rpcResult.messages() != null ?new ArrayList<>(Arrays.asList(rpcResult.messages())) : Collections.emptyList();
                 ArrayList<SerializableExceptionStacktraceInformation> stacktrace = new ArrayList<>();
-                final Data[] data = r.data();
+                final Data[] data = rpcResult.data();
                 if (data != null)
                 {
                     for (Data ste : data)
@@ -304,13 +307,13 @@ public class JsonCall<T> implements RequestCallback
                         stacktrace.add(new SerializableExceptionStacktraceInformation(ste.className(), ste.methodName(), ste.lineNumber(), ste.fileName()));
                     }
                 }
-                final String exceptionClass = r.exceptionClass();
+                final String exceptionClass = rpcResult.exceptionClass();
                 SerializableExceptionInformation exceptionInformation = new SerializableExceptionInformation(message, exceptionClass, messages, stacktrace);
                 e = exceptionDeserializer.deserializeException(exceptionInformation);
                 if (e == null)
                 {
                     final String errmsg = message;
-                    e = new RemoteJsonException(errmsg, sc, new JSONObject(r));
+                    e = new RemoteJsonException(errmsg, sc, new JSONObject(rpcResult));
                 }
                 callback.onFailure(e);
                 return;
@@ -318,7 +321,7 @@ public class JsonCall<T> implements RequestCallback
             if (sc == Response.SC_OK)
             {
                 System.out.println("Successfull call. Mapping to response.");
-                invoke(r);
+                invoke(result);
                 return;
             }
             else
@@ -337,13 +340,13 @@ public class JsonCall<T> implements RequestCallback
         }
     }
 
-    private void invoke(final JavaScriptObject rpcResult)
+    private void invoke(final Object rpcResult)
     {
         final T result;
         try
         {
             System.out.println("Parsing " + rpcResult);
-            result = resultDeserializer.fromResult(rpcResult);
+            result = resultDeserializer.fromJson(rpcResult);
             System.out.println("Parsed to " + result);
         }
         catch (RuntimeException e)
@@ -379,7 +382,7 @@ public class JsonCall<T> implements RequestCallback
      * @return the parsed data
      * @see #jsonParser
      */
-    private static final native RpcResult parse(JavaScriptObject parserFunction, String json)
+    private static final native Object parse(JavaScriptObject parserFunction, String json)
     /*-{
     return parserFunction(json);
   }-*/;
@@ -395,8 +398,6 @@ public class JsonCall<T> implements RequestCallback
         final native String exceptionClass()/*-{ return this.exceptionClass; }-*/;
 
         final native String[] messages()/*-{ return this.message; }-*/;
-
-        final native int code()/*-{ return this.code; }-*/;
 
         final native Data[] data()/*-{ return this.data}-*/;
     }
@@ -470,7 +471,10 @@ public class JsonCall<T> implements RequestCallback
      *
      * http://ecmanaut.googlecode.com/svn/trunk/lib/base64.js
      */
-    public static native String encodeBase64(String data)
+    public static String encodeBase64(String data)
+    {
+        return URL.encode(data);
+    }
   /*-{
     var out = "", c1, c2, c3, e1, e2, e3, e4;
     for (var i = 0; i < data.length; ) {

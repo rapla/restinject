@@ -76,11 +76,6 @@ public class SetSerializer<T> extends JsonSerializer<java.util.Set<T>>
     return r;
   }
 
-  @Override
-  public java.util.Set<T> fromResult(final JavaScriptObject response) {
-    return fromJson(response);
-  }
-
   private static final native int size(JavaScriptObject o)/*-{ return o.length; }-*/;
 
   private static final native Object get(JavaScriptObject o, int i)/*-{ return o[i]; }-*/;

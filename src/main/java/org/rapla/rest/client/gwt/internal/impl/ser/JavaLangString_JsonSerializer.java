@@ -39,9 +39,4 @@ public final class JavaLangString_JsonSerializer extends
   public void printJson(final StringBuilder sb, final String o) {
     sb.append(JsonUtils.escapeValue(o));
   }
-
-  @Override
-  public String fromResult(JavaScriptObject responseObject) {
-    return PrimitiveResultDeserializers.stringResult(responseObject);
-  }
 }

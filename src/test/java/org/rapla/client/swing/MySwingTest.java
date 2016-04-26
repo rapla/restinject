@@ -1,127 +1,57 @@
 package org.rapla.client.swing;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import junit.framework.TestCase;
 import org.eclipse.jetty.server.Server;
-import org.junit.Assert;
-import org.rapla.common.AnnotationProcessingTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import org.rapla.client.AbstractProxyTest;
 import org.rapla.common.AnnotationProcessingTest_JavaJsonProxy;
-import org.rapla.common.AnnotationSimpleProcessingTest;
 import org.rapla.common.AnnotationSimpleProcessingTest_JavaJsonProxy;
 import org.rapla.rest.client.CustomConnector;
-import org.rapla.rest.client.ExceptionDeserializer;
 import org.rapla.server.ServletTestContainer;
 
-import junit.framework.TestCase;
-
-public class MySwingTest extends TestCase
+@RunWith(JUnit4.class)
+public class MySwingTest extends AbstractProxyTest
 {
     Server server;
 
-    CustomConnector connector = new MyCustomConnector();
-    private Map<String, String> paramMap = new LinkedHashMap<>();
+    @Override protected CustomConnector createConnector()
     {
-        paramMap.put("greeting","World");
+        return new MyCustomConnector();
     }
-
-    @Override
-    protected void setUp() throws Exception
+    @Before
+    public void setUp() throws Exception
     {
-        super.setUp();
         server = ServletTestContainer.createServer();
         server.start();
     }
 
-    @Override
-    protected void tearDown() throws Exception
+    @After
+    public void tearDown() throws Exception
     {
-        super.tearDown();
         server.stop();
     }
 
-    public void test() throws Exception
+    protected AnnotationProcessingTest_JavaJsonProxy createAnnotationProcessingProxy()
     {
-        AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
-        test.dontSayHello();
-
-        AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
-        p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
-        final Collection<AnnotationProcessingTest.Result> resultList = test.sayHello(p);
-        final AnnotationProcessingTest.Result result = resultList.iterator().next();
-        final Collection<String> ids = result.getIds();
-        assertEquals(2, ids.size());
-        final Iterator<String> iterator = ids.iterator();
-        assertEquals("1", iterator.next());
-        assertEquals("2", iterator.next());
-        test.sayHello2(p);
-        test.sayHello3(p);
-
-
+        return new AnnotationProcessingTest_JavaJsonProxy(connector);
     }
 
-    public void test3() throws Exception
+    protected AnnotationSimpleProcessingTest_JavaJsonProxy createAnnotationSimpleProxy()
     {
-        AnnotationSimpleProcessingTest test = new AnnotationSimpleProcessingTest_JavaJsonProxy(connector);
-        final String message = "hello";
-        final String result = test.sayHello(message);
-        System.out.println("result");
-        assertTrue(result.startsWith(message));
+        return new AnnotationSimpleProcessingTest_JavaJsonProxy(connector);
     }
 
-    public void testListOfStrings() throws Exception
+    @Override public void assertEq(Object o1, Object o2)
     {
-        AnnotationSimpleProcessingTest test = new AnnotationSimpleProcessingTest_JavaJsonProxy(connector);
-        final String message = "hello";
-        final List<String> resultFutureResult = test.translations(message);
-        assertEquals(3, resultFutureResult.size());
-        assertEquals(message, resultFutureResult.get(0));
-        assertEquals(message + "_de", resultFutureResult.get(1));
-        assertEquals(message + "_fr", resultFutureResult.get(2));
+        TestCase.assertEquals(o1,o2);
     }
 
-    public void test4() throws Exception
+    @Override public void fail_(String message)
     {
-        AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
-        final Set<String> greeting = test.complex(paramMap).get("greeting");
-        assertEquals(2, greeting.size());
-        final Iterator<String> iterator = greeting.iterator();
-        assertEquals("Hello", iterator.next());
-        assertEquals("World", iterator.next());
-    }
-
-    public void testException() throws Exception
-    {
-        AnnotationSimpleProcessingTest test = new AnnotationSimpleProcessingTest_JavaJsonProxy(connector);
-        try
-        {
-            final List<String> exception = test.exception();
-            Assert.fail("Exception should have been thrown");
-        }
-        catch (RuntimeException e)
-        {
-
-        }
-    }
-
-    public void testCollections() throws Exception
-    {
-        AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
-        Collection<String> primiteCollection = Arrays.asList(new String[] {"Hello", "World"});
-        Collection<AnnotationProcessingTest.Parameter> complectCollection = new LinkedHashSet<>();
-        complectCollection.add( new AnnotationProcessingTest.Parameter());
-        final AnnotationProcessingTest.Parameter param2 = new AnnotationProcessingTest.Parameter();
-        param2.setCasts( primiteCollection);
-        complectCollection.add(param2);
-        final String greeting = test.collecions(primiteCollection, complectCollection);
-        assertEquals("Made[Hello, World],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=null}, Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello, World]}]", greeting);
+        TestCase.fail(message);
     }
 
 }

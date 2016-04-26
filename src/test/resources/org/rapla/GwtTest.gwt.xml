@@ -7,7 +7,9 @@
     <inherits name='org.rapla.inject.inject'/>
     <inherits name='org.rapla.scheduler.scheduler'/>
     <inherits name='RestinjectExternal'/>
-    <source path='client/gwt' />
+    <source path='client' >
+        <exclude name='**/swing/**' />
+            </source>
     <source path='inject'/>
     <source path='common'/>
     <source path='dagger'/>

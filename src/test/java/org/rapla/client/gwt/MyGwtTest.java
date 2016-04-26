@@ -1,27 +1,55 @@
 package org.rapla.client.gwt;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.junit.client.GWTTestCase;
+import dagger.Component;
+import org.rapla.client.AbstractProxyTest;
 import org.rapla.common.AnnotationProcessingTest;
+import org.rapla.common.AnnotationProcessingTest_GwtJsonProxy;
+import org.rapla.common.AnnotationSimpleProcessingTest;
+import org.rapla.common.AnnotationSimpleProcessingTest_GwtJsonProxy;
 import org.rapla.common.ComponentStarter;
-import org.rapla.rest.client.EntryPointFactory;
-import org.rapla.rest.client.AbstractJsonProxy;
+import org.rapla.rest.client.CustomConnector;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.Promise;
 import org.rapla.scheduler.client.gwt.GwtCommandScheduler;
 
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.junit.client.GWTTestCase;
-
-import dagger.Component;
-
 import javax.inject.Singleton;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 
 public class MyGwtTest extends GWTTestCase
 {
+
+    AbstractProxyTest genericTest = new AbstractProxyTest()
+    {
+
+        @Override protected CustomConnector createConnector()
+        {
+            return new GwtCustomConnector();
+        }
+
+        @Override protected AnnotationProcessingTest createAnnotationProcessingProxy()
+        {
+            return new AnnotationProcessingTest_GwtJsonProxy(connector);
+        }
+
+        @Override protected AnnotationSimpleProcessingTest createAnnotationSimpleProxy()
+        {
+            return new AnnotationSimpleProcessingTest_GwtJsonProxy(connector);
+        }
+
+        @Override public void assertEq(Object o1, Object o2)
+        {
+            GWTTestCase.assertEquals( o1, o2);
+        }
+
+        @Override public void fail_(String message)
+        {
+            GWTTestCase.fail( message);
+        }
+    };
 
     /**
      * Specifies a module to use when running this test case. The returned
@@ -43,6 +71,11 @@ public class MyGwtTest extends GWTTestCase
     @Override protected void gwtSetUp() throws Exception
     {
         super.gwtSetUp();
+    }
+
+    public void testCollections() throws Exception
+    {
+        genericTest.testCollections();
     }
 
     public void testGwtCall() throws Exception

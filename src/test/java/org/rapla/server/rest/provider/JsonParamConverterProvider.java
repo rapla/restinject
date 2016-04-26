@@ -1,16 +1,13 @@
 package org.rapla.server.rest.provider;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
-import java.util.Map;
+import com.google.gson.Gson;
+import org.rapla.rest.client.swing.JSONParserWrapper;
 
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
 import javax.ws.rs.ext.Provider;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import org.rapla.rest.client.swing.JSONParserWrapper;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
 
 @Provider
 public class JsonParamConverterProvider implements ParamConverterProvider

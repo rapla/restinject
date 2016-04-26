@@ -31,14 +31,4 @@ public abstract class ObjectSerializer<T extends Object> extends
 
   protected abstract int printJsonImpl(int field, StringBuilder sb, Object o);
 
-  @Override
-  public T fromResult(JavaScriptObject responseObject) {
-    return fromJson( responseObject);
-    //final JavaScriptObject result = objectResult(responseObject);
-    //return result == null ? null : fromJson(result);
-  }
-
-//  static native JavaScriptObject objectResult(JavaScriptObject responseObject)
-//  /*-{ return responseObject.result; }-*/;
-
 }

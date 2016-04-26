@@ -14,16 +14,14 @@
 
 package org.rapla.rest.client.gwt.internal.impl.ser;
 
-import org.rapla.rest.client.gwt.internal.impl.ArrayResultDeserializer;
+import com.google.gwt.core.client.JavaScriptObject;
 import org.rapla.rest.client.gwt.internal.impl.ResultDeserializer;
 
-import com.google.gwt.core.client.JavaScriptObject;
-
-public class PrimitiveArrayResultDeserializers extends ArrayResultDeserializer {
+public class PrimitiveArrayResultDeserializers  {
   public static ResultDeserializer<Boolean[]> BOOLEAN_INSTANCE =
       new ResultDeserializer<Boolean[]>() {
         @Override
-        public Boolean[] fromResult(JavaScriptObject responseObject) {
+        public Boolean[] fromJson(Object responseObject) {
           final Boolean[] tmp = new Boolean[getResultSize(responseObject)];
           PrimitiveArraySerializer.INSTANCE.fromJson(getResult(responseObject),
               tmp);
@@ -33,7 +31,7 @@ public class PrimitiveArrayResultDeserializers extends ArrayResultDeserializer {
   public static ResultDeserializer<Byte[]> BYTE_INSTANCE =
       new ResultDeserializer<Byte[]>() {
         @Override
-        public Byte[] fromResult(JavaScriptObject responseObject) {
+        public Byte[] fromJson(Object responseObject) {
           final Byte[] tmp = new Byte[getResultSize(responseObject)];
           PrimitiveArraySerializer.INSTANCE.fromJson(getResult(responseObject),
               tmp);
@@ -43,7 +41,7 @@ public class PrimitiveArrayResultDeserializers extends ArrayResultDeserializer {
   public static ResultDeserializer<Character[]> CHARACTER_INSTANCE =
       new ResultDeserializer<Character[]>() {
         @Override
-        public Character[] fromResult(JavaScriptObject responseObject) {
+        public Character[] fromJson(Object responseObject) {
           final Character[] tmp = new Character[getResultSize(responseObject)];
           PrimitiveArraySerializer.INSTANCE.fromJson(getResult(responseObject),
               tmp);
@@ -53,7 +51,7 @@ public class PrimitiveArrayResultDeserializers extends ArrayResultDeserializer {
   public static ResultDeserializer<Double[]> DOUBLE_INSTANCE =
       new ResultDeserializer<Double[]>() {
         @Override
-        public Double[] fromResult(JavaScriptObject responseObject) {
+        public Double[] fromJson(Object responseObject) {
           final Double[] tmp = new Double[getResultSize(responseObject)];
           PrimitiveArraySerializer.INSTANCE.fromJson(getResult(responseObject),
               tmp);
@@ -63,7 +61,7 @@ public class PrimitiveArrayResultDeserializers extends ArrayResultDeserializer {
   public static ResultDeserializer<Float[]> FLOAT_INSTANCE =
       new ResultDeserializer<Float[]>() {
         @Override
-        public Float[] fromResult(JavaScriptObject responseObject) {
+        public Float[] fromJson(Object responseObject) {
           final Float[] tmp = new Float[getResultSize(responseObject)];
           PrimitiveArraySerializer.INSTANCE.fromJson(getResult(responseObject),
               tmp);
@@ -73,7 +71,7 @@ public class PrimitiveArrayResultDeserializers extends ArrayResultDeserializer {
   public static ResultDeserializer<Integer[]> INTEGER_INSTANCE =
       new ResultDeserializer<Integer[]>() {
         @Override
-        public Integer[] fromResult(JavaScriptObject responseObject) {
+        public Integer[] fromJson(Object responseObject) {
           final Integer[] tmp = new Integer[getResultSize(responseObject)];
           PrimitiveArraySerializer.INSTANCE.fromJson(getResult(responseObject),
               tmp);
@@ -83,11 +81,21 @@ public class PrimitiveArrayResultDeserializers extends ArrayResultDeserializer {
   public static ResultDeserializer<Short[]> SHORT_INSTANCE =
       new ResultDeserializer<Short[]>() {
         @Override
-        public Short[] fromResult(JavaScriptObject responseObject) {
+        public Short[] fromJson(Object responseObject) {
           final Short[] tmp = new Short[getResultSize(responseObject)];
           PrimitiveArraySerializer.INSTANCE.fromJson(getResult(responseObject),
               tmp);
           return tmp;
         }
       };
+
+    protected static native JavaScriptObject getResult(Object result)
+  /*-{
+    return result;
+  }-*/;
+
+    protected static native int getResultSize(Object result)
+  /*-{
+    return result.length;
+  }-*/;
 }
