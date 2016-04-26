@@ -9,6 +9,7 @@
     <inherits name='RestinjectExternal'/>
     <source path='client' >
         <exclude name='**/swing/**' />
+        <exclude name='**/standalone/**' />
             </source>
     <source path='inject'/>
     <source path='common'/>
