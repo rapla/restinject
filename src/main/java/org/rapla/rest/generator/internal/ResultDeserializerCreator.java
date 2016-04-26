@@ -44,7 +44,6 @@ class ResultDeserializerCreator
     private static final HashMap<String, String> generatedDeserializers = new HashMap<String, String>();
 
     private SerializerCreator serializerCreator;
-    private final NameFactory nameFactory = new NameFactory();
     private final ProcessingEnvironment processingEnvironment;
 
     private TypeMirror targetType;
@@ -102,9 +101,9 @@ class ResultDeserializerCreator
     private void generateSingleton(final SourceWriter w)
     {
         w.print("public static final ");
-        w.print(getDeserializerSimpleName(targetType, nameFactory, processingEnvironment));
+        w.print(getDeserializerSimpleName(targetType, processingEnvironment));
         w.print(" INSTANCE = new ");
-        w.print(getDeserializerSimpleName(targetType, nameFactory, processingEnvironment));
+        w.print(getDeserializerSimpleName(targetType, processingEnvironment));
         w.println("();");
         w.println();
     }
@@ -141,7 +140,7 @@ class ResultDeserializerCreator
     private String getDeserializerQualifiedName(TypeMirror targetType)
     {
         final String pkgName = getDeserializerPackageName(targetType);
-        final String className = getDeserializerSimpleName(targetType, nameFactory, processingEnvironment);
+        final String className = getDeserializerSimpleName(targetType, processingEnvironment);
         return pkgName.length() == 0 ? className : pkgName + "." + className;
     }
 
@@ -155,16 +154,16 @@ class ResultDeserializerCreator
         return end >= 0 ? compSerializer.substring(0, end) : "";
     }
 
-    private static String getDeserializerSimpleName(TypeMirror targetType, NameFactory nameFactory, ProcessingEnvironment processingEnvironment)
+    private static String getDeserializerSimpleName(TypeMirror targetType, ProcessingEnvironment processingEnvironment)
     {
         final TypeElement typeElement = (TypeElement) processingEnvironment.getTypeUtils().asElement(targetType);
-        return GwtProxyCreator.synthesizeTopLevelClassName(typeElement, DSER_SUFFIX, nameFactory, processingEnvironment)[1];
+        return GwtProxyCreator.synthesizeTopLevelClassName(typeElement, DSER_SUFFIX, processingEnvironment)[1];
     }
 
     private SourceWriter getSourceWriter(TreeLogger logger)
     {
         String pkgName = getDeserializerPackageName(targetType);
-        final String simpleName = getDeserializerSimpleName(targetType, nameFactory, processingEnvironment);
+        final String simpleName = getDeserializerSimpleName(targetType, processingEnvironment);
         SourceWriter pw;
         try
         {

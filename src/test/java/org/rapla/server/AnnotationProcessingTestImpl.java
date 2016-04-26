@@ -2,6 +2,7 @@ package org.rapla.server;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Inject;
+import javax.ws.rs.QueryParam;
 
 import org.rapla.common.AnnotationProcessingTest;
 import org.rapla.inject.DefaultImplementation;
@@ -29,7 +31,7 @@ public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
     }
 
     @Override
-    public List<Result> sayHello(Parameter param)
+    public Collection<Result> sayHello(Parameter param)
     {
         List<Result> list = sayHello3(param);
         return list;
@@ -48,7 +50,7 @@ public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
     public Result sayHello2(Parameter param)
     {
         Result result = new Result();
-        final List<Integer> actionIds = param.getActionIds();
+        final Collection<Integer> actionIds = param.getActionIds();
         final List<String> resultIds = new ArrayList<String>();
         for (Integer id : actionIds)
         {
@@ -76,5 +78,10 @@ public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
         param.setActionIds(Arrays.asList(new Integer[]{1}));
         List<Result> list = sayHello3(param);
         return list;
+    }
+
+    @Override public String collecions(@QueryParam("param") Collection<String> test, @QueryParam("complex") Collection<Parameter> complex)
+    {
+        return "Made" + test.toString()+","+complex.toString();
     }
 }

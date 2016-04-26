@@ -23,6 +23,7 @@ public interface SerializerClasses
     String EnumSerializer_simple= "org.rapla.rest.client.gwt.internal.impl.ser.EnumSerializer";
     String ObjectArraySerializer= "org.rapla.rest.client.gwt.internal.impl.ser.ObjectArraySerializer";
     String ListSerializer= "org.rapla.rest.client.gwt.internal.impl.ser.ListSerializer";
+    String CollectionSerializer= "org.rapla.rest.client.gwt.internal.impl.ser.CollectionSerializer";
     String ObjectMapSerializer= "org.rapla.rest.client.gwt.internal.impl.ser.ObjectMapSerializer";
     String ObjectSerializer_simple= "ObjectSerializer";
     String ObjectSerializer= "org.rapla.rest.client.gwt.internal.impl.ser.ObjectSerializer";

@@ -1,6 +1,8 @@
 package org.rapla.client.swing;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,14 +86,15 @@ public class SwingPromiseTest extends TestCase
         AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
         Semaphore semaphore = new Semaphore(0);
-        final Promise<List<AnnotationProcessingTest.Result>> supply = scheduler.supply(() -> test.sayHello(p));
+        final Promise<Collection<Result>> supply = scheduler.supply(() -> test.sayHello(p));
         supply.thenAccept((resultList) ->
         {
-            final AnnotationProcessingTest.Result result = resultList.get(0);
-            final List<String> ids = result.getIds();
+            final AnnotationProcessingTest.Result result = resultList.iterator().next();
+            final Collection<String> ids = result.getIds();
             assertEquals(2, ids.size());
-            assertEquals("1", ids.get(0));
-            assertEquals("2", ids.get(1));
+            final Iterator<String> iterator = ids.iterator();
+            assertEquals("1", iterator.next());
+            assertEquals("2", iterator.next());
             semaphore.release();
         });
         assertTrue(semaphore.tryAcquire(10000, TimeUnit.MILLISECONDS));
@@ -102,7 +105,7 @@ public class SwingPromiseTest extends TestCase
         final Semaphore semaphore = new Semaphore(0);
         AnnotationProcessingTest test = createAnnotationProcessingProxy();
         final AnnotationProcessingTest.Parameter p = null;
-        final Promise<List<AnnotationProcessingTest.Result>> supply = scheduler.supply(() -> test.sayHello(p));
+        final Promise<Collection<Result>> supply = scheduler.supply(() -> test.sayHello(p));
         supply.handle((resultList, ex) ->
         {
             if (ex != null)
@@ -118,7 +121,7 @@ public class SwingPromiseTest extends TestCase
         assertTrue(semaphore.tryAcquire(10000, TimeUnit.MILLISECONDS));
         AnnotationProcessingTest.Parameter p2 = new AnnotationProcessingTest.Parameter();
         p2.setActionIds(Arrays.asList(new Integer[] { 3, 5 }));
-        final Promise<List<Result>> successPromise = scheduler.supply(() -> test.sayHello(p2));
+        final Promise<Collection<Result>> successPromise = scheduler.supply(() -> test.sayHello(p2));
         successPromise.handle((resultList, ex) ->
         {
             if (ex != null)
@@ -204,11 +207,12 @@ public class SwingPromiseTest extends TestCase
             result1.set(map);
             return scheduler.supplyProxy(() -> test.sayHello(param)).thenAccept((list) ->
             {
-                final Result resultParam = list.get(0);
-                final List<String> ids = resultParam.getIds();
+                final Result resultParam = list.iterator().next();
+                final Collection<String> ids = resultParam.getIds();
                 final Map internalMap = result1.get();
-                Assert.assertEquals(internalMap.keySet().size() + "", ids.get(0));
-                Assert.assertEquals(internalMap.values().size() + "", ids.get(1));
+                final Iterator<String> iterator = ids.iterator();
+                Assert.assertEquals(internalMap.keySet().size() + "", iterator.next());
+                Assert.assertEquals(internalMap.values().size() + "", iterator.next());
                 semaphore.release();
             });
         });
@@ -219,7 +223,7 @@ public class SwingPromiseTest extends TestCase
     {
         final Semaphore semaphore = new Semaphore(0);
         AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        final Promise<List<AnnotationProcessingTest.Result>> promise = scheduler.supplyProxy(() -> test.sayHello(null));
+        final Promise<Collection<Result>> promise = scheduler.supplyProxy(() -> test.sayHello(null));
         promise.exceptionally((ex) ->
         {
             semaphore.release();

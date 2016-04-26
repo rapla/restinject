@@ -14,11 +14,6 @@
 
 package org.rapla.rest.client;
 
-import org.rapla.rest.client.CustomConnector;
-import org.rapla.rest.client.gwt.MockProxy;
-
-import javax.ws.rs.ext.Provider;
-
 public abstract class AbstractJsonProxy
 {
     /** URL of the service implementation. */
@@ -29,12 +24,6 @@ public abstract class AbstractJsonProxy
     {
         this.connector = connector;
     }
-
-    public String getMockAccessToken()
-    {
-        return connector.getAccessToken();
-    }
-
 
     protected void setPath(String path)
     {

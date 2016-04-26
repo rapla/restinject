@@ -10,6 +10,7 @@ import javax.ws.rs.ext.Provider;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.rapla.rest.client.swing.JSONParserWrapper;
 
 @Provider
 public class JsonParamConverterProvider implements ParamConverterProvider
@@ -18,7 +19,7 @@ public class JsonParamConverterProvider implements ParamConverterProvider
     private static final class JsonParamConverter<T> implements ParamConverter<T>
     {
 
-        private Gson gson = new GsonBuilder().create();
+        private Gson gson = JSONParserWrapper.defaultGsonBuilder(new Class[] {}).create();
         private Type genericType;
 
         public JsonParamConverter(Type genericType)
@@ -47,7 +48,7 @@ public class JsonParamConverterProvider implements ParamConverterProvider
     @Override
     public <T> ParamConverter<T> getConverter(Class<T> rawType, Type genericType, Annotation[] annotations)
     {
-        if (Map.class.isAssignableFrom(rawType))
+        if (!rawType.isPrimitive())
         {
             return new JsonParamConverter<T>(genericType);
         }

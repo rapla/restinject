@@ -1,6 +1,8 @@
 package org.rapla.client.gwt;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import org.rapla.common.AnnotationProcessingTest;
@@ -52,10 +54,11 @@ public class MyGwtTest extends GWTTestCase
         final AnnotationProcessingTest.Result result = bootstrap.call(p);
         //final FutureResult<AnnotationProcessingTest.Result> futureResult = new AnnotationProcessingTestImpl().sayHello(p);
         //AnnotationProcessingTest.Result result = futureResult.get();
-        final List<String> ids = result.getIds();
+        final Collection<String> ids = result.getIds();
         assertEquals(2, ids.size());
-        assertEquals("1", ids.get(0));
-        assertEquals("2", ids.get(1));
+        final Iterator<String> iterator = ids.iterator();
+        assertEquals("1", iterator.next());
+        assertEquals("2", iterator.next());
     }
 
     private Bootstrap createBootstrap()
@@ -79,14 +82,15 @@ public class MyGwtTest extends GWTTestCase
             }
 
         };
-        final Promise<List<AnnotationProcessingTest.Result>> promise = bootstrap.callAsync(p, scheduler);
+        final Promise<Collection<AnnotationProcessingTest.Result>> promise = bootstrap.callAsync(p, scheduler);
         delayTestFinish(10000);
         promise.thenAccept((list) -> {
-            asyncResult = list.get(0);
-            final List<String> ids = asyncResult.getIds();
+            asyncResult = list.iterator().next();
+            final Collection<String> ids = asyncResult.getIds();
             assertEquals(2, ids.size());
-            assertEquals("1", ids.get(0));
-            assertEquals("2", ids.get(1));
+            final Iterator<String> iterator = ids.iterator();
+            assertEquals("1", iterator.next());
+            assertEquals("2", iterator.next());
             finishTest();
         }).exceptionally((ex)->{ex.printStackTrace();fail(ex.getMessage());return null;});
     }

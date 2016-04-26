@@ -33,6 +33,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 @RunWith(JUnit4.class) public class JettyLocalconnectorTest
@@ -145,7 +146,7 @@ import java.util.List;
         AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(customConnector);
         AnnotationProcessingTest.Parameter param = new AnnotationProcessingTest.Parameter();
         param.setActionIds(Arrays.asList(new Integer[] {1,2}));
-        final List<AnnotationProcessingTest.Result> results = test.sayHello(param);
+        final Collection<AnnotationProcessingTest.Result> results = test.sayHello(param);
         System.out.println( results);
     }
 

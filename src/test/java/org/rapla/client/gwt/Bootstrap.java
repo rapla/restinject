@@ -1,5 +1,6 @@
 package org.rapla.client.gwt;
 
+import java.util.Collection;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -22,14 +23,14 @@ public class Bootstrap
 
     public AnnotationProcessingTest.Result call(AnnotationProcessingTest.Parameter p) throws Exception
     {
-        final List<AnnotationProcessingTest.Result> resultFutureResult = webservice.sayHello(p);
-        final AnnotationProcessingTest.Result result = resultFutureResult.get(0);
+        final Collection<AnnotationProcessingTest.Result> resultFutureResult = webservice.sayHello(p);
+        final AnnotationProcessingTest.Result result = resultFutureResult.iterator().next();
         return result;
     }
 
-    public Promise<List<AnnotationProcessingTest.Result>> callAsync(final AnnotationProcessingTest.Parameter p, final CommandScheduler scheduler) throws Exception
+    public Promise<Collection<AnnotationProcessingTest.Result>> callAsync(final AnnotationProcessingTest.Parameter p, final CommandScheduler scheduler) throws Exception
     {
-        final Promise<List<AnnotationProcessingTest.Result>> listPromise = scheduler.supplyProxy(()->webservice.sayHello(p));
+        final Promise<Collection<AnnotationProcessingTest.Result>> listPromise = scheduler.supplyProxy(()->webservice.sayHello(p));
         return listPromise;
     }
 }

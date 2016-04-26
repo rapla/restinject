@@ -14,8 +14,14 @@
 
 package org.rapla.rest.generator.internal;
 
+import org.rapla.inject.generator.internal.SourceWriter;
+
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
+import java.util.List;
 
 public class JavaClientProxyCreator extends AbstractClientProxyCreator
 {
@@ -26,11 +32,69 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
         super(remoteService,processingEnvironment, generatorName);
     }
 
+    @Override
+    protected String encode(String encodingParam)
+    {
+        return "URLEncoder.encode(" + encodingParam + ",\"UTF-8\")";
+    }
+
+    @Override
+    protected String[] writeSerializers(SourceWriter w, List<? extends VariableElement> params, TypeMirror resultType)
+    {
+        String containerClass = "null";
+        final String resultClassname;
+        {
+            if ((resultType instanceof DeclaredType) && ((DeclaredType) resultType).getTypeArguments() != null && !((DeclaredType) resultType)
+                    .getTypeArguments().isEmpty())
+            {
+                TypeMirror typeMirror = resultType;
+                {
+                    TypeMirror erasedType = SerializerCreator.getErasedType(typeMirror, processingEnvironment);
+                    containerClass = erasedType.toString() + ".class";
+                }
+                {
+                    final List<? extends TypeMirror> typeArguments1 = ((DeclaredType) typeMirror).getTypeArguments();
+                    final TypeMirror innerType = typeArguments1.get(typeArguments1.size() - 1);
+                    final TypeMirror erasedType = SerializerCreator.getErasedType(innerType, processingEnvironment);
+                    resultClassname = erasedType.toString();
+                }
+            }
+            else
+            {
+                resultClassname = resultType.toString();
+            }
+        }
+        String serialzerName = "serializer_" + instanceField++;
+        w.println("JavaJsonSerializer " + serialzerName+ " = new JavaJsonSerializer(() -> connector, " + resultClassname + ".class, "+ containerClass + ");");
+
+        final int argLength = params.size();
+        final String[] strings = new String[argLength + 1];
+        for ( int i=0;i<strings.length;i++)
+        {
+            strings[i] = serialzerName;
+        }
+        return strings;
+    }
 
     @Override
     public String getProxySuffix()
     {
         return PROXY_SUFFIX;
+    }
+
+    @Override
+    protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField,
+            String methodType)
+    {
+        w.println("Object result = new JavaClientServerConnector(  ).send(connector,\"" + methodType
+                + "\", methodUrl, postBody.toString(),additionalHeaders," + resultDeserialzerField + ");");
+        //w.println("final Object result = httpConnector.getResult(resultMessage, resultType, containerClass);");
+    }
+
+    @Override
+    protected void writeParam(SourceWriter w,String targetName,TypeMirror paramType, String pname, String serializerField)
+    {
+        w.println( targetName +".append(" + serializerField + ".serializeArgument(" + pname + "));");
     }
 
 

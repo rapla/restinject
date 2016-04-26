@@ -1,5 +1,6 @@
 package org.rapla.common;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -24,12 +25,12 @@ public interface AnnotationProcessingTest
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("sayHello6")
-    List<Result> sayHello6() throws Exception;
+    Collection<Result> sayHello6() throws Exception;
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Path("sayHello")
-    List<Result> sayHello(Parameter param);
+    Collection<Result> sayHello(Parameter param);
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
@@ -46,9 +47,14 @@ public interface AnnotationProcessingTest
     @Path("complex")
     Map<String, Set<String>> complex(@QueryParam("param") Map<String,String> test);
 
-    public static class Result {
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("collections")
+    String collecions(@QueryParam("param") Collection<String> test, @QueryParam("complex") Collection<Parameter> complex);
+
+    class Result {
         private String name;
-        private List<String> ids;
+        private Collection<String> ids;
         private Moyo[] moyos;
 
         public String getName()
@@ -61,12 +67,12 @@ public interface AnnotationProcessingTest
             this.name = name;
         }
 
-        public List<String> getIds()
+        public Collection<String> getIds()
         {
             return ids;
         }
 
-        public void setIds(List<String> ids)
+        public void setIds(Collection<String> ids)
         {
             this.ids = ids;
         }
@@ -108,12 +114,12 @@ public interface AnnotationProcessingTest
 
     }
 
-    public static class Parameter
+    class Parameter
     {
         private Map<String, List<String>> requestedIds;
-        private List<Integer> actionIds;
+        private Collection<Integer> actionIds;
         private Date lastRequestTime;
-        private List<String> casts;
+        private Collection<String> casts;
 
         public Map<String, List<String>> getRequestedIds()
         {
@@ -125,7 +131,7 @@ public interface AnnotationProcessingTest
             this.requestedIds = requestedIds;
         }
 
-        public List<Integer> getActionIds()
+        public Collection<Integer> getActionIds()
         {
             return actionIds;
         }
@@ -133,6 +139,16 @@ public interface AnnotationProcessingTest
         public void setActionIds(List<Integer> actionIds)
         {
             this.actionIds = actionIds;
+        }
+
+        @Override public String toString()
+        {
+            return "Parameter{" +
+                    "requestedIds=" + requestedIds +
+                    ", actionIds=" + actionIds +
+                    ", lastRequestTime=" + lastRequestTime +
+                    ", casts=" + casts +
+                    '}';
         }
 
         public Date getLastRequestTime()
@@ -145,14 +161,15 @@ public interface AnnotationProcessingTest
             this.lastRequestTime = lastRequestTime;
         }
 
-        public List<String> getCasts()
+        public Collection<String> getCasts()
         {
             return casts;
         }
 
-        public void setCasts(List<String> casts)
+        public void setCasts(Collection<String> casts)
         {
             this.casts = casts;
         }
+
     }
 }

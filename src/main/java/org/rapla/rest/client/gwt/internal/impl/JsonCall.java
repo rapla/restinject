@@ -470,7 +470,7 @@ public class JsonCall<T> implements RequestCallback
      *
      * http://ecmanaut.googlecode.com/svn/trunk/lib/base64.js
      */
-    private static native String encodeBase64(String data)
+    public static native String encodeBase64(String data)
   /*-{
     var out = "", c1, c2, c3, e1, e2, e3, e4;
     for (var i = 0; i < data.length; ) {

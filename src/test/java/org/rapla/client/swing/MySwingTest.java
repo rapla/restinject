@@ -1,8 +1,11 @@
 package org.rapla.client.swing;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,6 +17,7 @@ import org.rapla.common.AnnotationProcessingTest_JavaJsonProxy;
 import org.rapla.common.AnnotationSimpleProcessingTest;
 import org.rapla.common.AnnotationSimpleProcessingTest_JavaJsonProxy;
 import org.rapla.rest.client.CustomConnector;
+import org.rapla.rest.client.ExceptionDeserializer;
 import org.rapla.server.ServletTestContainer;
 
 import junit.framework.TestCase;
@@ -50,12 +54,13 @@ public class MySwingTest extends TestCase
 
         AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
-        final List<AnnotationProcessingTest.Result> resultList = test.sayHello(p);
-        final AnnotationProcessingTest.Result result = resultList.get(0);
-        final List<String> ids = result.getIds();
+        final Collection<AnnotationProcessingTest.Result> resultList = test.sayHello(p);
+        final AnnotationProcessingTest.Result result = resultList.iterator().next();
+        final Collection<String> ids = result.getIds();
         assertEquals(2, ids.size());
-        assertEquals("1", ids.get(0));
-        assertEquals("2", ids.get(1));
+        final Iterator<String> iterator = ids.iterator();
+        assertEquals("1", iterator.next());
+        assertEquals("2", iterator.next());
         test.sayHello2(p);
         test.sayHello3(p);
 
@@ -92,7 +97,7 @@ public class MySwingTest extends TestCase
         assertEquals("World", iterator.next());
     }
 
-    public void test5() throws Exception
+    public void testException() throws Exception
     {
         AnnotationSimpleProcessingTest test = new AnnotationSimpleProcessingTest_JavaJsonProxy(connector);
         try
@@ -104,6 +109,19 @@ public class MySwingTest extends TestCase
         {
 
         }
+    }
+
+    public void testCollections() throws Exception
+    {
+        AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(connector);
+        Collection<String> primiteCollection = Arrays.asList(new String[] {"Hello", "World"});
+        Collection<AnnotationProcessingTest.Parameter> complectCollection = new LinkedHashSet<>();
+        complectCollection.add( new AnnotationProcessingTest.Parameter());
+        final AnnotationProcessingTest.Parameter param2 = new AnnotationProcessingTest.Parameter();
+        param2.setCasts( primiteCollection);
+        complectCollection.add(param2);
+        final String greeting = test.collecions(primiteCollection, complectCollection);
+        assertEquals("Made[Hello, World],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=null}, Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello, World]}]", greeting);
     }
 
 }

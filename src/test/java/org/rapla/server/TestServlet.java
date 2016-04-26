@@ -81,7 +81,9 @@ public class TestServlet extends HttpServlet
 
 
     @Override protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+
     {
+        System.out.println( "QueryString " +request.getQueryString() + " Test param " + request.getParameter("param"));
         request.setAttribute(RestDaggerListener.RAPLA_CONTEXT, membersInjector);
         System.out.println("service request full " + request.toString() + " uri: " + request.getRequestURI() + " context: " + request.getContextPath() + " pathInfo " + request.getPathInfo() + " servlet path " + request.getServletPath()) ;
         dispatcher.service( request, response);

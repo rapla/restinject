@@ -15,6 +15,7 @@
 package org.rapla.rest.generator.internal;
 
 import org.rapla.inject.generator.internal.SourceWriter;
+import org.rapla.rest.client.gwt.internal.impl.JsonCall;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.TypeElement;
@@ -31,6 +32,13 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
     public GwtProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName)
     {
         super(remoteService,processingEnvironment, generatorName);
+    }
+
+
+    @Override
+    protected String encode(String encodedParam)
+    {
+        return "JsonCall.encodeBase64(" + encodedParam  + ")";
     }
 
     @Override
@@ -51,16 +59,16 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
         pw.println("import " + JsonCall + ";");
     }
 
-    @Override protected void writeBody(SourceWriter w,TypeMirror paramType, String pName,String serializerField)
+    @Override protected void writeParam(SourceWriter w,String targetName,TypeMirror paramType, String pName,String serializerField)
     {
 
         if (SerializerCreator.isBoxedCharacter(paramType))
         {
-            w.println("postBody.append(\"\\\"\") + " + JsonSerializer_simple + ".escapeChar(" + pName + "))+ \\\"\"));");
+            w.println(targetName+".append(\"\\\"\") + " + JsonSerializer_simple + ".escapeChar(" + pName + "))+ \\\"\"));");
         }
         else if ((SerializerCreator.isJsonPrimitive(paramType) || SerializerCreator.isBoxedPrimitive(paramType)) && !SerializerCreator.isJsonString(paramType))
         {
-            w.println("postBody.append(" + pName  + ");");
+            w.println(targetName+".append(" + pName  + ");");
         }
         else
         {
@@ -74,43 +82,12 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
             {
                 serializerCreator.generateSerializerReference(paramType, w, false);
             }
-            w.println(".printJson(postBody, " + pName + ");");
+            w.println(".printJson("+targetName + ", " + pName + ");");
             w.outdent();
             w.println("}");
         }
-//        else {
-//                                w.indent();
-//                                w.println(reqData + ".append(" + JsonSerializer + ".JS_NULL);");
-//                                w.outdent();
-//                                w.println("}");
-//        }
     }
 
-    @Override protected void writeEncoded(SourceWriter w,TypeMirror paramType, String pName, String serializerField)
-    {
-        if (SerializerCreator.isBoxedCharacter(paramType))
-        {
-            w.print("param.append(" +JsonSerializer_simple + ".escapeChar(" + pName + ")));");
-        }
-        else if ((SerializerCreator.isJsonPrimitive(paramType) || SerializerCreator.isBoxedPrimitive(paramType)) && !SerializerCreator.isJsonString(paramType))
-        {
-            w.print("param.append(" + pName + ");" );
-        }
-        else
-        {
-            final boolean needsTypeParameter = SerializerCreator.needsTypeParameter(paramType, processingEnvironment);
-            if ( needsTypeParameter )
-            {
-                w.print(serializerField);
-            }
-            else
-            {
-                serializerCreator.generateSerializerReference(paramType, w, false);
-            }
-            w.print(".printJson(param," + pName + ");");
-        }
-
-    }
 
     @Override
     protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType)
@@ -150,7 +127,6 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
                     w.print(serializerCreator.serializerFor(pType));
                 else
                     w.print(JsonSerializer);
-                //                    w.print(serializerCreator.serializerFor(pType));
                 w.print(" ");
                 w.print(serializerFields[i]);
                 w.print(" = ");
@@ -158,7 +134,6 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
                 w.println(";");
             }
         }
-        //TypeMirror parameterizedResult = null;
         if (SerializerCreator.isParameterized(resultType))
         {
             String fieldName = "serializer_" + instanceField++;
@@ -168,9 +143,6 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
             w.print(" ");
             w.print(fieldName);
             w.print(" = ");
-            //final List<? extends TypeMirror> typeArguments = ((DeclaredType) resultType).getTypeArguments();
-
-            //parameterizedResult = typeArguments.get(0);
             deserializerCreator.generateDeserializerReference(resultType, w);
             w.println(";");
         }

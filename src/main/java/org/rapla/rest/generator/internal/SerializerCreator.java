@@ -16,6 +16,7 @@ package org.rapla.rest.generator.internal;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -39,13 +40,14 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 
+import com.google.gwt.user.rebind.rpc.ProxyCreator;
 import org.rapla.inject.generator.internal.SourceWriter;
 
 class SerializerCreator implements SerializerClasses
 {
 
     private final ProcessingEnvironment processingEnvironment;
-    private final NameFactory nameFactory;
+    //private final NameFactory nameFactory;
     private static final String SER_SUFFIX = "_JsonSerializer";
     private static final Comparator<Element> FIELD_COMP = new Comparator<Element>()
     {
@@ -75,13 +77,13 @@ class SerializerCreator implements SerializerClasses
         parameterizedSerializers.put(List.class.getCanonicalName(), ListSerializer);
         parameterizedSerializers.put(Map.class.getCanonicalName(), ObjectMapSerializer);
         parameterizedSerializers.put(Set.class.getCanonicalName(), SetSerializer);
+        parameterizedSerializers.put(Collection.class.getCanonicalName(), CollectionSerializer);
         generatedSerializers = new HashMap<String, String>();
     }
 
-    SerializerCreator(ProcessingEnvironment processingEnvironment, NameFactory nameFactory, String generatorName)
+    SerializerCreator(ProcessingEnvironment processingEnvironment, String generatorName)
     {
         this.processingEnvironment = processingEnvironment;
-        this.nameFactory = nameFactory;
         this.generatorName = generatorName;
     }
 
@@ -253,10 +255,10 @@ class SerializerCreator implements SerializerClasses
                 ArrayType arrayType = ((ArrayType) type);
                 if (GwtProxyCreator.getRank(arrayType) != 1)
                 {
-                    logger.error("gwtjsonrpc does not support " + "(de)serializing of multi-dimensional arrays of primitves");
+                    logger.error("restinject does not support " + "(de)serializing of multi-dimensional arrays of primitves");
                     // To work around this, we would need to generate serializers for
                     // them, this can be considered a todo
-                    throw new UnableToCompleteException("gwtjsonrpc does not support " + "(de)serializing of multi-dimensional arrays of primitves");
+                    throw new UnableToCompleteException("restinject does not support " + "(de)serializing of multi-dimensional arrays of primitves");
                 }
                 else
                     // Rank 1 arrays work fine.
@@ -1068,14 +1070,14 @@ class SerializerCreator implements SerializerClasses
     private String getSerializerQualifiedName(final TypeElement targetType)
     {
         final String[] name;
-        name = GwtProxyCreator.synthesizeTopLevelClassName(targetType, SER_SUFFIX, nameFactory, processingEnvironment);
+        name = GwtProxyCreator.synthesizeTopLevelClassName(targetType, SER_SUFFIX, processingEnvironment);
         return name[0].length() == 0 ? name[1] : name[0] + "." + name[1];
     }
 
     private String getSerializerSimpleName(TypeElement targetType)
     {
 
-        return GwtProxyCreator.synthesizeTopLevelClassName(targetType, SER_SUFFIX, nameFactory, processingEnvironment)[1];
+        return GwtProxyCreator.synthesizeTopLevelClassName(targetType, SER_SUFFIX, processingEnvironment)[1];
     }
 
     static boolean needsTypeParameter(final TypeMirror ft, ProcessingEnvironment processingEnvironment)

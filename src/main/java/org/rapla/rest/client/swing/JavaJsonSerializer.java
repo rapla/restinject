@@ -15,6 +15,7 @@ import javax.inject.Provider;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -55,19 +56,6 @@ public class JavaJsonSerializer
             result = "";
         }
         return result;
-    }
-
-    public String serializeArgumentUrl(Object arg)
-    {
-        final String result = serializeArgument(arg);
-        try
-        {
-            return URLEncoder.encode(result, "UTF-8");
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            return result;
-        }
     }
 
     private Object deserializeReturnValue(Class<?> returnType, JsonElement element)
@@ -137,7 +125,7 @@ public class JavaJsonSerializer
         Object resultObject;
         if (container != null)
         {
-            if (List.class.equals(container))
+            if (List.class.equals(container) || Collection.class.equals(container))
             {
                 if (!resultElement.isJsonArray())
                 {

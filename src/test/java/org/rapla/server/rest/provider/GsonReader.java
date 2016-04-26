@@ -15,13 +15,14 @@ import javax.ws.rs.ext.Provider;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.rapla.rest.client.swing.JSONParserWrapper;
 
 @Provider
 @Consumes(MediaType.APPLICATION_JSON)
 public class GsonReader<T> implements MessageBodyReader<T>
 {
 
-    final Gson gson = new GsonBuilder().create();
+    final Gson gson = JSONParserWrapper.defaultGsonBuilder(new Class[]{}).create();
 
     @Override
     public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType)
