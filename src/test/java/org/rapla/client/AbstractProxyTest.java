@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.rapla.common.AnnotationProcessingTest;
 import org.rapla.common.AnnotationSimpleProcessingTest;
@@ -16,13 +17,17 @@ import org.rapla.rest.client.CustomConnector;
 
 public abstract class AbstractProxyTest
 {
-    protected Map<String, String> paramMap = new LinkedHashMap<>();
-    protected CustomConnector connector = createConnector();
+    protected Map<String, String> paramMap;
+    protected CustomConnector connector;
 
     protected abstract CustomConnector createConnector();
 
+    @Before
+    public void setUp() throws Exception
     {
+        paramMap = new LinkedHashMap<>();
         paramMap.put("greeting", "World");
+        connector = createConnector();
     }
 
     protected abstract AnnotationProcessingTest createAnnotationProcessingProxy();

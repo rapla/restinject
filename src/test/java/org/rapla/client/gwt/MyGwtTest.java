@@ -82,6 +82,7 @@ public class MyGwtTest extends GWTTestCase
     protected void gwtSetUp() throws Exception
     {
         super.gwtSetUp();
+        genericTest.setUp();
     }
 
     public void testEncoding() throws Exception

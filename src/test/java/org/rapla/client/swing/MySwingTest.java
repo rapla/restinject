@@ -24,6 +24,7 @@ public class MySwingTest extends AbstractProxyTest
     @Before
     public void setUp() throws Exception
     {
+        super.setUp();
         server = ServletTestContainer.createServer();
         server.start();
     }

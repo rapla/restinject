@@ -14,7 +14,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class AbstractPromiseTest
 {
@@ -118,10 +117,34 @@ public abstract class AbstractPromiseTest
         waitForTest();
     }
 
+    private static class RefContainer<T>
+    {
+        T t;
+
+        public RefContainer()
+        {
+            this(null);
+        }
+        public RefContainer(T t)
+        {
+            this.t = t;
+        }
+
+        public T get()
+        {
+            return t;
+        }
+
+        public void set(T t)
+        {
+            this.t = t;
+        }
+    }
+
     @Test public void testApplyRun() throws Exception
     {
         AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        final AtomicReference<Map<String, Set<String>>> result = new AtomicReference<Map<String, Set<String>>>(null);
+        final RefContainer<Map<String, Set<String>>> result = new RefContainer<Map<String, Set<String>>>(null);
         final Promise<Map<String, Set<String>>> supply = scheduler.supply(() -> test.complex(paramMap));
         supply.thenApply((map) -> {
             // assume setting in data model
@@ -140,7 +163,7 @@ public abstract class AbstractPromiseTest
     @Test public void testCombine() throws Exception
     {
         AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        AtomicReference<Map<String, Set<String>>> result = new AtomicReference<Map<String, Set<String>>>(null);
+        RefContainer<Map<String, Set<String>>> result = new RefContainer<Map<String, Set<String>>>(null);
         final Promise<Map<String, Set<String>>> promise1 = scheduler.supplyProxy(() -> test.complex(paramMap));
         final Promise<Map<String, Set<String>>> promise2 = scheduler.supplyProxy(() -> test.complex(paramMap));
         promise1.thenCombine(promise2, (map1, map2) -> {
@@ -158,7 +181,7 @@ public abstract class AbstractPromiseTest
     {
         AnnotationProcessingTest test = createAnnotationProcessingProxy();
         final Promise<Map<String, Set<String>>> promise = scheduler.supplyProxy(() -> test.complex(paramMap));
-        final AtomicReference<Map> result1 = new AtomicReference<Map>();
+        final RefContainer<Map> result1 = new RefContainer<Map>();
         promise.thenCompose((map) -> {
             AnnotationProcessingTest.Parameter param = new AnnotationProcessingTest.Parameter();
             param.setActionIds(Arrays.asList(new Integer[] { map.keySet().size(), map.values().size() }));

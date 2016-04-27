@@ -89,7 +89,7 @@ public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
     {
         try
         {
-            Thread.sleep( 100000);
+            Thread.sleep( 1000);
         }
         catch (InterruptedException e)
         {

@@ -73,6 +73,13 @@ public class GwtPromiseTest extends GWTTestCase
     @Override protected void gwtSetUp() throws Exception
     {
         super.gwtSetUp();
+        genericTest.setUp();
+    }
+
+    @Override protected void gwtTearDown() throws Exception
+    {
+        super.gwtTearDown();
+        genericTest.tearDown();
     }
 
     @Test public void testCombine() throws Exception

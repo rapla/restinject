@@ -15,14 +15,14 @@ public class MyAppTest extends TestCase
 {
     @Component(modules = { org.rapla.client.gwt.dagger.DaggerRaplaGwtModule.class })
     @Singleton
-    public interface GwtInjectionTest
+    public interface GwtInjectionInterface
     {
         Rapla getRapla();
     }
 
     public void testApplication() throws Exception
     {
-        DaggerMyAppTest_GwtInjectionTest.create().getRapla().print();
+        DaggerMyAppTest_GwtInjectionInterface.create().getRapla().print();
     }
 
     static public class Rapla

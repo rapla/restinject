@@ -172,7 +172,7 @@
 					<!--
 					<extraJvmArgs>-agentlib:jdwp=transport=dt_socket,server=n,address=localhost:5050,suspend=y</extraJvmArgs>
 					-->
-					<includes>**/*GwtTest.java</includes>
+					<includes>**/*Gwt*Test.java,**/*GWT*Test.java</includes>
 					<productionMode>${gwt.plugin.productionmode}</productionMode>
 					<testTimeOut>12360</testTimeOut>
 					<sourceLevel>1.8</sourceLevel>
