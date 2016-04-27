@@ -8,6 +8,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -20,6 +21,7 @@ import org.rapla.common.AnnotationSimpleProcessingTest;
 import org.rapla.common.AnnotationSimpleProcessingTest_JavaJsonProxy;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.swing.AbstractLocalJsonConnector;
+import org.rapla.rest.client.swing.HTTPConnector;
 import org.rapla.rest.client.swing.JavaClientServerConnector;
 import org.rapla.rest.client.swing.JsonRemoteConnector;
 import org.rapla.rest.server.RestApplication;
@@ -30,15 +32,16 @@ public class StandaloneTest extends AbstractProxyTest
 {
 
     private Server server;
+    private LocalConnector localConnector;
 
     @Before
     public void setUp() throws Exception
     {
+        super.setUp();
         File webappFolder = new File("test");
         server = new Server();
-        LocalConnector connector = new LocalConnector();
-        server.addConnector(connector);
-
+        localConnector = new LocalConnector();
+        server.addConnector(localConnector);
         String contextPath = "/";
         WebAppContext context = new WebAppContext(server, contextPath, "/");
         context.setInitParameter("resteasy.servlet.mapping.prefix", "/rapla");
@@ -50,16 +53,18 @@ public class StandaloneTest extends AbstractProxyTest
         final ServletHolder servletHolder = new ServletHolder(TestServlet.class);
         servletHolder.setServlet(new TestServlet());
         context.addServlet(servletHolder, "/*");
+        JavaClientServerConnector.setJsonRemoteConnector(createConnector(localConnector));
         server.start();
-        JavaClientServerConnector.setJsonRemoteConnector(createConnector(connector));
     }
 
     @After
     public void tearDown() throws Exception
     {
         server.stop();
+        JavaClientServerConnector.setJsonRemoteConnector(new HTTPConnector());
+        localConnector.close();
     }
-
+    
     JsonRemoteConnector createConnector(final LocalConnector connector)
     {
         return new AbstractLocalJsonConnector()
