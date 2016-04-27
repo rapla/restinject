@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Enumeration;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class TestServlet extends HttpServlet
@@ -85,7 +86,14 @@ public class TestServlet extends HttpServlet
     {
         System.out.println( "QueryString " +request.getQueryString() + " Test param " + request.getParameter("param"));
         request.setAttribute(RestDaggerListener.RAPLA_CONTEXT, membersInjector);
-        System.out.println("service request full " + request.toString() + " uri: " + request.getRequestURI() + " context: " + request.getContextPath() + " pathInfo " + request.getPathInfo() + " servlet path " + request.getServletPath()) ;
+        Map<String,String> headers = new LinkedHashMap<>();
+        final Enumeration<String> headerNames = request.getHeaderNames();
+        while ( headerNames.hasMoreElements())
+        {
+            String headerName = headerNames.nextElement();
+            headers.put(headerName, request.getHeader( headerName));
+        }
+        System.out.println("service request full " + request.toString() + " uri: " + request.getRequestURI() + " context: " + request.getContextPath() + " \npathInfo " + request.getPathInfo() + " \nservlet path " + request.getServletPath() + " \nHeaders: " + headers.toString()) ;
         dispatcher.service( request, response);
     }
 

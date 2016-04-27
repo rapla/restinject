@@ -199,7 +199,8 @@
 				<configuration>
 					<excludes>
 						<exclude>**/bootstrap/*.png</exclude>
-						<exclude>**/*GwtTest.java</exclude>
+						<exclude>**/*Gwt*.java</exclude>
+						<exclude>**/*GWT*.java</exclude>
 					</excludes>
 				</configuration>
 			</plugin>

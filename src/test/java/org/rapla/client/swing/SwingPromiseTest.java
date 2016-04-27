@@ -1,71 +1,89 @@
 package org.rapla.client.swing;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.jetty.server.Server;
-import org.junit.Assert;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import org.rapla.client.AbstractPromiseTest;
 import org.rapla.common.AnnotationProcessingTest;
-import org.rapla.common.AnnotationProcessingTest.Parameter;
-import org.rapla.common.AnnotationProcessingTest.Result;
 import org.rapla.rest.client.CustomConnector;
-import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.impl.UtilConcurrentCommandScheduler;
 import org.rapla.server.ServletTestContainer;
 
 import junit.framework.TestCase;
 
-public class SwingPromiseTest extends TestCase
+@RunWith(JUnit4.class) public class SwingPromiseTest extends AbstractPromiseTest
 {
 
     Server server;
+    Semaphore semaphore = new Semaphore(0);
 
-    CustomConnector connector = new MyCustomConnector();
-    UtilConcurrentCommandScheduler scheduler;
-    private Map<String, String> paramMap = new LinkedHashMap<>();
-
-    @Override
-    protected void setUp() throws Exception
+    @Before @Override public void setUp() throws Exception
     {
         super.setUp();
-        paramMap.put("greeting","World");
-        scheduler = new UtilConcurrentCommandScheduler()
+        server = ServletTestContainer.createServer();
+        server.start();
+        semaphore = new Semaphore(0);
+    }
+
+    @After @Override public void tearDown() throws Exception
+    {
+        super.tearDown();
+        server.stop();
+    }
+
+    @Override protected void waitForTest()
+    {
+        try
         {
-            @Override
-            protected void error(String message, Exception ex)
+            assertEq(Boolean.TRUE, (Boolean) semaphore.tryAcquire(10000, TimeUnit.MILLISECONDS));
+        }
+        catch (InterruptedException e)
+        {
+            fail_(e.getMessage());
+        }
+    }
+
+    @Override protected void finishTest()
+    {
+        semaphore.release();
+    }
+
+    protected CustomConnector createConnector()
+    {
+        return new MyCustomConnector();
+    }
+
+    protected CommandScheduler createScheduler()
+    {
+        return new UtilConcurrentCommandScheduler()
+        {
+            @Override protected void error(String message, Exception ex)
             {
                 System.err.println(message);
             }
 
-            @Override
-            protected void debug(String message)
+            @Override protected void debug(String message)
             {
                 System.out.println(message);
             }
 
-            @Override
-            protected void info(String message)
+            @Override protected void info(String message)
             {
                 System.out.println(message);
             }
 
-            @Override
-            protected void warn(String message)
+            @Override protected void warn(String message)
             {
                 System.err.println(message);
             }
 
         };
-        server = ServletTestContainer.createServer();
-        server.start();
     }
 
     protected AnnotationProcessingTest createAnnotationProcessingProxy()
@@ -73,190 +91,14 @@ public class SwingPromiseTest extends TestCase
         return new org.rapla.common.AnnotationProcessingTest_JavaJsonProxy(connector);
     }
 
-    @Override
-    protected void tearDown() throws Exception
+    @Override protected void assertEq(Object o1, Object o2)
     {
-        super.tearDown();
-        server.stop();
+        TestCase.assertEquals(o1,o2);
     }
 
-    public void testAccept() throws Exception
+    @Override protected void fail_(String s)
     {
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
-        p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
-        Semaphore semaphore = new Semaphore(0);
-        final Promise<Collection<Result>> supply = scheduler.supply(() -> test.sayHello(p));
-        supply.thenAccept((resultList) ->
-        {
-            final AnnotationProcessingTest.Result result = resultList.iterator().next();
-            final Collection<String> ids = result.getIds();
-            assertEquals(2, ids.size());
-            final Iterator<String> iterator = ids.iterator();
-            assertEquals("1", iterator.next());
-            assertEquals("2", iterator.next());
-            semaphore.release();
-        });
-        assertTrue(semaphore.tryAcquire(10000, TimeUnit.MILLISECONDS));
+        TestCase.fail(s);
     }
 
-    public void testHandle() throws Exception
-    {
-        final Semaphore semaphore = new Semaphore(0);
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        final AnnotationProcessingTest.Parameter p = null;
-        final Promise<Collection<Result>> supply = scheduler.supply(() -> test.sayHello(p));
-        supply.handle((resultList, ex) ->
-        {
-            if (ex != null)
-            {
-                semaphore.release();
-            }
-            else
-            {
-                fail("Exception should have occured");
-            }
-            return null;
-        });
-        assertTrue(semaphore.tryAcquire(10000, TimeUnit.MILLISECONDS));
-        AnnotationProcessingTest.Parameter p2 = new AnnotationProcessingTest.Parameter();
-        p2.setActionIds(Arrays.asList(new Integer[] { 3, 5 }));
-        final Promise<Collection<Result>> successPromise = scheduler.supply(() -> test.sayHello(p2));
-        successPromise.handle((resultList, ex) ->
-        {
-            if (ex != null)
-            {
-                fail("No exception should have occured");
-            }
-            else
-            {
-                semaphore.release();
-            }
-            return null;
-        });
-        assertTrue(semaphore.tryAcquire(10000, TimeUnit.MILLISECONDS));
-    }
-
-    public void testApplyAccept() throws Exception
-    {
-        final Semaphore semaphore = new Semaphore(0);
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        final Promise<Map<String, Set<String>>> supply = scheduler.supply(() -> test.complex(paramMap));
-        supply.thenApply((map) ->
-        {
-            return map.keySet();
-        }).thenAccept((s) ->
-        {
-            System.out.println("got keys: " + s);
-            semaphore.release();
-        });
-        Assert.assertTrue(semaphore.tryAcquire(10, TimeUnit.SECONDS));
-    }
-
-    public void testApplyRun() throws Exception
-    {
-        final Semaphore semaphore = new Semaphore(0);
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        final AtomicReference<Map<String, Set<String>>> result = new AtomicReference<Map<String, Set<String>>>(null);
-        final Promise<Map<String, Set<String>>> supply = scheduler.supply(() -> test.complex(paramMap));
-        supply.thenApply((map) ->
-        {
-            // assume setting in data model
-            result.set(map);
-            return map;
-        }).thenRun(() ->
-        {
-            semaphore.release();
-        });
-        Assert.assertTrue(semaphore.tryAcquire(10, TimeUnit.SECONDS));
-        // Check data model
-        final Map<String, Set<String>> map = result.get();
-        Assert.assertNotNull(map);
-        System.out.println("got keys: " + map.keySet());
-    }
-
-    public void testCombine() throws Exception
-    {
-        final Semaphore semaphore = new Semaphore(0);
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        AtomicReference<Map<String, Set<String>>> result = new AtomicReference<Map<String, Set<String>>>(null);
-        final Promise<Map<String, Set<String>>> promise1 = scheduler.supplyProxy(() -> test.complex(paramMap));
-        final Promise<Map<String, Set<String>>> promise2 = scheduler.supplyProxy(() -> test.complex(paramMap));
-        promise1.thenCombine(promise2, (map1, map2) ->
-        {
-            final Set<String> keySet1 = map1.keySet();
-            final Set<String> keySet2 = map2.keySet();
-            Assert.assertTrue(keySet1.containsAll(keySet2));
-            Assert.assertTrue(keySet2.containsAll(keySet1));
-            semaphore.release();
-            return map1;
-        });
-        Assert.assertTrue(semaphore.tryAcquire(10, TimeUnit.SECONDS));
-    }
-
-    public void testCompose() throws Exception
-    {
-        final Semaphore semaphore = new Semaphore(0);
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        final Promise<Map<String, Set<String>>> promise = scheduler.supplyProxy(() -> test.complex(paramMap));
-        final AtomicReference<Map> result1 = new AtomicReference<Map>();
-        promise.thenCompose((map) ->
-        {
-            Parameter param = new AnnotationProcessingTest.Parameter();
-            param.setActionIds(Arrays.asList(new Integer[] { map.keySet().size(), map.values().size() }));
-            result1.set(map);
-            return scheduler.supplyProxy(() -> test.sayHello(param)).thenAccept((list) ->
-            {
-                final Result resultParam = list.iterator().next();
-                final Collection<String> ids = resultParam.getIds();
-                final Map internalMap = result1.get();
-                final Iterator<String> iterator = ids.iterator();
-                Assert.assertEquals(internalMap.keySet().size() + "", iterator.next());
-                Assert.assertEquals(internalMap.values().size() + "", iterator.next());
-                semaphore.release();
-            });
-        });
-        Assert.assertTrue(semaphore.tryAcquire(20, TimeUnit.SECONDS));
-    }
-
-    public void testExceptionally() throws Exception
-    {
-        final Semaphore semaphore = new Semaphore(0);
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        final Promise<Collection<Result>> promise = scheduler.supplyProxy(() -> test.sayHello(null));
-        promise.exceptionally((ex) ->
-        {
-            semaphore.release();
-            return null;
-        });
-        Assert.assertTrue(semaphore.tryAcquire(20, TimeUnit.SECONDS));
-    }
-
-    public void testApplyToEither() throws Exception
-    {
-        final Semaphore semaphore = new Semaphore(0);
-        final Promise<Integer> promise = scheduler.supply(() ->
-        {
-            try
-            {
-                Thread.sleep(1000);
-            }
-            catch (Exception e)
-            {
-                fail(e.getMessage());
-            }
-            return 1000;
-        });
-        final Promise<Integer> promise2 = scheduler.supply(() ->
-        {
-            return 100;
-        });
-        promise.applyToEither(promise2, (first) ->
-        {
-            Assert.assertEquals(100, (int) first);
-            semaphore.release();
-            return null;
-        });
-        Assert.assertTrue(semaphore.tryAcquire(10, TimeUnit.SECONDS));
-    }
 }

@@ -213,21 +213,22 @@ class ResultDeserializerCreator
     {
         if (SerializerCreator.isBoxedPrimitive(targetType) || SerializerCreator.isPrimitive(targetType))
         {
-            w.print(SerializerClasses.PrimitiveResultDeserializers);
-            w.print(".");
-            final String serializerName;
-            final TypeElement typeElement = asTypeElement(targetType);
-            if (typeElement != null)
-            {
-                serializerName = typeElement.getSimpleName().toString().toUpperCase();
-            }
-            else
-            {
-                serializerName = getPrimitiveSerializerName(targetType);
-                
-            }
-            w.print(serializerName);
-            w.print("_INSTANCE");
+            w.print("null");
+//            w.print(SerializerClasses.PrimitiveResultDeserializers);
+//            w.print(".");
+//            final String serializerName;
+//            final TypeElement typeElement = asTypeElement(targetType);
+//            if (typeElement != null)
+//            {
+//                serializerName = typeElement.getSimpleName().toString().toUpperCase();
+//            }
+//            else
+//            {
+//                serializerName = getPrimitiveSerializerName(targetType);
+//
+//            }
+//            w.print(serializerName);
+//            w.print("_INSTANCE");
         }
         else if (targetType instanceof ArrayType)
         {

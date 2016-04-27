@@ -108,6 +108,7 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
         {
             deserializerCreator.generateDeserializerReference(resultType, w);
         }
+        w.print(", \"" + resultType.toString() + "\"");
         w.print(", connector);");
         w.println(" ");
     }

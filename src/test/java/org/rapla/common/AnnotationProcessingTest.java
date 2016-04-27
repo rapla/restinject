@@ -52,6 +52,16 @@ public interface AnnotationProcessingTest
     @Path("collections")
     String collecions(@QueryParam("param") Collection<String> test, @QueryParam("complex") Collection<Parameter> complex);
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("longcall")
+    String longcall();
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("shortcall")
+    String shortcall();
+
     class Result {
         private String name;
         private Collection<String> ids;

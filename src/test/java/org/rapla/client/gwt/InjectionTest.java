@@ -11,7 +11,7 @@ import org.rapla.common.DefaultImplFor2Interfaces;
 import org.rapla.common.ImplInterfaceUser;
 import org.rapla.common.OtherInterfaceUser;
 
-public class GwtInjectionTest extends TestCase
+public class InjectionTest extends TestCase
 {
     @Component(modules=DaggerRaplaGwtModule.class)
     @Singleton
@@ -22,7 +22,7 @@ public class GwtInjectionTest extends TestCase
     
     public void testServerInjection()
     {
-        GwtInterface si = DaggerGwtInjectionTest_GwtInterface.create();
+        GwtInterface si = DaggerInjectionTest_GwtInterface.create();
         Assert.assertTrue(si.getImplInterfaceUser().isImplInterfaceClass(DefaultImplFor2Interfaces.class));
         Assert.assertTrue(si.getOtherInterfaceUser().isOtherInterfaceClass(OtherGwtInterfaceImpl.class));
     }

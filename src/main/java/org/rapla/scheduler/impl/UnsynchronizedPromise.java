@@ -7,21 +7,20 @@ import java.util.List;
 
 public class UnsynchronizedPromise<T> implements Promise<T>
 {
-
-    enum State
+    private enum State
     {
+        pending,
         fulfilled,
-        rejected,
-        pending
+        rejected
     }
 
-    Object result;
-    Promise other;
-    Throwable exception;
-    List<UnsynchronizedPromise> listeners;
-    State state = State.pending;
-    BiFunction<Object, Object, Object> fn;
-    Function<Throwable, ? extends Object> exFn;
+    private Object result;
+    private Promise other;
+    private Throwable exception;
+    private List<UnsynchronizedPromise> listeners;
+    private State state = State.pending;
+    private BiFunction<Object, Object, Object> fn;
+    private Function<Throwable, ? extends Object> exFn;
 
     public UnsynchronizedPromise()
     {
@@ -54,22 +53,6 @@ public class UnsynchronizedPromise<T> implements Promise<T>
             return null;
         });
     }
-
-    //    private UnsynchronizedPromise(UnsynchronizedPromise parent, Runnable fn, Promise other)
-    //    {
-    //        this(parent, (act) -> {
-    //            fn.run();
-    //            return null;
-    //        }, other);
-    //    }
-    //
-    //    private UnsynchronizedPromise(UnsynchronizedPromise parent, BiConsumer fn,Promise other)
-    //    {
-    //        this(parent, (act) -> {
-    //            fn.accept(act);
-    //            return null;
-    //        }, other);
-    //    }
 
     private UnsynchronizedPromise(Function<Throwable, ? extends Object> exFn, UnsynchronizedPromise parent)
     {
@@ -189,19 +172,66 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         return new UnsynchronizedPromise(this, other, fn);
     }
 
+    private static class BooleanContainer
+    {
+        boolean status = true;
+
+        public synchronized boolean getAndSet(boolean b)
+        {
+            boolean old = status;
+            status = b;
+            return old;
+        }
+    }
+
     @Override public <U> Promise<U> applyToEither(Promise<? extends T> other, Function<? super T, U> fn)
     {
-        return null;
+        final UnsynchronizedPromise<U> resultPromise = new UnsynchronizedPromise<>();
+        final BooleanContainer resultIsPending = new BooleanContainer();
+        other.thenAccept((r) -> {
+            final U apply = fn.apply(r);
+            final boolean pending = resultIsPending.getAndSet(false);
+            if (pending)
+            {
+                resultPromise.complete(apply);
+            }
+        }).exceptionally((ex) -> {
+            final boolean pending = resultIsPending.getAndSet(false);
+            if (pending)
+            {
+                resultPromise.abort(ex);
+            }
+            return null;
+        });
+        this.thenAccept((r) -> {
+            final U apply = fn.apply(r);
+            final boolean pending = resultIsPending.getAndSet(false);
+            if (pending)
+            {
+                resultPromise.complete(apply);
+            }
+        }).exceptionally((ex) -> {
+            final boolean pending = resultIsPending.getAndSet(false);
+            if (pending)
+            {
+                resultPromise.abort(ex);
+            }
+            return null;
+        });
+        return resultPromise;
     }
 
     @Override public Promise<Void> acceptEither(Promise<? extends T> other, Consumer<? super T> fn)
     {
-        return null;
+        return applyToEither(other, (a) -> {
+            fn.accept(a);
+            return null;
+        });
     }
 
     @Override public Promise<Void> runAfterEither(Promise<?> other, Runnable fn)
     {
-        return null;
+        return acceptEither((Promise) other, (a) -> fn.run());
     }
 
     @Override public Promise<T> whenComplete(BiConsumer<? super T, ? super Throwable> fn)
@@ -219,7 +249,9 @@ public class UnsynchronizedPromise<T> implements Promise<T>
 
     @Override public <U> Promise<U> handle(BiFunction<? super T, Throwable, ? extends U> fn)
     {
-        return null;
+        final Promise<U> applyPromise = thenApply((a) -> fn.apply(a, null));
+        final Promise<U> exceptionallyPromise = applyPromise.exceptionally((ex) -> fn.apply(null, ex));
+        return exceptionallyPromise;
     }
 
     @Override public <U> Promise<U> thenCompose(Function<? super T, ? extends Promise<U>> fn)
@@ -249,7 +281,7 @@ public class UnsynchronizedPromise<T> implements Promise<T>
     {
         if (state != State.pending)
         {
-            throw new RuntimeException("Promise already " +state.name());
+            throw new RuntimeException("Promise already " + state.name());
         }
         if (ex != null)
         {

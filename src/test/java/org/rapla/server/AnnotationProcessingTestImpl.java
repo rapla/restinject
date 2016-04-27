@@ -84,4 +84,28 @@ public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
     {
         return "Made" + test.toString()+","+complex.toString();
     }
+
+    @Override public String longcall()
+    {
+        try
+        {
+            Thread.sleep( 100000);
+        }
+        catch (InterruptedException e)
+        {
+        }
+        return "long";
+    }
+
+    @Override public String shortcall()
+    {
+        try
+        {
+            Thread.sleep( 10);
+        }
+        catch (InterruptedException e)
+        {
+        }
+        return "short";
+    }
 }

@@ -24,7 +24,6 @@ import com.google.gwt.http.client.URL;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.user.client.rpc.InvocationException;
 import com.google.gwt.user.client.rpc.StatusCodeException;
-import com.google.gwt.user.server.rpc.RPC;
 import com.google.gwt.xhr.client.XMLHttpRequest;
 import org.rapla.rest.client.AsyncCallback;
 import org.rapla.rest.client.CustomConnector;
@@ -97,9 +96,10 @@ public class JsonCall<T> implements RequestCallback
 
     private String token;
     private final Map<String, String> additionalHeaders;
+    private final String resultType;
 
     public JsonCall(String httpMethod, final ExceptionDeserializer exceptionDeserializer, final String url, Map<String, String> additionalHeaders,
-            final String requestParams, final ResultDeserializer<T> resultDeserializer)
+            final String requestParams, final ResultDeserializer<T> resultDeserializer, String resultType)
     {
         this.httpMethod = httpMethod;
         this.exceptionDeserializer = exceptionDeserializer;
@@ -107,12 +107,13 @@ public class JsonCall<T> implements RequestCallback
         this.additionalHeaders = additionalHeaders;
         this.body = requestParams;
         this.resultDeserializer = resultDeserializer;
+        this.resultType = resultType;
     }
 
     public static <T> T doInvoke(final String requestMethodType, final String url, final String body, final Map<String, String> additionalHeaders,
-            final ResultDeserializer<T> ser,CustomConnector connector) throws Exception
+            final ResultDeserializer<T> ser,String resultType,CustomConnector connector) throws Exception
     {
-        JsonCall<T> newJsonCall = new JsonCall<>(requestMethodType,connector, url, additionalHeaders, body, ser);
+        JsonCall<T> newJsonCall = new JsonCall<>(requestMethodType,connector, url, additionalHeaders, body, ser, resultType);
         final String accessToken = connector.getAccessToken();
         if (accessToken != null)
         {
@@ -210,6 +211,13 @@ public class JsonCall<T> implements RequestCallback
             request.setRequestHeader("Authorization", "Bearer " + token);
         }
 
+        for (Map.Entry<String, String> additionalHeader : getAdditionalHeaders().entrySet())
+        {
+            final String key = additionalHeader.getKey();
+            final String value = additionalHeader.getValue();
+            request.setRequestHeader(key, value);
+            log("Writing header "  + key + ":" + value );
+        }
         String requestData = body != null ? body : "";
         request.send(requestData);
         String contentType = request.getResponseHeader("Content-Type");
@@ -226,6 +234,34 @@ public class JsonCall<T> implements RequestCallback
             throw (Exception) callbackContainer.caught;
         }
         throw new Exception(callbackContainer.caught);
+    }
+
+    protected void send()
+    {
+        requestId = ++lastRequestId;
+        //final StringBuilder url = new StringBuilder(proxy.getServiceEntryPoint()+"/"+URL.encodeQueryString(this.url));
+        //    url.append("?rest=2.0&method=").append(methodName);
+        //    url.append("&params=").append(encodedRequestParams);
+        //    url.append("&id=").append(requestId);
+
+        final RequestBuilder rb;
+        RequestBuilder.Method httpMethodType = mapRequestMethod( httpMethod);
+        rb = new RequestBuilder(httpMethodType, url.toString());
+        for (Map.Entry<String, String> additionalHeader : getAdditionalHeaders().entrySet())
+        {
+            final String key = additionalHeader.getKey();
+            final String value = additionalHeader.getValue();
+            rb.setHeader(key, value);
+            log("Writing header "  + key + ":" + value );
+        }
+        rb.setHeader("Content-Type", JsonConstants.JSONRPC20_REQ_CT);
+        rb.setHeader("Accept", JsonConstants.JSONRPC20_ACCEPT_CTS);
+        rb.setCallback(this);
+        if ( body != null)
+        {
+            rb.setRequestData(body);
+        }
+        send(rb);
     }
 
     class CallbackContainer implements AsyncCallback<T>
@@ -275,27 +311,69 @@ public class JsonCall<T> implements RequestCallback
 
     protected void processResponse(final int sc, final String responseText, final String statusText, String contentType)
     {
-        System.out.println("Response " + responseText + " for "  + contentType + " Status " + statusText + " [" +  sc +"]");
+        log("Response " + responseText + " for "  + contentType + " Status " + statusText + " [" +  sc +"]");
+        if ( sc == Response.SC_NO_CONTENT )
+        {
+            if (resultType.equals("void" ))
+            {
+                callback.onSuccess(null);
+            }
+            else
+            {
+                callback.onFailure(new InvocationException("Expected " + resultType + " but no JSON response: " + responseText + " Status " + statusText) );
+            }
+            return;
+        }
         if (isJsonBody(contentType))
         {
-            final Object result;
+            final Object parsedResult;
             try
             {
-                System.out.println("Parsing " + responseText);
-                result = parse(jsonParser, responseText);
-                System.out.println("Response parsed " + result);
+                log("Parsing " + responseText);
+                if ( resultDeserializer == null)
+                {
+                    //final String type = getPrimiteType(jsonParser, responseText);
+                    if (resultType.equals("java.lang.Boolean") || resultType.equals("boolean"))
+                    {
+                        parsedResult = Boolean.parseBoolean(responseText);
+                    }
+                    else if (resultType.equals("java.lang.Double") || resultType.equals("double"))
+                    {
+                        parsedResult = Double.parseDouble(responseText);
+                    }
+                    else if (resultType.equals("java.lang.Integer") || resultType.equals("int"))
+                    {
+                        parsedResult = Integer.parseInt(responseText);
+                    }
+                    else if (resultType.equals("java.lang.Float") || resultType.equals("float"))
+                    {
+                        parsedResult = Float.parseFloat(responseText);
+                    }
+                    else if (resultType.equals("java.lang.Character") || resultType.equals("char"))
+                    {
+                        parsedResult = responseText.length() > 0 ? responseText.charAt( 1) : null;
+                    }
+                    else
+                    {
+                        throw new IllegalStateException("Illegal response type" + resultType);
+                    }
+                }
+                else
+                {
+                    parsedResult = parse(jsonParser, responseText);
+                }
+                log("Response parsed " + parsedResult);
             }
             catch (RuntimeException e)
             {
                 callback.onFailure(new InvocationException("Bad JSON response: " + e));
                 return;
             }
-            System.out.println("Checking error.");
+            log("Checking error.");
             if (sc != Response.SC_OK)
             {
-
                 Exception e = null;
-                RpcResult rpcResult = (RpcResult) result;
+                RpcResult rpcResult = (RpcResult) parsedResult;
                 final String message = rpcResult.message();
                 final List<String> messages = rpcResult.messages() != null ?new ArrayList<>(Arrays.asList(rpcResult.messages())) : Collections.emptyList();
                 ArrayList<SerializableExceptionStacktraceInformation> stacktrace = new ArrayList<>();
@@ -320,17 +398,37 @@ public class JsonCall<T> implements RequestCallback
             }
             if (sc == Response.SC_OK)
             {
-                System.out.println("Successfull call. Mapping to response.");
-                invoke(result);
+                log("Successfull call. Mapping to response.");
+                final T deserialzedResult;
+                try
+                {
+                    log("Parsing " + parsedResult);
+                    if (resultDeserializer == null)
+                    {
+                        deserialzedResult = (T)parsedResult;
+                    }
+                    else
+                    {
+                        deserialzedResult = resultDeserializer.fromJson(parsedResult);
+                    }
+                    log("Parsed to " + deserialzedResult);
+
+                }
+                catch (RuntimeException e)
+                {
+                    callback.onFailure(new InvocationException("Invalid JSON Response", e));
+                    return;
+                }
+                callback.onSuccess(deserialzedResult);
                 return;
             }
             else
             {
-                System.out.println("Unsuccessfull call. Status " + sc);
+                log("Unsuccessfull call. Status " + sc);
             }
         }
 
-        if (sc == Response.SC_OK)
+        if (sc == Response.SC_OK )
         {
             callback.onFailure(new InvocationException("No JSON response: " + responseText + " Status " + statusText));
         }
@@ -340,22 +438,9 @@ public class JsonCall<T> implements RequestCallback
         }
     }
 
-    private void invoke(final Object rpcResult)
+    protected void log(String message)
     {
-        final T result;
-        try
-        {
-            System.out.println("Parsing " + rpcResult);
-            result = resultDeserializer.fromJson(rpcResult);
-            System.out.println("Parsed to " + result);
-        }
-        catch (RuntimeException e)
-        {
-            e.printStackTrace();
-            callback.onFailure(new InvocationException("Invalid JSON Response", e));
-            return;
-        }
-        callback.onSuccess(result);
+        System.out.println(message);
     }
 
     protected static boolean isJsonBody(String type)
@@ -384,7 +469,8 @@ public class JsonCall<T> implements RequestCallback
      */
     private static final native Object parse(JavaScriptObject parserFunction, String json)
     /*-{
-    return parserFunction(json);
+    var o = parserFunction(json);
+    return o;
   }-*/;
 
     private static class RpcResult extends JavaScriptObject
@@ -418,30 +504,7 @@ public class JsonCall<T> implements RequestCallback
         final native String fileName()/*-{return this.fileName}-*/;
     }
 
-    protected void send()
-    {
-        requestId = ++lastRequestId;
-        //final StringBuilder url = new StringBuilder(proxy.getServiceEntryPoint()+"/"+URL.encodeQueryString(this.url));
-        //    url.append("?rest=2.0&method=").append(methodName);
-        //    url.append("&params=").append(encodedRequestParams);
-        //    url.append("&id=").append(requestId);
 
-        final RequestBuilder rb;
-        RequestBuilder.Method httpMethodType = mapRequestMethod( httpMethod);
-        rb = new RequestBuilder(httpMethodType, url.toString());
-        for (Map.Entry<String, String> additionalHeader : getAdditionalHeaders().entrySet())
-        {
-            rb.setHeader(additionalHeader.getKey(), additionalHeader.getValue());
-        }
-        rb.setHeader("Content-Type", JsonConstants.JSONRPC20_REQ_CT);
-        rb.setHeader("Accept", JsonConstants.JSONRPC20_ACCEPT_CTS);
-        rb.setCallback(this);
-        if ( body != null)
-        {
-            rb.setRequestData(body);
-        }
-        send(rb);
-    }
 
     protected <T> RequestBuilder.Method mapRequestMethod(String requestMethodType)
     {
@@ -466,15 +529,17 @@ public class JsonCall<T> implements RequestCallback
             throw new IllegalArgumentException("request method not implemented: " + requestMethodType);
         }
     }
+    public static String encodeBase64(String data)
+    {
+        return URL.encodeQueryString(data);
+    }
+
     /**
      * Javascript base64 encoding implementation from.
      *
      * http://ecmanaut.googlecode.com/svn/trunk/lib/base64.js
      */
-    public static String encodeBase64(String data)
-    {
-        return URL.encode(data);
-    }
+    private native static String encodeBase64_(String data)
   /*-{
     var out = "", c1, c2, c3, e1, e2, e3, e4;
     for (var i = 0; i < data.length; ) {
