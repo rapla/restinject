@@ -1,9 +1,11 @@
 package org.rapla.rest.generator.internal;
 
-import org.rapla.inject.generator.internal.SourceWriter;
-import org.rapla.rest.client.CustomConnector;
-import org.rapla.rest.client.swing.JavaClientServerConnector;
-import org.rapla.rest.client.swing.JsonRemoteConnector;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -27,13 +29,11 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import org.rapla.inject.generator.internal.SourceWriter;
+import org.rapla.rest.client.CustomConnector;
+import org.rapla.rest.client.swing.JavaClientServerConnector;
+import org.rapla.rest.client.swing.JsonRemoteConnector;
 
 public abstract class AbstractClientProxyCreator implements SerializerClasses
 {
@@ -286,7 +286,8 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         final String className = svcInf.getQualifiedName().toString();
         boolean firstQueryParam = true;
 
-        final DeclaredType CollectionType = getDeclaredType(Collection.class);
+        final DeclaredType ListType = getDeclaredType(List.class);
+        final DeclaredType SetType = getDeclaredType(Set.class);
         final DeclaredType RuntimeExeption = getDeclaredType(RuntimeException.class);
         String postParamName = null;
         w.println("StringBuilder postBody = new StringBuilder();");
@@ -304,9 +305,9 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
             if (queryAnnotation != null || pathAnnotation != null || headerAnnotation != null)
             {
                 final boolean boxedCharacter = SerializerCreator.isBoxedCharacter(paramType);
-                final boolean jsonPrimitive = SerializerCreator.isJsonPrimitive(paramType) || SerializerCreator.isBoxedPrimitive(paramType);
+                final boolean boxedPrimitive = SerializerCreator.isBoxedPrimitive(paramType);
+                final boolean jsonPrimitive = SerializerCreator.isJsonPrimitive(paramType) || boxedPrimitive;
                 final boolean jsonString = SerializerCreator.isJsonString(paramType);
-                final boolean isCollection = typeUtils.isAssignable(paramType, CollectionType);
                 if (jsonPrimitive && !jsonString)
                 {
                     w.println("{");
@@ -320,7 +321,11 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
                 if (boxedCharacter)
                 {
+                    w.println("if (" + pname + " != null) {");
+                    w.indent();
                     w.println("param.append(" + pname + ".toString());");
+                    w.outdent();
+                    w.println("}");
                 }
                 else if ((jsonPrimitive))
                 {
@@ -330,19 +335,25 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
                     }
                     else
                     {
+                        if(boxedPrimitive)
+                        {
+                            w.println("if(" + pname + " != null) {");
+                            w.indent();
+                        }
                         w.println("param.append(" + pname + " + \"\");");
+                        if(boxedPrimitive)
+                        {
+                            w.outdent();
+                            w.println("}");
+                        }
                     }
                 }
                 else
                 {
-                    writeParam(w, "param",paramType, pname, serializerFields[i]);
+                    writeParam(w, "param", paramType, pname, serializerFields[i]);
                 }
                 if (queryAnnotation != null)
                 {
-                    if (isCollection && paramType instanceof DeclaredType)
-                    {
-                        final TypeMirror enclosingType = ((DeclaredType) paramType).getEnclosingType();
-                    }
                     if (firstQueryParam)
                     {
                         w.print("subPath += \"?");
