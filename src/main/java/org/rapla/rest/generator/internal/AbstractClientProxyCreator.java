@@ -57,7 +57,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
     abstract protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType);
 
-    abstract protected void writeParam(SourceWriter w, String targetName,TypeMirror paramType, String pname, String serializerField);
+    abstract protected void writeParam(SourceWriter w, String targetName,TypeMirror paramType, String pname, String serializerField, String annotationKey);
 
     abstract protected String[] writeSerializers(SourceWriter w, List<? extends VariableElement> params, TypeMirror resultType);
 
@@ -220,6 +220,16 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
             generateProxyMethod(logger, m, srcWriter);
         }
     }
+    
+    protected boolean isSetOrList(TypeMirror paramType)
+    {
+        final Types typeUtils = processingEnvironment.getTypeUtils();
+        final DeclaredType ListType = getDeclaredType(List.class);
+        final DeclaredType SetType = getDeclaredType(Set.class);
+        final boolean isList = typeUtils.isAssignable(paramType, ListType);
+        final boolean isSet = typeUtils.isAssignable(paramType, SetType);
+        return isList || isSet;
+    }
 
     protected void generateProxyMethod(@SuppressWarnings("unused") final TreeLogger logger, final ExecutableElement method, final SourceWriter w)
             throws UnableToCompleteException
@@ -280,14 +290,11 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         final boolean hasReturn = !cast.toLowerCase().equals("void");
         w.println("try{");
         w.indent();
-        final String s = "return";
         w.println("java.lang.String subPath = \"" + (method.getAnnotation(Path.class) != null ? method.getAnnotation(Path.class).value() : "") + "\";");
         w.println("final Map<java.lang.String, java.lang.String>additionalHeaders = new HashMap<>();");
         final String className = svcInf.getQualifiedName().toString();
         boolean firstQueryParam = true;
 
-        final DeclaredType ListType = getDeclaredType(List.class);
-        final DeclaredType SetType = getDeclaredType(Set.class);
         final DeclaredType RuntimeExeption = getDeclaredType(RuntimeException.class);
         String postParamName = null;
         w.println("StringBuilder postBody = new StringBuilder();");
@@ -304,6 +311,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
             if (queryAnnotation != null || pathAnnotation != null || headerAnnotation != null)
             {
+                final String annotationKey = queryAnnotation != null ? queryAnnotation.value() : headerAnnotation != null ? headerAnnotation.value() : null;
                 final boolean boxedCharacter = SerializerCreator.isBoxedCharacter(paramType);
                 final boolean boxedPrimitive = SerializerCreator.isBoxedPrimitive(paramType);
                 final boolean jsonPrimitive = SerializerCreator.isJsonPrimitive(paramType) || boxedPrimitive;
@@ -350,7 +358,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
                 }
                 else
                 {
-                    writeParam(w, "param", paramType, pname, serializerFields[i]);
+                    writeParam(w, "param", paramType, pname, serializerFields[i], annotationKey);
                 }
                 if (queryAnnotation != null)
                 {
@@ -363,11 +371,25 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
                     {
                         w.print("subPath += \"&");
                     }
-                    w.println(queryAnnotation.value() + "=\"+" + encode("param.toString()") + ";");
+                    if(isSetOrList(paramType))
+                    {
+                        w.println(queryAnnotation.value() + "=\"+param.toString();");
+                    }
+                    else
+                    {
+                        w.println(queryAnnotation.value() + "=\"+" + encode("param.toString()") + ";");
+                    }
                 }
                 if (headerAnnotation != null)
                 {
-                    w.println("additionalHeaders.put(\"" + headerAnnotation.value() + "\", " + encode("param.toString()") + ");");
+                    if(isSetOrList(paramType))
+                    {
+                        w.println("additionalHeaders.put(\"" + headerAnnotation.value() + "\", param.toString());");
+                    }
+                    else
+                    {
+                        w.println("additionalHeaders.put(\"" + headerAnnotation.value() + "\", " + encode("param.toString()") + ");");
+                    }
                 }
                 if (pathAnnotation != null)
                 {
@@ -390,7 +412,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
                     throw new UnableToCompleteException(" post param already set in " + className + "." + methodName + " " + postParamName + "," + pname
                             + " only one post param is allowed.");
                 }
-                writeParam(w, "postBody",paramType, pname, serializerFields[i]);
+                writeParam(w, "postBody",paramType, pname, serializerFields[i], null);
                 postParamName = pname;
             }
         }

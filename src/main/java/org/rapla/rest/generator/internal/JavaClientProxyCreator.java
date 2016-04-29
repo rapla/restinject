@@ -92,9 +92,26 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
     }
 
     @Override
-    protected void writeParam(SourceWriter w,String targetName,TypeMirror paramType, String pname, String serializerField)
+    protected void writeParam(SourceWriter w,String targetName,TypeMirror paramType, String pname, String serializerField, final String annotationKey)
     {
-        w.println( targetName +".append(" + serializerField + ".serializeArgument(" + pname + "));");
+        if(annotationKey != null && isSetOrList(paramType))
+        {
+            final TypeMirror typeMirror = ((DeclaredType) paramType).getTypeArguments().get(0);
+            w.println("if (" + pname + " != null) {");
+            w.indent();
+            w.println("for(" + typeMirror.toString() + " innerParam : " + pname + ") {");
+            w.indent();
+            w.println("if(" + targetName + ".length() > 0) " + targetName + ".append(\"&"+ annotationKey + "=\");");
+            w.println(targetName + ".append(" + encode(serializerField + ".serializeArgument(innerParam)") + ");");
+            w.outdent();
+            w.println("}");
+            w.outdent();
+            w.println("}");
+        }
+        else
+        {
+            w.println( targetName +".append(" + serializerField + ".serializeArgument(" + pname + "));");
+        }
     }
 
 

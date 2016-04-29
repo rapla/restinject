@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -40,7 +41,6 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 
-import com.google.gwt.user.rebind.rpc.ProxyCreator;
 import org.rapla.inject.generator.internal.SourceWriter;
 
 class SerializerCreator implements SerializerClasses
@@ -72,6 +72,7 @@ class SerializerCreator implements SerializerClasses
         parameterizedSerializers.put(List.class.getCanonicalName(), ListSerializer);
         parameterizedSerializers.put(Map.class.getCanonicalName(), ObjectMapSerializer);
         parameterizedSerializers.put(Set.class.getCanonicalName(), SetSerializer);
+        parameterizedSerializers.put(SortedSet.class.getCanonicalName(), SetSerializer);
         parameterizedSerializers.put(Collection.class.getCanonicalName(), CollectionSerializer);
         generatedSerializers = new HashMap<String, String>();
     }

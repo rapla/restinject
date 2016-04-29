@@ -1,10 +1,12 @@
 package org.rapla.client;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -12,6 +14,7 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.rapla.common.AnnotationProcessingTest;
+import org.rapla.common.AnnotationProcessingTest.Parameter;
 import org.rapla.common.AnnotationSimpleProcessingTest;
 import org.rapla.rest.client.CustomConnector;
 
@@ -121,6 +124,43 @@ public abstract class AbstractProxyTest
                 "Made[Hello, World],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=null}, Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello, World]}]",
                 greeting);
     }
+    
+    
+    @Test
+    public void testLists() throws Exception
+    {
+        AnnotationProcessingTest test = createAnnotationProcessingProxy();
+        List<String> primiteCollection = Arrays.asList(new String[] { "Hello", "World" });
+        List<AnnotationProcessingTest.Parameter> complectCollection = new LinkedList<>();
+        complectCollection.add(new AnnotationProcessingTest.Parameter());
+        final AnnotationProcessingTest.Parameter param2 = new AnnotationProcessingTest.Parameter();
+        param2.setCasts(primiteCollection);
+        complectCollection.add(param2);
+        List<Parameter> body = new ArrayList<>(complectCollection);
+        final String greeting = test.list(primiteCollection, complectCollection, body);
+        assertEq(
+                "Made[\"Hello\", \"World\"],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=null}, Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello, World]}],[{}, {casts=[Hello, World]}]",
+                greeting);
+    }
+    
+    
+    @Test
+    public void testSets() throws Exception
+    {
+        AnnotationProcessingTest test = createAnnotationProcessingProxy();
+        Set<String> primiteCollection = new LinkedHashSet(Arrays.asList(new String[] { "Hello", "World" }));
+        Set<AnnotationProcessingTest.Parameter> complectCollection = new LinkedHashSet<>();
+        final AnnotationProcessingTest.Parameter param2 = new AnnotationProcessingTest.Parameter();
+        param2.setCasts(primiteCollection);
+        complectCollection.add(param2);
+        Set<Parameter> body = new LinkedHashSet<>(complectCollection);
+        final String greeting = test.set(primiteCollection, complectCollection, body);
+        assertEq(
+                "Made[\"Hello\", \"World\"],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello, World]}],[{casts=[Hello, World]}]",
+                greeting);
+    }
+    
+    
 
     @Test
     public void testEncoding() throws Exception

@@ -23,6 +23,9 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.QueryParam;
+
 import java.util.List;
 
 public class GwtProxyCreator extends AbstractClientProxyCreator
@@ -59,10 +62,51 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
         pw.println("import " + JsonCall + ";");
     }
 
-    @Override protected void writeParam(SourceWriter w,String targetName,TypeMirror paramType, String pName,String serializerField)
+    @Override
+    protected void writeParam(SourceWriter w, String targetName, TypeMirror paramType, String pName, String serializerField, String annotationKey)
     {
-
-        if (SerializerCreator.isBoxedCharacter(paramType))
+        if(annotationKey != null && isSetOrList(paramType))
+        {
+            final TypeMirror typeMirror = ((DeclaredType) paramType).getTypeArguments().get(0);
+            w.println("if (" + pName + " != null) {");
+            w.indent();
+            w.println("for(" + typeMirror.toString() + " innerParam : " + pName + ") {");
+            w.indent();
+            w.println("if(" + targetName + ".length() > 0) " + targetName + ".append(\"&" + annotationKey + "=\");");
+            if (SerializerCreator.isBoxedCharacter(typeMirror))
+            {
+                w.println(targetName + ".append(\"\\\"\") + " + JsonSerializer_simple + ".escapeChar("+annotationKey+"=innerParam))+ \\\"\"));");
+            }
+            else if ((SerializerCreator.isJsonPrimitive(typeMirror) || SerializerCreator.isBoxedPrimitive(typeMirror))
+                    && !SerializerCreator.isJsonString(typeMirror))
+            {
+                w.println(targetName + ".append("+annotationKey+"="+encode("innerParam")+");");
+            }
+            else
+            {
+                w.println("if (innerParam != null) {");
+                w.indent();
+                w.println("final StringBuilder innerParamSb = new StringBuilder();");
+                if (SerializerCreator.needsTypeParameter(typeMirror, processingEnvironment))
+                {
+                    w.print(serializerField);
+                }
+                else
+                {
+                    serializerCreator.generateSerializerReference(typeMirror, w, false);
+                }
+                w.println(".printJson(innerParamSb, innerParam);");
+                w.println(targetName + ".append("+encode("innerParamSb.toString()")+");");
+                w.outdent();
+                w.println("}");
+            }
+            w.outdent();
+            w.println("}");
+            w.outdent();
+            w.println("}");
+            
+        }
+        else if (SerializerCreator.isBoxedCharacter(paramType))
         {
             w.println(targetName+".append(\"\\\"\") + " + JsonSerializer_simple + ".escapeChar(" + pName + "))+ \\\"\"));");
         }
@@ -112,6 +156,11 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
         w.print(", connector);");
         w.println(" ");
     }
+    
+    private boolean isListSetParam(TypeMirror paramType)
+    {
+        return paramType.getAnnotation(QueryParam.class) != null || paramType.getAnnotation(HeaderParam.class) != null;
+    }
 
     protected String[] writeSerializers(SourceWriter w, List<? extends VariableElement> params, TypeMirror resultType)
     {
@@ -119,7 +168,12 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
         for (int i = 0; i < params.size() /*- 1*/; i++)
         {
             final VariableElement variableElement = params.get(i);
-            final TypeMirror pType = variableElement.asType();
+            TypeMirror pType = variableElement.asType();
+            if(isListSetParam(pType))
+            {
+                // Take inner type
+                pType = ((DeclaredType)pType).getTypeArguments().get(0);
+            }
             if (SerializerCreator.needsTypeParameter(pType, processingEnvironment))
             {
                 serializerFields[i] = "serializer_" + instanceField++;

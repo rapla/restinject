@@ -52,6 +52,16 @@ public interface AnnotationProcessingTest
     @Path("collections")
     String collecions(@QueryParam("param") Collection<String> test, @QueryParam("complex") Collection<Parameter> complex);
 
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("list")
+    String list(@QueryParam("param") List<String> test, @QueryParam("complex") List<Parameter> complex, List<Parameter> postBody);
+    
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("set")
+    String set(@QueryParam("param") Set<String> test, @QueryParam("complex") Set<Parameter> complex, Set<Parameter> postBody);
+    
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("longcall")

@@ -84,6 +84,18 @@ public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
     {
         return "Made" + test.toString()+","+complex.toString();
     }
+    
+    @Override
+    public String list(List<String> test, List<Parameter> complex, List<Parameter> postBody)
+    {
+        return "Made" + test.toString()+","+complex.toString() + ","+postBody.toString();
+    }
+    
+    @Override
+    public String set(Set<String> test, Set<Parameter> complex, Set<Parameter> postBody)
+    {
+        return "Made" + test.toString()+","+complex.toString() + ","+postBody.toString();
+    }
 
     @Override public String longcall()
     {
