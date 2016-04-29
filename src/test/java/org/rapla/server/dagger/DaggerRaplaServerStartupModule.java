@@ -2,7 +2,6 @@ package org.rapla.server.dagger;
 
 import dagger.Module;
 import dagger.Provides;
-import org.rapla.common.AnnotationSimpleProcessingTest;
 import org.rapla.server.StartupParams;
 
 @Module

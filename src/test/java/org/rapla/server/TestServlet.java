@@ -2,28 +2,19 @@ package org.rapla.server;
 
 import dagger.MembersInjector;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
-import org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap;
-import org.jboss.resteasy.plugins.servlet.ResteasyServletInitializer;
-import org.rapla.client.gwt.MyGwtTest;
 import org.rapla.server.dagger.DaggerRaplaServerComponent;
 import org.rapla.server.dagger.DaggerRaplaServerStartupModule;
 import org.rapla.server.dagger.RaplaServerComponent;
 import org.rapla.server.rest.RestTestApplication;
-import org.rapla.server.rest.filter.InjectionFilter;
-import org.rapla.server.rest.listener.RestDaggerListener;
+import org.rapla.server.rest.ResteasyMembersInjector;
 
-import javax.servlet.DispatcherType;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -84,8 +75,9 @@ public class TestServlet extends HttpServlet
     @Override protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
 
     {
+
         System.out.println( "QueryString " +request.getQueryString() + " Test param " + request.getParameter("param"));
-        request.setAttribute(RestDaggerListener.RAPLA_CONTEXT, membersInjector);
+        request.setAttribute(ResteasyMembersInjector.RAPLA_CONTEXT, membersInjector);
         Map<String,String> headers = new LinkedHashMap<>();
         final Enumeration<String> headerNames = request.getHeaderNames();
         while ( headerNames.hasMoreElements())
@@ -94,7 +86,17 @@ public class TestServlet extends HttpServlet
             headers.put(headerName, request.getHeader( headerName));
         }
         System.out.println("service request full " + request.toString() + " uri: " + request.getRequestURI() + " context: " + request.getContextPath() + " \npathInfo " + request.getPathInfo() + " \nservlet path " + request.getServletPath() + " \nHeaders: " + headers.toString()) ;
-        dispatcher.service( request, response);
+        try
+        {
+            dispatcher.service(request, response);
+        } catch (ServletException|IOException ex)
+        {
+            throw ex;
+        } catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+
     }
 
 

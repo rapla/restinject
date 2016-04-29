@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -12,15 +13,15 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.ws.rs.QueryParam;
 
-import org.rapla.common.AnnotationProcessingTest;
+import org.rapla.common.ExampleService;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
 
-@DefaultImplementation(context = InjectionContext.server, of = AnnotationProcessingTest.class)
-public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
+@DefaultImplementation(context = InjectionContext.server, of = ExampleService.class)
+public class ExampleServiceImpl implements ExampleService
 {
     @Inject
-    public AnnotationProcessingTestImpl()
+    public ExampleServiceImpl()
     {
     }
 
@@ -80,11 +81,31 @@ public class AnnotationProcessingTestImpl implements AnnotationProcessingTest
         return list;
     }
 
-    @Override public String collecions(@QueryParam("param") Collection<String> test, @QueryParam("complex") Collection<Parameter> complex)
+    @Override public String collections(@QueryParam("param") Collection<String> test, @QueryParam("complex") Collection<Parameter> complex)
     {
         return "Made" + test.toString()+","+complex.toString();
     }
-    
+
+    @Override public String list(@QueryParam("param") List<String> test, @QueryParam("complex") List<Parameter> complex)
+    {
+        return "Made" + test.toString()+","+complex.toString();
+    }
+    @Override public String set(@QueryParam("param") Set<String> test, @QueryParam("complex") Set<Parameter> complex)
+    {
+        return "Made" + test.toString()+","+complex.toString();
+    }
+
+    @Override public String arrays( int[] integer,Double[] test, String[] stringArray, Parameter[] complex)
+    {
+        return "Made" + Arrays.toString(integer) +"," + Arrays.toString(test)+","+Arrays.toString(stringArray) + "," +Arrays.toString(complex);
+    }
+
+    @Override
+    public String charArray(Character[] charArray1,char[] charArray2)
+    {
+        return "Made"  + Arrays.toString(charArray1) +"," + Arrays.toString( charArray2);
+    }
+
     @Override
     public String list(List<String> test, List<Parameter> complex, List<Parameter> postBody)
     {

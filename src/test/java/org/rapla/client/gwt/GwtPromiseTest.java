@@ -3,8 +3,8 @@ package org.rapla.client.gwt;
 import com.google.gwt.junit.client.GWTTestCase;
 import org.junit.Test;
 import org.rapla.client.AbstractPromiseTest;
-import org.rapla.common.AnnotationProcessingTest;
-import org.rapla.common.AnnotationProcessingTest_GwtJsonProxy;
+import org.rapla.common.ExampleService;
+import org.rapla.common.ExampleService_GwtJsonProxy;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.client.gwt.GwtCommandScheduler;
@@ -33,9 +33,9 @@ public class GwtPromiseTest extends GWTTestCase
             return new GwtCustomConnector();
         }
 
-        @Override protected AnnotationProcessingTest createAnnotationProcessingProxy()
+        @Override protected ExampleService createAnnotationProcessingProxy()
         {
-            return new AnnotationProcessingTest_GwtJsonProxy(connector);
+            return new ExampleService_GwtJsonProxy(connector);
         }
 
         @Override public void assertEq(Object o1, Object o2)

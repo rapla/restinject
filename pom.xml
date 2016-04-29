@@ -135,11 +135,10 @@
 								<processor>org.rapla.inject.generator.AnnotationInjectionProcessor</processor>
 								<processor>dagger.internal.codegen.ComponentProcessor</processor>
 							</processors>
-							<failOnError>false</failOnError>
+							<failOnError>true</failOnError>
 							<outputDiagnostics>true</outputDiagnostics>
 						</configuration>
 					</execution>
-
 				</executions>
 				<dependencies>
 					<dependency>

@@ -1,36 +1,35 @@
 package org.rapla.client.gwt;
 
 import java.util.Collection;
-import java.util.List;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import org.rapla.common.AnnotationProcessingTest;
+import org.rapla.common.ExampleService;
 import org.rapla.scheduler.Promise;
 import org.rapla.scheduler.CommandScheduler;
 
 @Singleton
 public class Bootstrap
 {
-    private final AnnotationProcessingTest webservice;
+    private final ExampleService webservice;
 
     @Inject
-    public Bootstrap(AnnotationProcessingTest webservice)
+    public Bootstrap(ExampleService webservice)
     {
         this.webservice = webservice;
     }
 
-    public AnnotationProcessingTest.Result call(AnnotationProcessingTest.Parameter p) throws Exception
+    public ExampleService.Result call(ExampleService.Parameter p) throws Exception
     {
-        final Collection<AnnotationProcessingTest.Result> resultFutureResult = webservice.sayHello(p);
-        final AnnotationProcessingTest.Result result = resultFutureResult.iterator().next();
+        final Collection<ExampleService.Result> resultFutureResult = webservice.sayHello(p);
+        final ExampleService.Result result = resultFutureResult.iterator().next();
         return result;
     }
 
-    public Promise<Collection<AnnotationProcessingTest.Result>> callAsync(final AnnotationProcessingTest.Parameter p, final CommandScheduler scheduler) throws Exception
+    public Promise<Collection<ExampleService.Result>> callAsync(final ExampleService.Parameter p, final CommandScheduler scheduler) throws Exception
     {
-        final Promise<Collection<AnnotationProcessingTest.Result>> listPromise = scheduler.supplyProxy(()->webservice.sayHello(p));
+        final Promise<Collection<ExampleService.Result>> listPromise = scheduler.supplyProxy(()->webservice.sayHello(p));
         return listPromise;
     }
 }

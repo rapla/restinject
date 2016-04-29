@@ -7,19 +7,19 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;
 
-import org.rapla.common.AnnotationSimpleProcessingTest;
+import org.rapla.common.ExampleSimpleService;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
 
-@DefaultImplementation(context = InjectionContext.server, of = AnnotationSimpleProcessingTest.class)
-public class AnnotationSimpleProcessingTestImpl implements AnnotationSimpleProcessingTest
+@DefaultImplementation(context = InjectionContext.server, of = ExampleSimpleService.class)
+public class ExampleSimpleServiceImpl implements ExampleSimpleService
 {
     @Inject
     RemoteSession session;
     private final HttpServletRequest request;
 
     @Inject
-    public AnnotationSimpleProcessingTestImpl(@Context HttpServletRequest request)
+    public ExampleSimpleServiceImpl(@Context HttpServletRequest request)
     {
         this.request = request;
     }

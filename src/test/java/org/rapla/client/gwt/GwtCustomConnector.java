@@ -42,11 +42,6 @@ public class GwtCustomConnector implements CustomConnector
         // throw new Au
     }
 
-    @Override public Class[] getNonPrimitiveClasses()
-    {
-        return new Class[0];
-    }
-
     @Override public String getFullQualifiedUrl(String relativePath)
     {
         return GWT.getModuleBaseURL() + "rapla/" + relativePath;

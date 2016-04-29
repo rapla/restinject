@@ -57,7 +57,76 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
     abstract protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType);
 
-    abstract protected void writeParam(SourceWriter w, String targetName,TypeMirror paramType, String pname, String serializerField, String annotationKey);
+    protected void writeParam(SourceWriter w, String targetName, TypeMirror paramType, String pName, String serializerField, String annotationKey)
+    {
+        if(annotationKey != null && isSetOrListOrArray( paramType))
+        {
+            final TypeMirror typeMirror = isArray(paramType) ? ((ArrayType) paramType).getComponentType() :((DeclaredType) paramType).getTypeArguments().get(0);
+            w.println("if (" + pName + " != null) {");
+            w.indent();
+            w.println("for(" + typeMirror.toString() + " innerParam : " + pName + ") {");
+            w.indent();
+            w.println("if(" + targetName + ".length() > 0) " + targetName + ".append(\"&" + annotationKey + "=\");");
+            final boolean primitive = SerializerCreator.isPrimitive(typeMirror);
+            if ( !primitive)
+            {
+                w.println("if(innerParam != null) {");
+                w.indent();
+            }
+            serializeArg(w, targetName, serializerField, "innerParam",typeMirror, true);
+            if ( !primitive)
+            {
+                w.outdent();
+                w.println("}");
+            }
+            w.outdent();
+            w.println("}");
+            w.outdent();
+            w.println("}");
+        }
+        else
+        {
+            final boolean primitive = SerializerCreator.isPrimitive(paramType);
+            if ( !primitive)
+            {
+                w.println("if (" + pName + " != null) {");
+                w.indent();
+            }
+            serializeArg(w, targetName, serializerField, pName, paramType, false);
+            if ( !primitive)
+            {
+                w.outdent();
+                w.println("}");
+            }
+
+        }
+    }
+
+    private void serializeArg(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType, boolean encode)
+    {
+        if ((SerializerCreator.isJsonPrimitive(paramType) || SerializerCreator.isBoxedPrimitive(paramType)))
+        {
+            if (SerializerCreator.isJsonString(paramType) && encode)
+            {
+                w.println(targetName + ".append(" + encode(pName) + ");");
+            }
+            else if ((SerializerCreator.isBoxedCharacter(paramType) || TypeKind.CHAR == paramType.getKind()) && encode)
+            {
+                w.println(targetName + ".append(" + encode("\"\"+" + pName) + ");");
+            }
+            else
+            {
+                w.println(targetName + ".append(" + pName + ");");
+            }
+        }
+        else
+        {
+            serializeArg2(w, targetName, serializerField, pName, paramType, encode);
+        }
+    }
+
+    abstract protected void serializeArg2(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType,boolean encode);
+
 
     abstract protected String[] writeSerializers(SourceWriter w, List<? extends VariableElement> params, TypeMirror resultType);
 
@@ -72,7 +141,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
     {
         TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
         String interfaceName = erasedType.getQualifiedName().toString();
-        checkMethods(logger, processingEnvironment);
+        checkMethods(logger, interfaceName,processingEnvironment);
 
         final SourceWriter srcWriter = getSourceWriter(interfaceName);
         if (srcWriter == null)
@@ -89,43 +158,50 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         return getProxyQualifiedName();
     }
 
-    private void checkMethods(final TreeLogger logger, final ProcessingEnvironment processingEnvironment) throws UnableToCompleteException
+    private void checkMethods(final TreeLogger logger, String interfaceName,final ProcessingEnvironment processingEnvironment) throws UnableToCompleteException
     {
         final List<ExecutableElement> methods = getMethods(processingEnvironment);
         for (final ExecutableElement m : methods)
         {
-            final List<? extends VariableElement> params = m.getParameters();
-
-            for (VariableElement p : params)
+            try
             {
-                final TreeLogger branch = logger;//logger.branch(TreeLogger.DEBUG, m.getName() + ", parameter " + p.getName());
-                //final TypeElement typeP = (TypeElement) processingEnvironment.getTypeUtils().asElement(p.asType());
-                TypeMirror typeP = p.asType();
-                serializerCreator.checkCanSerialize(branch, typeP);
-                if (!SerializerCreator.isPrimitive(typeP) && !SerializerCreator.isBoxedPrimitive(typeP))
+                final List<? extends VariableElement> params = m.getParameters();
+
+                for (VariableElement p : params)
                 {
-                    serializerCreator.create(typeP, branch);
+                    final TreeLogger branch = logger;//logger.branch(TreeLogger.DEBUG, m.getName() + ", parameter " + p.getName());
+                    //final TypeElement typeP = (TypeElement) processingEnvironment.getTypeUtils().asElement(p.asType());
+                    TypeMirror typeP = p.asType();
+                    serializerCreator.checkCanSerialize(branch, typeP);
+                    if (!SerializerCreator.isPrimitive(typeP) && !SerializerCreator.isBoxedPrimitive(typeP))
+                    {
+                        serializerCreator.create(typeP, branch);
+                    }
                 }
-            }
-            TypeMirror returnType = m.getReturnType();
-            if (SerializerCreator.isPrimitive(returnType))
-            {
-                continue;
-            }
+                TypeMirror returnType = m.getReturnType();
+                if (SerializerCreator.isPrimitive(returnType))
+                {
+                    continue;
+                }
 
-            final TreeLogger branch = logger;//.branch(TreeLogger.DEBUG, m.getName() + ", result " + resultType.getQualifiedSourceName());
-            serializerCreator.checkCanSerialize(branch, returnType);
-            if (SerializerCreator.isArray(returnType))
-            {
-                // Arrays need a special deserializer
-                deserializerCreator.create(logger, returnType);
+                final TreeLogger branch = logger;//.branch(TreeLogger.DEBUG, m.getName() + ", result " + resultType.getQualifiedSourceName());
+                serializerCreator.checkCanSerialize(branch, returnType);
+                if (SerializerCreator.isArray(returnType))
+                {
+                    // Arrays need a special deserializer
+                    deserializerCreator.create(logger, returnType);
+                }
+                else if (!SerializerCreator.isPrimitive(returnType) && !SerializerCreator.isBoxedPrimitive(returnType) && returnType.getKind() != TypeKind.VOID)
+                {
+                    // Non primitives get deserialized by their normal serializer
+                    serializerCreator.create(returnType, branch);
+                }
+                // (Boxed)Primitives are left, they are handled specially
             }
-            else if (!SerializerCreator.isPrimitive(returnType) && !SerializerCreator.isBoxedPrimitive(returnType) && returnType.getKind() != TypeKind.VOID)
+            catch (UnableToCompleteException ex)
             {
-                // Non primitives get deserialized by their normal serializer
-                serializerCreator.create(returnType, branch);
+                throw new UnableToCompleteException("Can't generate method " + interfaceName + "."+m.getSimpleName().toString() +   " cause " + ex.getMessage(),ex);
             }
-            // (Boxed)Primitives are left, they are handled specially
         }
     }
 
@@ -220,7 +296,17 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
             generateProxyMethod(logger, m, srcWriter);
         }
     }
-    
+
+    protected boolean isArray(TypeMirror paramType)
+    {
+        return paramType.getKind() == TypeKind.ARRAY;
+    }
+
+    protected boolean isSetOrListOrArray(TypeMirror paramType)
+    {
+        return isArray(paramType) || isSetOrList(paramType);
+    }
+
     protected boolean isSetOrList(TypeMirror paramType)
     {
         final Types typeUtils = processingEnvironment.getTypeUtils();
@@ -326,40 +412,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
                 }
                 w.indent();
                 w.println("final StringBuilder param= new StringBuilder();");
-
-                if (boxedCharacter)
-                {
-                    w.println("if (" + pname + " != null) {");
-                    w.indent();
-                    w.println("param.append(" + pname + ".toString());");
-                    w.outdent();
-                    w.println("}");
-                }
-                else if ((jsonPrimitive))
-                {
-                    if (jsonString)
-                    {
-                        w.println("param.append(" + pname + ");");
-                    }
-                    else
-                    {
-                        if(boxedPrimitive)
-                        {
-                            w.println("if(" + pname + " != null) {");
-                            w.indent();
-                        }
-                        w.println("param.append(" + pname + " + \"\");");
-                        if(boxedPrimitive)
-                        {
-                            w.outdent();
-                            w.println("}");
-                        }
-                    }
-                }
-                else
-                {
-                    writeParam(w, "param", paramType, pname, serializerFields[i], annotationKey);
-                }
+                writeParam(w, "param", paramType, pname, serializerFields[i], annotationKey);
                 if (queryAnnotation != null)
                 {
                     if (firstQueryParam)
@@ -371,7 +424,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
                     {
                         w.print("subPath += \"&");
                     }
-                    if(isSetOrList(paramType))
+                    if(isSetOrListOrArray(paramType))
                     {
                         w.println(queryAnnotation.value() + "=\"+param.toString();");
                     }
@@ -382,7 +435,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
                 }
                 if (headerAnnotation != null)
                 {
-                    if(isSetOrList(paramType))
+                    if(isSetOrListOrArray(paramType))
                     {
                         w.println("additionalHeaders.put(\"" + headerAnnotation.value() + "\", param.toString());");
                     }

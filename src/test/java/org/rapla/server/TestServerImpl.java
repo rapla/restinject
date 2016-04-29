@@ -1,7 +1,7 @@
 package org.rapla.server;
 
 import com.google.gson.GsonBuilder;
-import org.rapla.common.AnnotationProcessingTest;
+import org.rapla.common.ExampleService;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
 
@@ -29,7 +29,7 @@ public class TestServerImpl implements  TestServer
         response.setContentType(MediaType.APPLICATION_JSON);
         final PrintWriter writer = response.getWriter();
         final ArrayList<Object> list = new ArrayList<>();
-        final AnnotationProcessingTest.Result result = new AnnotationProcessingTest.Result();
+        final ExampleService.Result result = new ExampleService.Result();
         result.setIds(new ArrayList<>());
         result.getIds().add("1");
         result.getIds().add("2");

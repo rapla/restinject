@@ -2,6 +2,7 @@ package org.rapla.common;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,8 +15,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-@Path("AnnotationProcessingTest")
-public interface AnnotationProcessingTest
+@Path("ExampleService")
+public interface ExampleService
 {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -50,7 +51,28 @@ public interface AnnotationProcessingTest
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("collections")
-    String collecions(@QueryParam("param") Collection<String> test, @QueryParam("complex") Collection<Parameter> complex);
+    String collections(@QueryParam("param") Collection<String> test, @QueryParam("complex") Collection<Parameter> complex);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("list")
+    String list(@QueryParam("param") List<String> test, @QueryParam("complex") List<Parameter> complex);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("set")
+    String set(@QueryParam("param") Set<String> test, @QueryParam("complex") Set<Parameter> complex);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("arrays")
+    String arrays( @QueryParam("int")int[] integer,@QueryParam("doubleArray") Double[] test, @QueryParam("stringArray") String[] strings,@QueryParam("complexArray") Parameter[] complex);
+
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("list")
+    String charArray(@QueryParam("param1") Character[] charArray1,@QueryParam("param2") char[] charArray2);
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)

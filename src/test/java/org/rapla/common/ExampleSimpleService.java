@@ -9,8 +9,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-@Path("AnnotationSimpleProcessingTest")
-public interface AnnotationSimpleProcessingTest
+@Path("ExampleSimpleService")
+public interface ExampleSimpleService
 {
     @GET
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})

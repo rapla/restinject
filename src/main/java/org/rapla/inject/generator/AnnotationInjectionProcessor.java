@@ -20,6 +20,7 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
@@ -40,6 +41,7 @@ import org.rapla.inject.generator.internal.DaggerModuleCreator;
 import org.rapla.rest.generator.internal.GwtProxyCreator;
 import org.rapla.rest.generator.internal.JavaClientProxyCreator;
 import org.rapla.rest.generator.internal.TreeLogger;
+import org.rapla.rest.generator.internal.UnableToCompleteException;
 
 /*
  * Annotation Processor to create the org.rapla.servicelist file within the META-INF folder and one file 
@@ -311,17 +313,40 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         appendToFile(serviceListFile, interfaceName);
     }
 
-    private void addServiceFile(TypeElement interfaceElement, TypeElement implementationElement, File folder) throws IOException
+    private void addServiceFile(TypeElement interfaceElement, TypeElement implementationElement, File folder) throws IOException, UnableToCompleteException
     {
-        final String serviceFileName = interfaceElement.getQualifiedName().toString();
+        final String serviceFileName = getClassname(interfaceElement);
         addServiceFile(serviceFileName, implementationElement, folder);
 
     }
 
-    private void addServiceFile(String serviceFileName, TypeElement implementationElement, File folder) throws IOException
+    private void addServiceFile(String serviceFileName, TypeElement implementationElement, File folder) throws IOException, UnableToCompleteException
     {
-        String implementationName = implementationElement != null ? implementationElement.getQualifiedName().toString() : null;
+        String implementationName = implementationElement != null ? getClassname(implementationElement) : null;
         appendToFile("services/" + serviceFileName, folder, implementationName);
+    }
+
+    private String getClassname(TypeElement element) throws UnableToCompleteException
+    {
+        final NestingKind nestingKind = element.getNestingKind();
+        if ( nestingKind.equals( NestingKind.TOP_LEVEL))
+        {
+            return element.getQualifiedName().toString();
+        }
+        else if ( nestingKind.equals( NestingKind.MEMBER))
+        {
+            final Element enclosingElement = element.getEnclosingElement();
+            if (!(enclosingElement instanceof TypeElement))
+            {
+                throw new UnableToCompleteException("Only named Innerclasses are supported");
+            }
+            final String enclosingName = getClassname(((TypeElement) enclosingElement));
+            return enclosingName + '$' + element.getSimpleName().toString();
+        }
+        else
+        {
+            throw new UnableToCompleteException("Only named Innerclasses are supported");
+        }
     }
 
     public static void appendToFile(String serviceFileName, File folder, String line) throws IOException

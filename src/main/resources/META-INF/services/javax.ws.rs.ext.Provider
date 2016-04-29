@@ -1,0 +1,7 @@
+org.rapla.rest.server.provider.exception.RestExceptionMapper
+org.rapla.rest.server.provider.json.JsonReader
+org.rapla.rest.server.provider.json.JsonWriter
+org.rapla.rest.server.provider.json.JsonParamConverterProvider
+org.rapla.rest.server.provider.xml.XmlReader
+org.rapla.rest.server.provider.xml.XmlWriter
+org.rapla.rest.server.provider.filter.HttpMethodOverride

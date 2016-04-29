@@ -3,6 +3,7 @@ package org.rapla.client;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -13,10 +14,10 @@ import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.rapla.common.AnnotationProcessingTest;
-import org.rapla.common.AnnotationProcessingTest.Parameter;
-import org.rapla.common.AnnotationSimpleProcessingTest;
+import org.rapla.common.ExampleService;
+import org.rapla.common.ExampleSimpleService;
 import org.rapla.rest.client.CustomConnector;
+import org.rapla.rest.JsonParserWrapper;
 
 public abstract class AbstractProxyTest
 {
@@ -25,28 +26,26 @@ public abstract class AbstractProxyTest
 
     protected abstract CustomConnector createConnector();
 
-    @Before
-    public void setUp() throws Exception
+    @Before public void setUp() throws Exception
     {
         paramMap = new LinkedHashMap<>();
         paramMap.put("greeting", "World");
         connector = createConnector();
     }
 
-    protected abstract AnnotationProcessingTest createAnnotationProcessingProxy();
+    protected abstract ExampleService createExampleServiceProxy();
 
-    protected abstract AnnotationSimpleProcessingTest createAnnotationSimpleProxy();
+    protected abstract ExampleSimpleService createExampleSimpleServiceProxy();
 
-    @Test
-    public void test() throws Exception
+    @Test public void test() throws Exception
     {
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
+        ExampleService test = createExampleServiceProxy();
         test.dontSayHello();
 
-        AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
+        ExampleService.Parameter p = new ExampleService.Parameter();
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
-        final Collection<AnnotationProcessingTest.Result> resultList = test.sayHello(p);
-        final AnnotationProcessingTest.Result result = resultList.iterator().next();
+        final Collection<ExampleService.Result> resultList = test.sayHello(p);
+        final ExampleService.Result result = resultList.iterator().next();
         final Collection<String> ids = result.getIds();
         assertEq(2, ids.size());
         final Iterator<String> iterator = ids.iterator();
@@ -61,20 +60,18 @@ public abstract class AbstractProxyTest
 
     abstract public void fail_(String message);
 
-    @Test
-    public void test3() throws Exception
+    @Test public void test3() throws Exception
     {
-        AnnotationSimpleProcessingTest test = createAnnotationSimpleProxy();
+        ExampleSimpleService test = createExampleSimpleServiceProxy();
         final String message = "hello";
         final String result = test.sayHello(message);
         System.out.println("result");
         assertEq(Boolean.TRUE, (Boolean) result.startsWith(message));
     }
 
-    @Test
-    public void testListOfStrings() throws Exception
+    @Test public void testListOfStrings() throws Exception
     {
-        AnnotationSimpleProcessingTest test = createAnnotationSimpleProxy();
+        ExampleSimpleService test = createExampleSimpleServiceProxy();
         final String message = "hello";
         final List<String> resultFutureResult = test.translations(message);
         assertEq(3, resultFutureResult.size());
@@ -83,10 +80,9 @@ public abstract class AbstractProxyTest
         assertEq(message + "_fr", resultFutureResult.get(2));
     }
 
-    @Test
-    public void test4() throws Exception
+    @Test public void test4() throws Exception
     {
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
+        ExampleService test = createExampleServiceProxy();
         final Set<String> greeting = test.complex(paramMap).get("greeting");
         assertEq(2, greeting.size());
         final Iterator<String> iterator = greeting.iterator();
@@ -94,10 +90,9 @@ public abstract class AbstractProxyTest
         assertEq("World", iterator.next());
     }
 
-    @Test
-    public void testException() throws Exception
+    @Test public void testException() throws Exception
     {
-        AnnotationSimpleProcessingTest test = createAnnotationSimpleProxy();
+        ExampleSimpleService test = createExampleSimpleServiceProxy();
         try
         {
             final List<String> exception = test.exception();
@@ -109,128 +104,133 @@ public abstract class AbstractProxyTest
         }
     }
 
-    @Test
-    public void testCollections() throws Exception
+    @Test public void testCollections() throws Exception
     {
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
+        ExampleService test = createExampleServiceProxy();
         Collection<String> primiteCollection = Arrays.asList(new String[] { "Hello", "World" });
-        Collection<AnnotationProcessingTest.Parameter> complectCollection = new LinkedHashSet<>();
-        complectCollection.add(new AnnotationProcessingTest.Parameter());
-        final AnnotationProcessingTest.Parameter param2 = new AnnotationProcessingTest.Parameter();
+        Collection<ExampleService.Parameter> complectCollection = new LinkedHashSet<>();
+        complectCollection.add(new ExampleService.Parameter());
+        final ExampleService.Parameter param2 = new ExampleService.Parameter();
         param2.setCasts(primiteCollection);
         complectCollection.add(param2);
-        final String greeting = test.collecions(primiteCollection, complectCollection);
+        final String greeting = test.collections(primiteCollection, complectCollection);
         assertEq(
                 "Made[Hello, World],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=null}, Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello, World]}]",
                 greeting);
     }
-    
-    
+
+
     @Test
     public void testLists() throws Exception
     {
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
+        ExampleService test = createExampleServiceProxy();
         List<String> primiteCollection = Arrays.asList(new String[] { "Hello", "World" });
-        List<AnnotationProcessingTest.Parameter> complectCollection = new LinkedList<>();
-        complectCollection.add(new AnnotationProcessingTest.Parameter());
-        final AnnotationProcessingTest.Parameter param2 = new AnnotationProcessingTest.Parameter();
+        List<ExampleService.Parameter> complectCollection = new LinkedList<>();
+        complectCollection.add(new ExampleService.Parameter());
+        final ExampleService.Parameter param2 = new ExampleService.Parameter();
         param2.setCasts(primiteCollection);
         complectCollection.add(param2);
-        List<Parameter> body = new ArrayList<>(complectCollection);
+        List<ExampleService.Parameter> body = new ArrayList<>(complectCollection);
         final String greeting = test.list(primiteCollection, complectCollection, body);
         assertEq(
-                "Made[\"Hello\", \"World\"],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=null}, Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello, World]}],[{}, {casts=[Hello, World]}]",
+                "Made[Hello, World],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=null}, Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello, World]}],[{}, {casts=[Hello, World]}]",
                 greeting);
     }
-    
-    
+
+
     @Test
     public void testSets() throws Exception
     {
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
+        ExampleService test = createExampleServiceProxy();
         Set<String> primiteCollection = new LinkedHashSet(Arrays.asList(new String[] { "Hello", "World" }));
-        Set<AnnotationProcessingTest.Parameter> complectCollection = new LinkedHashSet<>();
-        final AnnotationProcessingTest.Parameter param2 = new AnnotationProcessingTest.Parameter();
+        Set<ExampleService.Parameter> complectCollection = new LinkedHashSet<>();
+        final ExampleService.Parameter param2 = new ExampleService.Parameter();
         param2.setCasts(primiteCollection);
         complectCollection.add(param2);
-        Set<Parameter> body = new LinkedHashSet<>(complectCollection);
+        Set<ExampleService.Parameter> body = new LinkedHashSet<>(complectCollection);
         final String greeting = test.set(primiteCollection, complectCollection, body);
         assertEq(
-                "Made[\"Hello\", \"World\"],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello, World]}],[{casts=[Hello, World]}]",
+                "Made[Hello, World],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello, World]}],[{casts=[Hello, World]}]",
                 greeting);
     }
-    
-    
 
-    @Test
-    public void testEncoding() throws Exception
+
+    @Test public void testArrays() throws Exception
+    {
+        ExampleService test = createExampleServiceProxy();
+        int[] intCollection = new int[] {1,2,3};
+        Double[] primiteCollection = new Double[] { 0.5, 1.0, 3.0, 0. };
+        String[] stringCollection = new String[] { "Hello", null, "","World"};
+        final ExampleService.Parameter param2 = new ExampleService.Parameter();
+        ExampleService.Parameter[] complectCollection = new ExampleService.Parameter[] { new ExampleService.Parameter(), param2 };
+        param2.setCasts(Collections.singletonList("Hello"));
+        final String greeting = test.arrays(intCollection,primiteCollection,stringCollection, complectCollection);
+        assertEq(
+                "Made[1, 2, 3],[0.5, 1.0, 3.0, 0.0],[Hello, , , World],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=null}, Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello]}]"
+                ,greeting);
+    }
+
+    @Test public void testEncoding() throws Exception
     {
         String stringWithDifficultCharacters = "#äöüßÖÄÜ\"+<>!§$%&(=&\\)";
-        final String result = createAnnotationSimpleProxy().sayHello(stringWithDifficultCharacters);
+        final String result = createExampleSimpleServiceProxy().sayHello(stringWithDifficultCharacters);
         final String substring = result.substring(0, stringWithDifficultCharacters.length());
         assertEq(stringWithDifficultCharacters, substring);
     }
 
-    @Test
-    public void testPrimitiveString() throws Exception
+    @Test public void testPrimitiveString() throws Exception
     {
         String param = "another param";
-        final String result = createAnnotationSimpleProxy().sendString(param);
+        final String result = createExampleSimpleServiceProxy().sendString(param);
         assertEq(param, result);
     }
 
-    @Test
-    public void testDouble() throws Exception
+    @Test public void testDouble() throws Exception
     {
         Double param = new Double(-2.0);
-        final Double result = createAnnotationSimpleProxy().sendDouble(param);
+        final Double result = createExampleSimpleServiceProxy().sendDouble(param);
         assertEq(param, -1 * result);
     }
 
-    @Test
-    public void testPrimDouble() throws Exception
+    @Test public void testPrimDouble() throws Exception
     {
         double param = 12.;
-        final double result = createAnnotationSimpleProxy().sendPrimDouble(param);
+        final double result = createExampleSimpleServiceProxy().sendPrimDouble(param);
         assertEq(param, -1 * result);
     }
 
-    @Test
-    public void testBoolean() throws Exception
+    @Test public void testBoolean() throws Exception
     {
         Boolean param = Boolean.FALSE;
-        final Boolean result = createAnnotationSimpleProxy().sendBool(param);
+        final Boolean result = createExampleSimpleServiceProxy().sendBool(param);
         assertEq(param, !result);
     }
 
-    @Test
-    public void testPrimBoolean() throws Exception
+    @Test public void testPrimBoolean() throws Exception
     {
         boolean param = true;
-        final boolean result = createAnnotationSimpleProxy().sendPrimBool(param);
+        final boolean result = createExampleSimpleServiceProxy().sendPrimBool(param);
         assertEq(param, !result);
     }
 
-    @Test
-    public void testInt() throws Exception
+    @Test public void testInt() throws Exception
     {
         Integer param = new Integer(42);
-        final Integer result = createAnnotationSimpleProxy().sendInt(param);
+        final Integer result = createExampleSimpleServiceProxy().sendInt(param);
         assertEq(param, -1 * result);
     }
 
-    @Test
-    public void testPrimInt() throws Exception
+    @Test public void testPrimInt() throws Exception
     {
         int param = 24;
-        final int result = createAnnotationSimpleProxy().sendPrimInt(param);
+        final int result = createExampleSimpleServiceProxy().sendPrimInt(param);
         assertEq(param, -1 * result);
     }
-    @Test
-    public void testChar() throws Exception
+
+    @Test public void testChar() throws Exception
     {
         Character param = new Character('a');
-        final Character result = createAnnotationSimpleProxy().sendChar(param);
+        final Character result = createExampleSimpleServiceProxy().sendChar(param);
         assertEq(new Character('b'), result);
     }
 }

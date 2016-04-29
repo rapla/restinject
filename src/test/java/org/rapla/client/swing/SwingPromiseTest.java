@@ -9,7 +9,8 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.rapla.client.AbstractPromiseTest;
-import org.rapla.common.AnnotationProcessingTest;
+import org.rapla.common.ExampleService;
+import org.rapla.common.ExampleService_JavaJsonProxy;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.impl.UtilConcurrentCommandScheduler;
@@ -86,9 +87,9 @@ import junit.framework.TestCase;
         };
     }
 
-    protected AnnotationProcessingTest createAnnotationProcessingProxy()
+    protected ExampleService createAnnotationProcessingProxy()
     {
-        return new org.rapla.common.AnnotationProcessingTest_JavaJsonProxy(connector);
+        return new ExampleService_JavaJsonProxy(connector);
     }
 
     @Override protected void assertEq(Object o1, Object o2)

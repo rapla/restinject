@@ -3,7 +3,7 @@ package org.rapla.client;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.rapla.common.AnnotationProcessingTest;
+import org.rapla.common.ExampleService;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.Promise;
@@ -33,7 +33,7 @@ public abstract class AbstractPromiseTest
 
     protected abstract CustomConnector createConnector();
 
-    protected abstract AnnotationProcessingTest createAnnotationProcessingProxy();
+    protected abstract ExampleService createAnnotationProcessingProxy();
 
     protected abstract void assertEq(Object o1, Object o2);
 
@@ -49,12 +49,12 @@ public abstract class AbstractPromiseTest
 
     @Test public void testAccept() throws Exception
     {
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
+        ExampleService test = createAnnotationProcessingProxy();
+        ExampleService.Parameter p = new ExampleService.Parameter();
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
-        final Promise<Collection<AnnotationProcessingTest.Result>> supply = scheduler.supply(() -> test.sayHello(p));
+        final Promise<Collection<ExampleService.Result>> supply = scheduler.supply(() -> test.sayHello(p));
         supply.thenAccept((resultList) -> {
-            final AnnotationProcessingTest.Result result = resultList.iterator().next();
+            final ExampleService.Result result = resultList.iterator().next();
             final Collection<String> ids = result.getIds();
             assertEq(2, ids.size());
             final Iterator<String> iterator = ids.iterator();
@@ -67,9 +67,9 @@ public abstract class AbstractPromiseTest
 
     @Test public void testHandle1() throws Exception
     {
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        final AnnotationProcessingTest.Parameter p = null;
-        final Promise<Collection<AnnotationProcessingTest.Result>> supply = scheduler.supply(() -> test.sayHello(p));
+        ExampleService test = createAnnotationProcessingProxy();
+        final ExampleService.Parameter p = null;
+        final Promise<Collection<ExampleService.Result>> supply = scheduler.supply(() -> test.sayHello(p));
         supply.handle((resultList, ex) -> {
             if (ex != null)
             {
@@ -86,10 +86,10 @@ public abstract class AbstractPromiseTest
 
     @Test public void testHandle2() throws Exception
     {
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        AnnotationProcessingTest.Parameter p2 = new AnnotationProcessingTest.Parameter();
+        ExampleService test = createAnnotationProcessingProxy();
+        ExampleService.Parameter p2 = new ExampleService.Parameter();
         p2.setActionIds(Arrays.asList(new Integer[] { 3, 5 }));
-        final Promise<Collection<AnnotationProcessingTest.Result>> successPromise = scheduler.supply(() -> test.sayHello(p2));
+        final Promise<Collection<ExampleService.Result>> successPromise = scheduler.supply(() -> test.sayHello(p2));
         successPromise.handle((resultList, ex) -> {
             if (ex != null)
             {
@@ -106,7 +106,7 @@ public abstract class AbstractPromiseTest
 
     @Test public void testApplyAccept() throws Exception
     {
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
+        ExampleService test = createAnnotationProcessingProxy();
         final Promise<Map<String, Set<String>>> supply = scheduler.supply(() -> test.complex(paramMap));
         supply.thenApply((map) -> {
             return map.keySet();
@@ -143,7 +143,7 @@ public abstract class AbstractPromiseTest
 
     @Test public void testApplyRun() throws Exception
     {
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
+        ExampleService test = createAnnotationProcessingProxy();
         final RefContainer<Map<String, Set<String>>> result = new RefContainer<Map<String, Set<String>>>(null);
         final Promise<Map<String, Set<String>>> supply = scheduler.supply(() -> test.complex(paramMap));
         supply.thenApply((map) -> {
@@ -162,7 +162,7 @@ public abstract class AbstractPromiseTest
 
     @Test public void testCombine() throws Exception
     {
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
+        ExampleService test = createAnnotationProcessingProxy();
         RefContainer<Map<String, Set<String>>> result = new RefContainer<Map<String, Set<String>>>(null);
         final Promise<Map<String, Set<String>>> promise1 = scheduler.supplyProxy(() -> test.complex(paramMap));
         final Promise<Map<String, Set<String>>> promise2 = scheduler.supplyProxy(() -> test.complex(paramMap));
@@ -179,15 +179,15 @@ public abstract class AbstractPromiseTest
 
     @Test public void testCompose() throws Exception
     {
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
+        ExampleService test = createAnnotationProcessingProxy();
         final Promise<Map<String, Set<String>>> promise = scheduler.supplyProxy(() -> test.complex(paramMap));
         final RefContainer<Map> result1 = new RefContainer<Map>();
         promise.thenCompose((map) -> {
-            AnnotationProcessingTest.Parameter param = new AnnotationProcessingTest.Parameter();
+            ExampleService.Parameter param = new ExampleService.Parameter();
             param.setActionIds(Arrays.asList(new Integer[] { map.keySet().size(), map.values().size() }));
             result1.set(map);
             return scheduler.supplyProxy(() -> test.sayHello(param)).thenAccept((list) -> {
-                final AnnotationProcessingTest.Result resultParam = list.iterator().next();
+                final ExampleService.Result resultParam = list.iterator().next();
                 final Collection<String> ids = resultParam.getIds();
                 final Map internalMap = result1.get();
                 final Iterator<String> iterator = ids.iterator();
@@ -201,8 +201,8 @@ public abstract class AbstractPromiseTest
 
     @Test public void testExceptionally() throws Exception
     {
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
-        final Promise<Collection<AnnotationProcessingTest.Result>> promise = scheduler.supplyProxy(() -> test.sayHello(null));
+        ExampleService test = createAnnotationProcessingProxy();
+        final Promise<Collection<ExampleService.Result>> promise = scheduler.supplyProxy(() -> test.sayHello(null));
         promise.exceptionally((ex) -> {
             finishTest();
             return null;
@@ -212,7 +212,7 @@ public abstract class AbstractPromiseTest
 
     @Test public void testApplyToEither() throws Exception
     {
-        AnnotationProcessingTest test = createAnnotationProcessingProxy();
+        ExampleService test = createAnnotationProcessingProxy();
         final Promise<String> promise = scheduler.supplyProxy(() -> test.longcall());
         final Promise<String> promise2 = scheduler.supplyProxy(() -> test.shortcall());
         promise.applyToEither(promise2, (first) -> {

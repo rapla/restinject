@@ -6,8 +6,13 @@ public class UnableToCompleteException extends Exception
     {
         super(message);
     }
+
+    public UnableToCompleteException(String message, Exception ex)
+    {
+        super(message,ex);
+    }
     public UnableToCompleteException(Exception ex)
     {
-        super(ex);
+        this(ex.getMessage(),ex);
     }
 }

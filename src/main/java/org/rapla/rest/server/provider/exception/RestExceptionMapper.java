@@ -1,4 +1,4 @@
-package org.rapla.server.rest.exception;
+package org.rapla.rest.server.provider.exception;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;

@@ -4,7 +4,5 @@ public interface CustomConnector extends ExceptionDeserializer, EntryPointFactor
 {
     String reauth(Class proxy) throws Exception;
 
-    Class[] getNonPrimitiveClasses();
-
     String getAccessToken();
 }

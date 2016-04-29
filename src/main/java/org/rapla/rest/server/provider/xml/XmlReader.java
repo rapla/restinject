@@ -1,11 +1,4 @@
-package org.rapla.server.rest.provider;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.Map;
+package org.rapla.rest.server.provider.xml;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.WebApplicationException;
@@ -16,14 +9,18 @@ import javax.ws.rs.ext.Provider;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.Map;
 
 @Provider
 @Consumes(MediaType.APPLICATION_XML)
 public class XmlReader<T> implements MessageBodyReader<T>
 {
-
     private Map<Class<T>, JAXBContext> contextMap = new HashMap<>();
-
     @Override
     public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType)
     {

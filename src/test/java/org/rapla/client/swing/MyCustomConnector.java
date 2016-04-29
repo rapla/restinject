@@ -52,10 +52,6 @@ public class MyCustomConnector implements CustomConnector
         // throw new Au
     }
 
-    @Override public Class[] getNonPrimitiveClasses()
-    {
-        return new Class[0];
-    }
 
 
     @Override public String getFullQualifiedUrl(String relativePath)

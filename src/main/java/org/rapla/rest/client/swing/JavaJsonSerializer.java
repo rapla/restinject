@@ -7,13 +7,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import org.rapla.rest.client.CustomConnector;
+import org.rapla.rest.JsonParserWrapper;
 import org.rapla.rest.client.RaplaConnectException;
 import org.rapla.rest.client.SerializableExceptionInformation;
 
-import javax.inject.Provider;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -27,19 +24,17 @@ public class JavaJsonSerializer
     private GsonBuilder gsonBuilder = null;
     private final Class resultType;
     private final Class container;
-    private final Provider<CustomConnector> customConnectorProvider;
 
-    public JavaJsonSerializer(final Provider<CustomConnector> customConnector, final Class resultType, final Class container)
+    public JavaJsonSerializer(final Class resultType, final Class container)
     {
         this.resultType = resultType;
-        this.customConnectorProvider = customConnector;
         this.container = container;
     }
 
     private synchronized Gson createGson()
     {
         if (gsonBuilder == null)
-            gsonBuilder = JSONParserWrapper.defaultGsonBuilder(customConnectorProvider.get().getNonPrimitiveClasses()).disableHtmlEscaping();
+            gsonBuilder = JsonParserWrapper.defaultGsonBuilder().disableHtmlEscaping();
         return gsonBuilder.create();
     }
 
@@ -54,52 +49,6 @@ public class JavaJsonSerializer
         else
         {
             result = "";
-        }
-        return result;
-    }
-
-    private Object deserializeReturnValue(Class<?> returnType, JsonElement element)
-    {
-        Gson gson = createGson();
-
-        Object result = gson.fromJson(element, returnType);
-        return result;
-    }
-
-    private List deserializeReturnList(Class<?> returnType, JsonArray list)
-    {
-        Gson gson = createGson();
-        List<Object> result = new ArrayList<Object>();
-        for (JsonElement element : list)
-        {
-            Object obj = gson.fromJson(element, returnType);
-            result.add(obj);
-        }
-        return result;
-    }
-
-    private Set deserializeReturnSet(Class<?> returnType, JsonArray list)
-    {
-        Gson gson = createGson();
-        Set<Object> result = new LinkedHashSet<Object>();
-        for (JsonElement element : list)
-        {
-            Object obj = gson.fromJson(element, returnType);
-            result.add(obj);
-        }
-        return result;
-    }
-
-    private Map deserializeReturnMap(Class<?> returnType, JsonObject map)
-    {
-        Gson gson = createGson();
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
-        for (Map.Entry<String, JsonElement> entry : map.entrySet())
-        {
-            String key = entry.getKey();
-            JsonElement element = entry.getValue();
-            Object obj = gson.fromJson(element, returnType);
-            result.put(key, obj);
         }
         return result;
     }
@@ -123,23 +72,23 @@ public class JavaJsonSerializer
         }
 
         Object resultObject;
-        if (container != null)
+        Gson gson = createGson();
+        if (container != null && !Object.class.equals(container))
         {
-            if (List.class.equals(container) || Collection.class.equals(container))
+            if (List.class.equals(container) || Collection.class.equals(container) || Set.class.equals(container))
             {
                 if (!resultElement.isJsonArray())
                 {
                     throw new RaplaConnectException("Array expected as json result");
                 }
-                resultObject = deserializeReturnList(resultType, resultElement.getAsJsonArray());
-            }
-            else if (Set.class.equals(container))
-            {
-                if (!resultElement.isJsonArray())
+                Collection<Object> result = Set.class.equals(container) ? new LinkedHashSet<>(): new ArrayList<>();
+                JsonArray list = resultElement.getAsJsonArray();
+                for (JsonElement element : list)
                 {
-                    throw new RaplaConnectException("Array expected as json result");
+                    Object obj = gson.fromJson(element, resultType);
+                    result.add(obj);
                 }
-                resultObject = deserializeReturnSet(resultType, resultElement.getAsJsonArray());
+                resultObject = result;
             }
             else if (Map.class.equals(container))
             {
@@ -147,20 +96,25 @@ public class JavaJsonSerializer
                 {
                     throw new RaplaConnectException("JsonObject expected as json result");
                 }
-                resultObject = deserializeReturnMap(resultType, resultElement.getAsJsonObject());
-            }
-            else if (Object.class.equals(container))
-            {
-                resultObject = deserializeReturnValue(resultType, resultElement);
+                final JsonObject map = resultElement.getAsJsonObject();
+                Map<String, Object> result = new LinkedHashMap<String, Object>();
+                for (Map.Entry<String, JsonElement> entry : map.entrySet())
+                {
+                    String key = entry.getKey();
+                    JsonElement element = entry.getValue();
+                    Object obj = gson.fromJson(element, resultType);
+                    result.put(key, obj);
+                }
+                resultObject = result;
             }
             else
             {
-                throw new RaplaConnectException("Array expected as json result");
+                throw new RaplaConnectException("List,Set or Map expected as json container");
             }
         }
         else
         {
-            resultObject = deserializeReturnValue(resultType, resultElement);
+            resultObject = gson.fromJson(resultElement, resultType);
         }
         return resultObject;
     }

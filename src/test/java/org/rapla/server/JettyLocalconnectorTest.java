@@ -14,27 +14,18 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.rapla.client.swing.MyCustomConnector;
-import org.rapla.common.AnnotationProcessingTest;
-import org.rapla.common.AnnotationProcessingTest_JavaJsonProxy;
+import org.rapla.common.ExampleService;
+import org.rapla.common.ExampleService_JavaJsonProxy;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.swing.AbstractLocalJsonConnector;
 import org.rapla.rest.client.swing.JavaClientServerConnector;
 import org.rapla.rest.client.swing.JsonRemoteConnector;
-import org.rapla.rest.server.RestApplication;
+import org.rapla.rest.server.ServiceInfLoader;
+import org.rapla.server.rest.RestTestApplication;
 
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 
 @RunWith(JUnit4.class) public class JettyLocalconnectorTest
 {
@@ -49,34 +40,10 @@ import java.util.List;
 
         String contextPath = "/";
         WebAppContext context = new WebAppContext(server, contextPath, "/");
-        //        context.addFilter(org.rapla.server.HTTPMethodOverrideFilter.class, "/rapla/*", null);
         context.addEventListener(new ResteasyBootstrap());
-        //        final Filter filter = new Filter()
-        //        {
-        //            @Override
-        //            public void init(FilterConfig filterConfig) throws ServletException
-        //            {
-        //                // do not init context as given from outside
-        //            }
-        //
-        //            @Override
-        //            public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
-        //            {
-        //                request.setAttribute(RaplaRestDaggerContextProvider.RAPLA_CONTEXT, serverServiceImpl.getMembersInjector());
-        //                chain.doFilter(request, response);
-        //            }
-        //
-        //            @Override
-        //            public void destroy()
-        //            {
-        //
-        //            }
-        //        };
-        //        final FilterHolder holder = new FilterHolder(filter);
-        //        context.addFilter(holder, "/*", EnumSet.allOf(DispatcherType.class));
         context.setInitParameter("resteasy.servlet.mapping.prefix", "/rapla");
         context.setInitParameter("resteasy.use.builtin.providers", "false");
-        context.setInitParameter("javax.ws.rs.Application", RestApplication.class.getCanonicalName());
+        context.setInitParameter("javax.ws.rs.Application", RestTestApplication.class.getCanonicalName());
         context.setResourceBase(webappFolder.getAbsolutePath());
         context.setMaxFormContentSize(64000000);
 
@@ -143,10 +110,10 @@ import java.util.List;
     @Test public void testHttp() throws Exception
     {
         CustomConnector customConnector = new MyCustomConnector();
-        AnnotationProcessingTest test = new AnnotationProcessingTest_JavaJsonProxy(customConnector);
-        AnnotationProcessingTest.Parameter param = new AnnotationProcessingTest.Parameter();
+        ExampleService test = new ExampleService_JavaJsonProxy(customConnector);
+        ExampleService.Parameter param = new ExampleService.Parameter();
         param.setActionIds(Arrays.asList(new Integer[] {1,2}));
-        final Collection<AnnotationProcessingTest.Result> results = test.sayHello(param);
+        final Collection<ExampleService.Result> results = test.sayHello(param);
         System.out.println( results);
     }
 

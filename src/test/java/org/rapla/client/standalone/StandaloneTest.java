@@ -8,23 +8,22 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.rapla.client.AbstractProxyTest;
 import org.rapla.client.swing.MyCustomConnector;
-import org.rapla.common.AnnotationProcessingTest;
-import org.rapla.common.AnnotationProcessingTest_JavaJsonProxy;
-import org.rapla.common.AnnotationSimpleProcessingTest;
-import org.rapla.common.AnnotationSimpleProcessingTest_JavaJsonProxy;
+import org.rapla.common.ExampleService;
+import org.rapla.common.ExampleService_JavaJsonProxy;
+import org.rapla.common.ExampleSimpleService;
+import org.rapla.common.ExampleSimpleService_JavaJsonProxy;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.swing.AbstractLocalJsonConnector;
 import org.rapla.rest.client.swing.HTTPConnector;
 import org.rapla.rest.client.swing.JavaClientServerConnector;
 import org.rapla.rest.client.swing.JsonRemoteConnector;
-import org.rapla.rest.server.RestApplication;
+import org.rapla.rest.server.ServiceInfLoader;
 import org.rapla.server.TestServlet;
 
 @RunWith(JUnit4.class)
@@ -46,7 +45,7 @@ public class StandaloneTest extends AbstractProxyTest
         WebAppContext context = new WebAppContext(server, contextPath, "/");
         context.setInitParameter("resteasy.servlet.mapping.prefix", "/rapla");
         context.setInitParameter("resteasy.use.builtin.providers", "false");
-        context.setInitParameter("javax.ws.rs.Application", RestApplication.class.getCanonicalName());
+        context.setInitParameter("javax.ws.rs.Application", ServiceInfLoader.class.getCanonicalName());
         context.setResourceBase(webappFolder.getAbsolutePath());
         context.setMaxFormContentSize(64000000);
 
@@ -94,15 +93,15 @@ public class StandaloneTest extends AbstractProxyTest
     }
 
     @Override
-    protected AnnotationProcessingTest createAnnotationProcessingProxy()
+    protected ExampleService createExampleServiceProxy()
     {
-        return new AnnotationProcessingTest_JavaJsonProxy(connector);
+        return new ExampleService_JavaJsonProxy(connector);
     }
 
     @Override
-    protected AnnotationSimpleProcessingTest createAnnotationSimpleProxy()
+    protected ExampleSimpleService createExampleSimpleServiceProxy()
     {
-        return new AnnotationSimpleProcessingTest_JavaJsonProxy(connector);
+        return new ExampleSimpleService_JavaJsonProxy(connector);
     }
 
     @Override

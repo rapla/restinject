@@ -1,4 +1,4 @@
-package org.rapla.server.rest.listener;
+package org.rapla.server.rest;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -11,23 +11,9 @@ import org.jboss.resteasy.spi.validation.GeneralValidator;
 
 import dagger.MembersInjector;
 
-public class RestDaggerListener implements GeneralValidator
+public class ResteasyMembersInjector implements GeneralValidator
 {
     public static final String RAPLA_CONTEXT = "raplaContext";
-
-    @Provider
-    public static class RaplaRestDaggerContextProvider implements ContextResolver<GeneralValidator>
-    {
-
-        final RestDaggerListener raplaRestDaggerListener = new RestDaggerListener();
-
-        @Override
-        public GeneralValidator getContext(Class<?> type)
-        {
-            return raplaRestDaggerListener;
-        }
-
-    }
 
     @Override
     public void validate(HttpRequest request, Object object, Class<?>... groups)

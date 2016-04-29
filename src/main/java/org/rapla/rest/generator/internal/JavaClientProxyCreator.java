@@ -29,17 +29,15 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
 
     public JavaClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName)
     {
-        super(remoteService,processingEnvironment, generatorName);
+        super(remoteService, processingEnvironment, generatorName);
     }
 
-    @Override
-    protected String encode(String encodingParam)
+    @Override protected String encode(String encodingParam)
     {
         return "URLEncoder.encode(" + encodingParam + ",\"UTF-8\")";
     }
 
-    @Override
-    protected String[] writeSerializers(SourceWriter w, List<? extends VariableElement> params, TypeMirror resultType)
+    @Override protected String[] writeSerializers(SourceWriter w, List<? extends VariableElement> params, TypeMirror resultType)
     {
         String containerClass = "null";
         final String resultClassname;
@@ -65,55 +63,36 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
             }
         }
         String serialzerName = "serializer_" + instanceField++;
-        w.println("JavaJsonSerializer " + serialzerName+ " = new JavaJsonSerializer(() -> connector, " + resultClassname + ".class, "+ containerClass + ");");
+        w.println("JavaJsonSerializer " + serialzerName + " = new JavaJsonSerializer(" + resultClassname + ".class, " + containerClass + ");");
 
         final int argLength = params.size();
         final String[] strings = new String[argLength + 1];
-        for ( int i=0;i<strings.length;i++)
+        for (int i = 0; i < strings.length; i++)
         {
             strings[i] = serialzerName;
         }
         return strings;
     }
 
-    @Override
-    public String getProxySuffix()
+    @Override public String getProxySuffix()
     {
         return PROXY_SUFFIX;
     }
 
-    @Override
-    protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField,
-            String methodType)
+    @Override protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType)
     {
-        w.println("Object result = new JavaClientServerConnector(  ).send(connector,\"" + methodType
-                + "\", methodUrl, postBody.toString(),additionalHeaders," + resultDeserialzerField + ");");
+        w.println("Object result = new JavaClientServerConnector(  ).send(connector,\"" + methodType + "\", methodUrl, postBody.toString(),additionalHeaders,"
+                + resultDeserialzerField + ");");
         //w.println("final Object result = httpConnector.getResult(resultMessage, resultType, containerClass);");
     }
 
-    @Override
-    protected void writeParam(SourceWriter w,String targetName,TypeMirror paramType, String pname, String serializerField, final String annotationKey)
+
+    protected void serializeArg2(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType,boolean encode)
     {
-        if(annotationKey != null && isSetOrList(paramType))
-        {
-            final TypeMirror typeMirror = ((DeclaredType) paramType).getTypeArguments().get(0);
-            w.println("if (" + pname + " != null) {");
-            w.indent();
-            w.println("for(" + typeMirror.toString() + " innerParam : " + pname + ") {");
-            w.indent();
-            w.println("if(" + targetName + ".length() > 0) " + targetName + ".append(\"&"+ annotationKey + "=\");");
-            w.println(targetName + ".append(" + encode(serializerField + ".serializeArgument(innerParam)") + ");");
-            w.outdent();
-            w.println("}");
-            w.outdent();
-            w.println("}");
-        }
+        if (encode)
+            w.println(targetName + ".append(" + encode(serializerField + ".serializeArgument("+ pName+")") + ");");
         else
-        {
-            w.println( targetName +".append(" + serializerField + ".serializeArgument(" + pname + "));");
-        }
+            w.println(targetName + ".append(" + serializerField + ".serializeArgument("+pName + "));");
     }
-
-
 
 }

@@ -1,10 +1,7 @@
-package org.rapla.server.rest.provider;
+package org.rapla.rest.server.provider.json;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
+import com.google.gson.Gson;
+import org.rapla.rest.JsonParserWrapper;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.WebApplicationException;
@@ -12,17 +9,18 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.Provider;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import org.rapla.rest.client.swing.JSONParserWrapper;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
 
 @Provider
 @Consumes(MediaType.APPLICATION_JSON)
-public class GsonReader<T> implements MessageBodyReader<T>
+public class JsonReader<T> implements MessageBodyReader<T>
 {
 
-    final Gson gson = JSONParserWrapper.defaultGsonBuilder(new Class[]{}).create();
+    final Gson gson = JsonParserWrapper.defaultGsonBuilder().create();
 
     @Override
     public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType)

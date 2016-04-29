@@ -1,23 +1,13 @@
 package org.rapla.server;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.EnumSet;
-
-import javax.servlet.DispatcherType;
-
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.rapla.common.dagger.CycleTest;
-import org.rapla.server.rest.RestTestApplication;
-import org.rapla.server.rest.filter.InjectionFilter;
 
-/**
- * Created by Christopher on 21.10.2015.
- */
+import java.io.File;
+
 public class ServletTestContainer
 {
 

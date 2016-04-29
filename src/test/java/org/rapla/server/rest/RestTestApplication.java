@@ -1,50 +1,46 @@
 package org.rapla.server.rest;
 
+import org.rapla.rest.server.ServiceInfLoader;
+import org.rapla.rest.server.provider.exception.RestExceptionMapper;
+import org.rapla.rest.server.provider.filter.HttpMethodOverride;
+import org.rapla.rest.server.provider.json.JsonParamConverterProvider;
+import org.rapla.rest.server.provider.json.JsonReader;
+import org.rapla.rest.server.provider.json.JsonWriter;
+import org.rapla.rest.server.provider.xml.XmlReader;
+import org.rapla.rest.server.provider.xml.XmlWriter;
+
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Application;
+import javax.ws.rs.ext.Provider;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import javax.ws.rs.core.Application;
-
-import org.rapla.common.EnumJsonServiceImpl;
-import org.rapla.common.ExampleWithParameterArrayImpl;
-import org.rapla.common.SimpleServiceImpl;
-import org.rapla.rest.server.HttpMethodOverrideProvider;
-import org.rapla.server.AnnotationProcessingTestImpl;
-import org.rapla.server.AnnotationSimpleProcessingTestImpl;
-import org.rapla.server.MyRestPage;
-import org.rapla.server.rest.exception.RestExceptionMapper;
-import org.rapla.server.rest.listener.RestDaggerListener.RaplaRestDaggerContextProvider;
-import org.rapla.server.rest.provider.GsonReader;
-import org.rapla.server.rest.provider.GsonWriter;
-import org.rapla.server.rest.provider.JsonParamConverterProvider;
-import org.rapla.server.rest.provider.WildcardWriter;
-import org.rapla.server.rest.provider.XmlReader;
-import org.rapla.server.rest.provider.XmlWriter;
 
 public class RestTestApplication extends Application
 {
 
     private Set<Class<?>> classes;
 
-    public RestTestApplication()
+    public RestTestApplication() throws IOException
     {
         final HashSet<Class<?>> classes = new HashSet<>();
-        classes.add(HttpMethodOverrideProvider.class);
-        classes.add(GsonReader.class);
-        classes.add(GsonWriter.class);
-        classes.add(WildcardWriter.class);
-        classes.add(XmlReader.class);
-        classes.add(XmlWriter.class);
-        classes.add(MyRestPage.class);
-        classes.add(AnnotationSimpleProcessingTestImpl.class);
-        classes.add(AnnotationProcessingTestImpl.class);
-        classes.add(SimpleServiceImpl.class);
-        classes.add(EnumJsonServiceImpl.class);
-        classes.add(ExampleWithParameterArrayImpl.class);
-        classes.add(RaplaRestDaggerContextProvider.class);
-        classes.add(RestExceptionMapper.class);
-        classes.add(JsonParamConverterProvider.class);
+        {
+            final ClassLoader classLoader = getClass().getClassLoader();
+            final ServiceInfLoader.LoadingResult loadingResult = ServiceInfLoader.loadClassesFromMetaInfo(classLoader, Provider.class.getCanonicalName(), Path.class.getCanonicalName());
+            classes.addAll(loadingResult.getClasses());
+            for (Throwable error : loadingResult.getErrors())
+            {
+                throw new RuntimeException("Error loading Meta-INF" + error);
+            }
+            classes.add(RestExceptionMapper.class);
+            classes.add(HttpMethodOverride.class);
+            classes.add(JsonParamConverterProvider.class);
+            classes.add(JsonReader.class);
+            classes.add(JsonWriter.class);
+            classes.add(XmlWriter.class);
+            classes.add(XmlReader.class);
+        }
         this.classes = Collections.unmodifiableSet(classes);
     }
 

@@ -6,11 +6,12 @@ import java.util.Iterator;
 
 import javax.inject.Singleton;
 
+import org.junit.Test;
 import org.rapla.client.AbstractProxyTest;
-import org.rapla.common.AnnotationProcessingTest;
-import org.rapla.common.AnnotationProcessingTest_GwtJsonProxy;
-import org.rapla.common.AnnotationSimpleProcessingTest;
-import org.rapla.common.AnnotationSimpleProcessingTest_GwtJsonProxy;
+import org.rapla.common.ExampleService;
+import org.rapla.common.ExampleService_GwtJsonProxy;
+import org.rapla.common.ExampleSimpleService;
+import org.rapla.common.ExampleSimpleService_GwtJsonProxy;
 import org.rapla.common.ComponentStarter;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.scheduler.CommandScheduler;
@@ -22,7 +23,7 @@ import com.google.gwt.junit.client.GWTTestCase;
 
 import dagger.Component;
 
-public class MyGwtTest extends GWTTestCase
+public class GwtProxyTest extends GWTTestCase
 {
 
     AbstractProxyTest genericTest = new AbstractProxyTest()
@@ -35,15 +36,15 @@ public class MyGwtTest extends GWTTestCase
         }
 
         @Override
-        protected AnnotationProcessingTest createAnnotationProcessingProxy()
+        protected ExampleService createExampleServiceProxy()
         {
-            return new AnnotationProcessingTest_GwtJsonProxy(connector);
+            return new ExampleService_GwtJsonProxy(connector);
         }
 
         @Override
-        protected AnnotationSimpleProcessingTest createAnnotationSimpleProxy()
+        protected ExampleSimpleService createExampleSimpleServiceProxy()
         {
-            return new AnnotationSimpleProcessingTest_GwtJsonProxy(connector);
+            return new ExampleSimpleService_GwtJsonProxy(connector);
         }
 
         @Override
@@ -125,6 +126,21 @@ public class MyGwtTest extends GWTTestCase
         genericTest.testPrimitiveString();
     }
 
+    public void testLists() throws Exception
+    {
+        genericTest.testLists();
+    }
+
+    public void testSets() throws Exception
+    {
+        genericTest.testSets();
+    }
+
+    public void testArrays() throws Exception
+    {
+        genericTest.testArrays();
+    }
+
     public void testDouble() throws Exception
     {
         genericTest.testDouble();
@@ -164,11 +180,11 @@ public class MyGwtTest extends GWTTestCase
     {
 
         final Bootstrap bootstrap = createBootstrap();
-        AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
+        ExampleService.Parameter p = new ExampleService.Parameter();
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
-        final AnnotationProcessingTest.Result result = bootstrap.call(p);
-        //final FutureResult<AnnotationProcessingTest.Result> futureResult = new AnnotationProcessingTestImpl().sayHello(p);
-        //AnnotationProcessingTest.Result result = futureResult.get();
+        final ExampleService.Result result = bootstrap.call(p);
+        //final FutureResult<ExampleService.Result> futureResult = new ExampleServiceImpl().sayHello(p);
+        //ExampleService.Result result = futureResult.get();
         final Collection<String> ids = result.getIds();
         assertEquals(2, ids.size());
         final Iterator<String> iterator = ids.iterator();
@@ -178,15 +194,15 @@ public class MyGwtTest extends GWTTestCase
 
     private Bootstrap createBootstrap()
     {
-        return DaggerMyGwtTest_BootstrapInterface.create().getBootstrap();
+        return DaggerGwtProxyTest_BootstrapInterface.create().getBootstrap();
     }
 
-    AnnotationProcessingTest.Result asyncResult;
+    ExampleService.Result asyncResult;
 
     public void testGwtPromiseCall() throws Exception
     {
         final Bootstrap bootstrap = createBootstrap();
-        AnnotationProcessingTest.Parameter p = new AnnotationProcessingTest.Parameter();
+        ExampleService.Parameter p = new ExampleService.Parameter();
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
         CommandScheduler scheduler = new GwtCommandScheduler()
         {
@@ -198,7 +214,7 @@ public class MyGwtTest extends GWTTestCase
             }
 
         };
-        final Promise<Collection<AnnotationProcessingTest.Result>> promise = bootstrap.callAsync(p, scheduler);
+        final Promise<Collection<ExampleService.Result>> promise = bootstrap.callAsync(p, scheduler);
         delayTestFinish(10000);
         promise.thenAccept((list) ->
         {
