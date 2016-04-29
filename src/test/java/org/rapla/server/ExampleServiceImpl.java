@@ -11,7 +11,9 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Inject;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 
 import org.rapla.common.ExampleService;
 import org.rapla.inject.DefaultImplementation;
@@ -81,6 +83,7 @@ public class ExampleServiceImpl implements ExampleService
         return list;
     }
 
+    @Produces(MediaType.APPLICATION_JSON)
     @Override public String collections(@QueryParam("param") Collection<String> test, @QueryParam("complex") Collection<Parameter> complex)
     {
         return "Made" + test.toString()+","+complex.toString();
@@ -100,11 +103,16 @@ public class ExampleServiceImpl implements ExampleService
         return "Made" + Arrays.toString(integer) +"," + Arrays.toString(test)+","+Arrays.toString(stringArray) + "," +Arrays.toString(complex);
     }
 
-    @Override
-    public String charArray(Character[] charArray1,char[] charArray2)
-    {
-        return "Made"  + Arrays.toString(charArray1) +"," + Arrays.toString( charArray2);
-    }
+//    @Override
+//    public String charArray(Character[] charArray1,char[] charArray2)
+//    {
+//        return "Made"  + Arrays.toString(charArray1) +"," + Arrays.toString( charArray2);
+//    }
+
+        public String charArray(char[] charArray2)
+        {
+            return "Made"  + Arrays.toString( charArray2);
+        }
 
     @Override
     public String list(List<String> test, List<Parameter> complex, List<Parameter> postBody)

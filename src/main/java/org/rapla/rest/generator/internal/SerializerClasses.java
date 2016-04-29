@@ -9,7 +9,7 @@ public interface SerializerClasses
     String ResultDeserializer= "org.rapla.rest.client.gwt.internal.impl.ResultDeserializer";
     String ArrayResultDeserializer= "org.rapla.rest.client.gwt.internal.impl.ArrayResultDeserializer";
     String JavaJsonSerializer = "org.rapla.rest.client.swing.JavaJsonSerializer";
-    String JsonCall= "org.rapla.rest.client.gwt.internal.impl.JsonCall";
+    String JsonCall= "org.rapla.rest.client.gwt.internal.impl.GwtClientServerConnector";
     String JsonSerializer= "org.rapla.rest.client.gwt.internal.impl.JsonSerializer";
     String JsonSerializer_simple= "JsonSerializer";
 

@@ -13,7 +13,7 @@ import javax.ws.rs.core.MediaType;
 public interface ExampleSimpleService
 {
     @GET
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+    @Produces({MediaType.APPLICATION_JSON})
     @Path("sayHello")
     String sayHello(@QueryParam("param") String param);
     

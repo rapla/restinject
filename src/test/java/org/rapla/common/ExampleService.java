@@ -72,11 +72,6 @@ public interface ExampleService
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Path("list")
-    String charArray(@QueryParam("param1") Character[] charArray1,@QueryParam("param2") char[] charArray2);
-
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("list")
     String list(@QueryParam("param") List<String> test, @QueryParam("complex") List<Parameter> complex, List<Parameter> postBody);
     
     @POST

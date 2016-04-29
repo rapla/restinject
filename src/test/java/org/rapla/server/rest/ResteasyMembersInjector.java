@@ -1,15 +1,11 @@
 package org.rapla.server.rest;
 
-import java.lang.reflect.Method;
-import java.util.Map;
-
-import javax.ws.rs.ext.ContextResolver;
-import javax.ws.rs.ext.Provider;
-
+import dagger.MembersInjector;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.validation.GeneralValidator;
 
-import dagger.MembersInjector;
+import java.lang.reflect.Method;
+import java.util.Map;
 
 public class ResteasyMembersInjector implements GeneralValidator
 {

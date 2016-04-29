@@ -1,7 +1,7 @@
 package org.rapla.rest.server.provider.json;
 
-import org.rapla.rest.client.SerializableExceptionInformation;
 import org.rapla.rest.JsonParserWrapper;
+import org.rapla.rest.client.SerializableExceptionInformation;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
@@ -16,7 +16,7 @@ import java.lang.reflect.Type;
 
 @Provider
 @Produces({MediaType.APPLICATION_JSON})
-public class JsonWriter<T> implements MessageBodyWriter<T>
+public class JsonStringWriter implements MessageBodyWriter<String>
 {
     final JsonParserWrapper.JsonParser jsonParser = JsonParserWrapper.defaultJson().get();
 
@@ -27,31 +27,18 @@ public class JsonWriter<T> implements MessageBodyWriter<T>
     }
 
     @Override
-    public long getSize(T t, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType)
+    public long getSize(String t, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType)
     {
         return -1;
     }
 
     @Override
-    public void writeTo(T t, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
+    public void writeTo(String t, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
             OutputStream entityStream) throws IOException, WebApplicationException
     {
-        String json;
-        if (t instanceof Throwable)
-        {
-            json = serializeException((Throwable) t);
-        }
-        else
-        {
-            json = jsonParser.toJson(t);
-        }
+        String json = jsonParser.toJson(t);
         entityStream.write(json.getBytes("UTF-8"));
     }
 
-    private String serializeException(Throwable exception)
-    {
-        final SerializableExceptionInformation se = new SerializableExceptionInformation(exception);
-        final String json = jsonParser.toJson(se);
-        return json;
-    }
+
 }

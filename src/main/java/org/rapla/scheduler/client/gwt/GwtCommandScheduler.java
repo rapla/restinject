@@ -1,7 +1,7 @@
 package org.rapla.scheduler.client.gwt;
 
 import org.rapla.rest.client.AsyncCallback;
-import org.rapla.rest.client.gwt.internal.impl.JsonCall;
+import org.rapla.rest.client.gwt.internal.impl.GwtClientServerConnector;
 import org.rapla.scheduler.Cancelable;
 import org.rapla.scheduler.Command;
 import org.rapla.scheduler.CommandScheduler;
@@ -132,7 +132,7 @@ public abstract class GwtCommandScheduler implements CommandScheduler
         final UnsynchronizedPromise<T> promise = new UnsynchronizedPromise<T>();
         Scheduler.get().scheduleFinally(() ->
         {
-            JsonCall.registerSingleThreadedCallback( new AsyncCallback<T>()
+            GwtClientServerConnector.registerSingleThreadedCallback(new AsyncCallback<T>()
             {
                 @Override
                 public void onFailure(Throwable caught)

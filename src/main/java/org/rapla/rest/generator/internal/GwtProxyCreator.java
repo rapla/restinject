@@ -38,7 +38,7 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
 
     @Override protected String encode(String encodedParam)
     {
-        return "JsonCall.encodeBase64(" + encodedParam + ")";
+        return "GwtClientServerConnector.encodeBase64(" + encodedParam + ")";
     }
 
     @Override public String getProxySuffix()
@@ -81,7 +81,7 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
 
     @Override protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType)
     {
-        w.print("Object result = JsonCall.doInvoke(");
+        w.print("Object result = GwtClientServerConnector.doInvoke(");
         w.print("\"" + methodType + "\"");
         w.print(", methodUrl, postBody.toString(), additionalHeaders,");
         if ((resultType instanceof DeclaredType) && ((DeclaredType) resultType).getTypeArguments() != null && !((DeclaredType) resultType).getTypeArguments()

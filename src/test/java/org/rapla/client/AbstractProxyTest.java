@@ -170,6 +170,7 @@ public abstract class AbstractProxyTest
                 ,greeting);
     }
 
+
     @Test public void testEncoding() throws Exception
     {
         String stringWithDifficultCharacters = "#äöüßÖÄÜ\"+<>!§$%&(=&\\)";

@@ -50,7 +50,7 @@ public class HTTPConnector implements JsonRemoteConnector
         {
             conn.setRequestProperty("Authorization", "Bearer " + authenticationToken);
         }
-        conn.setReadTimeout(60000); //set timeout to 60 seconds
+        conn.setReadTimeout(120000); //set timeout to 120 seconds
         conn.setConnectTimeout(50000); //set connect timeout to 50 seconds
         conn.setDoOutput(true);
         conn.connect();
