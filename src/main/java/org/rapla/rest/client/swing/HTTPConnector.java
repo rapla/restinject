@@ -25,7 +25,7 @@ public class HTTPConnector implements JsonRemoteConnector
     }
 
     public CallResult sendCallWithString(String requestMethod, URL methodURL, String body, String authenticationToken, String accept,
-            Map<String, String> additionalHeaders) throws IOException, ProtocolException, UnsupportedEncodingException
+            Map<String, String> additionalHeaders) throws IOException
     {
         HttpURLConnection conn = (HttpURLConnection) methodURL.openConnection();
         for (Entry<String, String> additionalHeader : additionalHeaders.entrySet())

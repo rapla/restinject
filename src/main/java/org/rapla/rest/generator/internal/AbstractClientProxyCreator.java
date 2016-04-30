@@ -55,7 +55,21 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
     abstract protected String encode(String encodingParam);
 
-    abstract protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType);
+    protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType)
+    {
+        final String serverConnectorClass = getServerConnectorClass();
+        w.print("Object result = " + serverConnectorClass + ".doInvoke(");
+        w.print("\"" + methodType + "\"");
+        w.print(", methodUrl , additionalHeaders,postBody.toString(),");
+        w.print(resultDeserialzerField);
+        w.print(", \"" + resultType.toString() + "\"");
+        w.print(", connector);");
+        w.println(" ");
+    }
+
+    abstract protected String getServerConnectorClass();
+
+    //abstract protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType);
 
     protected void writeParam(SourceWriter w, String targetName, TypeMirror paramType, String pName, String serializerField, String annotationKey)
     {
@@ -256,14 +270,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         return pw;
     }
 
-    protected void writeImports(SourceWriter pw)
-    {
-        pw.println("import " + JavaClientServerConnector.class.getCanonicalName() + ";");
-        pw.println("import java.net.URL;");
-        pw.println("import java.net.URLEncoder;");
-        pw.println("import " + JavaJsonSerializer + ";");
-        pw.println("import " + JsonRemoteConnector.CallResult.class.getCanonicalName() + ";");
-    }
+    abstract protected void writeImports(SourceWriter pw);
 
     private void generateProxyConstructor(@SuppressWarnings("unused") final TreeLogger logger, final SourceWriter w, String interfaceName)
             throws UnableToCompleteException
@@ -297,6 +304,10 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         }
     }
 
+    protected boolean isQueryOrHeaderParam(TypeMirror paramType)
+    {
+        return paramType.getAnnotation(QueryParam.class) != null || paramType.getAnnotation(HeaderParam.class) != null;
+    }
     protected boolean isArray(TypeMirror paramType)
     {
         return paramType.getKind() == TypeKind.ARRAY;

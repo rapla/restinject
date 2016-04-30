@@ -21,7 +21,7 @@ public class MyCustomConnector implements CustomConnector
         return accessToken;
     }
 
-    @Override public Exception deserializeException(SerializableExceptionInformation exceptionInformations)
+    @Override public Exception deserializeException(SerializableExceptionInformation exceptionInformations, int responseCode)
     {
         String aClass = exceptionInformations.getExceptionClass();
         if ( aClass != null)

@@ -53,9 +53,8 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
         pw.println("import " + ResultDeserializer + ";");
         pw.println("import com.google.gwt.core.client.GWT;");
         pw.println("import " + RequestBuilder + ";");
-        pw.println("import " + JsonCall + ";");
+        pw.println("import " + GwtClientServerConnector + ";");
     }
-
 
     protected void serializeArg2(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType, boolean encode)
     {
@@ -79,32 +78,9 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
         }
     }
 
-    @Override protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType)
+    protected String getServerConnectorClass()
     {
-        w.print("Object result = GwtClientServerConnector.doInvoke(");
-        w.print("\"" + methodType + "\"");
-        w.print(", methodUrl, postBody.toString(), additionalHeaders,");
-        if ((resultType instanceof DeclaredType) && ((DeclaredType) resultType).getTypeArguments() != null && !((DeclaredType) resultType).getTypeArguments()
-                .isEmpty())
-        {
-            w.print(resultDeserialzerField);
-        }
-        else if (resultType.getKind() == TypeKind.VOID)
-        {
-            w.print("null");
-        }
-        else
-        {
-            deserializerCreator.generateDeserializerReference(resultType, w);
-        }
-        w.print(", \"" + resultType.toString() + "\"");
-        w.print(", connector);");
-        w.println(" ");
-    }
-
-    private boolean isListSetParam(TypeMirror paramType)
-    {
-        return paramType.getAnnotation(QueryParam.class) != null || paramType.getAnnotation(HeaderParam.class) != null;
+        return "GwtClientServerConnector";
     }
 
     protected String[] writeSerializers(SourceWriter w, List<? extends VariableElement> params, TypeMirror resultType)
@@ -114,7 +90,7 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
         {
             final VariableElement variableElement = params.get(i);
             TypeMirror pType = variableElement.asType();
-            if (isListSetParam(pType))
+            if (isQueryOrHeaderParam(pType))
             {
                 // Take inner type
                 pType = ((DeclaredType) pType).getTypeArguments().get(0);
@@ -134,18 +110,22 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
                 w.println(";");
             }
         }
-        if (SerializerCreator.isParameterized(resultType))
+        String fieldName = "serializer_" + instanceField++;
+        serializerFields[serializerFields.length - 1] = fieldName;
+        w.print("private static final ");
+        w.print(ResultDeserializer);
+        w.print(" ");
+        w.print(fieldName);
+        w.print(" = ");
+        if (resultType.getKind() == TypeKind.VOID)
         {
-            String fieldName = "serializer_" + instanceField++;
-            serializerFields[serializerFields.length - 1] = fieldName;
-            w.print("private static final ");
-            w.print(ResultDeserializer);
-            w.print(" ");
-            w.print(fieldName);
-            w.print(" = ");
-            deserializerCreator.generateDeserializerReference(resultType, w);
-            w.println(";");
+            w.print("null");
         }
+        else
+        {
+            deserializerCreator.generateDeserializerReference(resultType, w);
+        }
+        w.println(";");
         return serializerFields;
     }
 

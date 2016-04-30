@@ -8,7 +8,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import org.rapla.rest.JsonParserWrapper;
-import org.rapla.rest.client.RaplaConnectException;
+import org.rapla.rest.client.RemoteConnectException;
 import org.rapla.rest.client.SerializableExceptionInformation;
 
 import java.util.ArrayList;
@@ -53,7 +53,7 @@ public class JavaJsonSerializer
         return result;
     }
 
-    public Object deserializeResult(String unparsedResult) throws RaplaConnectException
+    public Object deserializeResult(String unparsedResult) throws RemoteConnectException
     {
         if (resultType.equals(void.class))
         {
@@ -68,7 +68,7 @@ public class JavaJsonSerializer
         }
         catch (JsonParseException ex)
         {
-            throw new RaplaConnectException("Unparsable json " + ex.getMessage() + ":" + unparsedResult);
+            throw new RemoteConnectException("Unparsable json " + ex.getMessage() + ":" + unparsedResult);
         }
 
         Object resultObject;
@@ -79,7 +79,7 @@ public class JavaJsonSerializer
             {
                 if (!resultElement.isJsonArray())
                 {
-                    throw new RaplaConnectException("Array expected as json result");
+                    throw new RemoteConnectException("Array expected as json result");
                 }
                 Collection<Object> result = Set.class.equals(container) ? new LinkedHashSet<>(): new ArrayList<>();
                 JsonArray list = resultElement.getAsJsonArray();
@@ -94,7 +94,7 @@ public class JavaJsonSerializer
             {
                 if (!resultElement.isJsonObject())
                 {
-                    throw new RaplaConnectException("JsonObject expected as json result");
+                    throw new RemoteConnectException("JsonObject expected as json result");
                 }
                 final JsonObject map = resultElement.getAsJsonObject();
                 Map<String, Object> result = new LinkedHashMap<String, Object>();
@@ -109,7 +109,7 @@ public class JavaJsonSerializer
             }
             else
             {
-                throw new RaplaConnectException("List,Set or Map expected as json container");
+                throw new RemoteConnectException("List,Set or Map expected as json container");
             }
         }
         else

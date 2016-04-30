@@ -15,6 +15,8 @@
 package org.rapla.rest.generator.internal;
 
 import org.rapla.inject.generator.internal.SourceWriter;
+import org.rapla.rest.client.swing.JavaClientServerConnector;
+import org.rapla.rest.client.swing.JsonRemoteConnector;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.TypeElement;
@@ -30,6 +32,16 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
     public JavaClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName)
     {
         super(remoteService, processingEnvironment, generatorName);
+    }
+
+    @Override
+    protected void writeImports(SourceWriter pw)
+    {
+        pw.println("import " + JavaClientServerConnector.class.getCanonicalName() + ";");
+        pw.println("import java.net.URL;");
+        pw.println("import java.net.URLEncoder;");
+        pw.println("import " + JavaJsonSerializer + ";");
+        pw.println("import " + JsonRemoteConnector.CallResult.class.getCanonicalName() + ";");
     }
 
     @Override protected String encode(String encodingParam)
@@ -79,11 +91,10 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
         return PROXY_SUFFIX;
     }
 
-    @Override protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType)
+    @Override
+    protected String getServerConnectorClass()
     {
-        w.println("Object result = new JavaClientServerConnector(  ).send(connector,\"" + methodType + "\", methodUrl, postBody.toString(),additionalHeaders,"
-                + resultDeserialzerField + ");");
-        //w.println("final Object result = httpConnector.getResult(resultMessage, resultType, containerClass);");
+        return JavaClientServerConnector.class.getSimpleName();
     }
 
 

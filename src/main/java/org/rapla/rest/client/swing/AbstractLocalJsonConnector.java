@@ -13,7 +13,7 @@ import java.util.Map;
 public abstract class AbstractLocalJsonConnector implements JsonRemoteConnector
 {
     @Override public CallResult sendCallWithString(String requestMethod, URL methodURL, String body, String authenticationToken, String contentType,
-            Map<String, String> additionalHeaders) throws Exception
+            Map<String, String> additionalHeaders) throws IOException
     {
         final String rawHttpRequest = createRawHttpRequest(requestMethod, methodURL, body, authenticationToken, contentType, additionalHeaders);
         final String rawResult = doSend(rawHttpRequest);

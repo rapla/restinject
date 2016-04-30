@@ -3,16 +3,14 @@ package org.rapla.rest.client.gwt.internal.impl;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.http.client.URL;
-import com.google.gwt.json.client.JSONObject;
-import com.google.gwt.user.client.rpc.InvocationException;
-import com.google.gwt.user.client.rpc.StatusCodeException;
 import com.google.gwt.xhr.client.XMLHttpRequest;
+
 import org.rapla.rest.client.AsyncCallback;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.ExceptionDeserializer;
+import org.rapla.rest.client.RemoteConnectException;
 import org.rapla.rest.client.SerializableExceptionInformation;
 import org.rapla.rest.client.SerializableExceptionInformation.SerializableExceptionStacktraceInformation;
-import org.rapla.rest.client.gwt.internal.RemoteJsonException;
 
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
@@ -52,19 +50,18 @@ public class GwtClientServerConnector<T>
     private final String resultType;
 
     public GwtClientServerConnector(String httpMethod, final ExceptionDeserializer exceptionDeserializer, final String url, Map<String, String> additionalHeaders,
-            final String requestParams, final ResultDeserializer<T> resultDeserializer, String resultType)
+            final String body, final ResultDeserializer<T> resultDeserializer, String resultType)
     {
         this.httpMethod = httpMethod;
         this.exceptionDeserializer = exceptionDeserializer;
         this.url = url;
         this.additionalHeaders = additionalHeaders;
-        this.body = requestParams;
+        this.body = body;
         this.resultDeserializer = resultDeserializer;
         this.resultType = resultType;
     }
 
-    public static <T> T doInvoke(final String requestMethodType, final String url, final String body, final Map<String, String> additionalHeaders,
-            final ResultDeserializer<T> ser, String resultType, CustomConnector connector) throws Exception
+    public static <T> T doInvoke(final String requestMethodType, final String url, final Map<String, String> additionalHeaders, final String body, final ResultDeserializer<T> ser, String resultType, CustomConnector connector) throws Exception
     {
         GwtClientServerConnector gwtConnector = new GwtClientServerConnector<>(requestMethodType, connector, url, additionalHeaders, body, ser, resultType);
         final String accessToken = connector.getAccessToken();
@@ -164,6 +161,7 @@ public class GwtClientServerConnector<T>
                     onResponseReceived(xhr, callback);
                 }
             });
+            log("sending request asynchronous to " +url+  " with post data "+ requestData);
             request.send(requestData);
             return null;
         }
@@ -218,7 +216,7 @@ public class GwtClientServerConnector<T>
             }
             else
             {
-                callback.onFailure(new InvocationException("Expected " + resultType + " but no JSON response: " + responseText + " Status " + statusText));
+                callback.onFailure(new RemoteConnectException("Expected " + resultType + " but no JSON response: " + responseText + " Status " + statusText));
             }
             return;
         }
@@ -264,7 +262,7 @@ public class GwtClientServerConnector<T>
             }
             catch (RuntimeException e)
             {
-                callback.onFailure(new InvocationException("Bad JSON response: " + e));
+                callback.onFailure(new RemoteConnectException("Bad JSON response: " + e));
                 return;
             }
             log("Checking error.");
@@ -285,11 +283,11 @@ public class GwtClientServerConnector<T>
                 }
                 final String exceptionClass = errorResult.exceptionClass();
                 SerializableExceptionInformation exceptionInformation = new SerializableExceptionInformation(message, exceptionClass, messages, stacktrace);
-                e = exceptionDeserializer.deserializeException(exceptionInformation);
+                e = exceptionDeserializer.deserializeException(exceptionInformation,sc);
                 if (e == null)
                 {
                     final String errmsg = message;
-                    e = new RemoteJsonException(errmsg, sc, new JSONObject(errorResult));
+                    e = new RemoteConnectException(errmsg);
                 }
                 callback.onFailure(e);
                 return;
@@ -314,7 +312,7 @@ public class GwtClientServerConnector<T>
                 }
                 catch (RuntimeException e)
                 {
-                    callback.onFailure(new InvocationException("Invalid JSON Response", e));
+                    callback.onFailure(new RemoteConnectException("Invalid JSON Response", e));
                     return;
                 }
                 callback.onSuccess(deserialzedResult);
@@ -326,14 +324,7 @@ public class GwtClientServerConnector<T>
             }
         }
 
-        if (sc == Response.SC_OK)
-        {
-            callback.onFailure(new InvocationException("No JSON response: " + responseText + " Status " + statusText));
-        }
-        else
-        {
-            callback.onFailure(new StatusCodeException(sc, statusText));
-        }
+        callback.onFailure(new RemoteConnectException("No JSON response: " + responseText + " Status " + statusText));
     }
 
     protected void log(String message)

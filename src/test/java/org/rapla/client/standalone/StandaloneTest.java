@@ -26,7 +26,7 @@ import org.rapla.rest.client.swing.JsonRemoteConnector;
 import org.rapla.rest.server.ServiceInfLoader;
 import org.rapla.server.TestServlet;
 
-@RunWith(JUnit4.class)
+/*@RunWith(JUnit4.class)
 public class StandaloneTest extends AbstractProxyTest
 {
 
@@ -63,7 +63,7 @@ public class StandaloneTest extends AbstractProxyTest
         JavaClientServerConnector.setJsonRemoteConnector(new HTTPConnector());
         localConnector.close();
     }
-    
+
     JsonRemoteConnector createConnector(final LocalConnector connector)
     {
         return new AbstractLocalJsonConnector()
@@ -117,3 +117,4 @@ public class StandaloneTest extends AbstractProxyTest
     }
 
 }
+*/
