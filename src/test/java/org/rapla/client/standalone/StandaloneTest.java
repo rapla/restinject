@@ -26,7 +26,7 @@ import org.rapla.rest.client.swing.JsonRemoteConnector;
 import org.rapla.rest.server.ServiceInfLoader;
 import org.rapla.server.TestServlet;
 
-/*@RunWith(JUnit4.class)
+@RunWith(JUnit4.class)
 public class StandaloneTest extends AbstractProxyTest
 {
 
@@ -117,4 +117,3 @@ public class StandaloneTest extends AbstractProxyTest
     }
 
 }
-*/
