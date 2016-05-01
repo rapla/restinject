@@ -4,6 +4,8 @@ import com.google.gson.*;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 public class HTTPJsonConnector extends HTTPConnector
@@ -17,6 +19,10 @@ public class HTTPJsonConnector extends HTTPConnector
         return sendCall("POST", methodURL, jsonObject, authenticationToken, additionalHeaders);
     }
 
+    public CallResult sendGet(URL methodURL) throws IOException,JsonParseException  {
+        return sendCall("GET", methodURL, null,null, new HashMap<>());
+    }
+
     public CallResult sendGet(URL methodURL, String authenticationToken, Map<String, String>additionalHeaders) throws IOException,JsonParseException  {
         return sendCall("GET", methodURL, null, authenticationToken, additionalHeaders);
     }
@@ -25,6 +31,10 @@ public class HTTPJsonConnector extends HTTPConnector
         return sendCall("PUT", methodURL, jsonObject, authenticationToken, additionalHeaders);
     }
 
+    public CallResult sendPatch(URL methodURL, JsonElement jsonObject) throws IOException
+    {
+        return sendPatch( methodURL,jsonObject,null, Collections.emptyMap());
+    }
     public CallResult sendPatch(URL methodURL, JsonElement jsonObject, String authenticationToken,Map<String, String>additionalHeaders) throws IOException,JsonParseException  {
         return sendCall("PATCH", methodURL, jsonObject, authenticationToken, additionalHeaders);
     }

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Generated;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -146,9 +147,10 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
     abstract protected String getProxySuffix();
 
-    protected String getGeneratorString()
+    protected String getGeneratorString(String interfaceName)
     {
-        return "@javax.annotation.Generated(\"" + generatorName + "\")";
+        String comments = "annotation in "  + interfaceName;
+        return "@javax.annotation.Generated(value=\"" + generatorName + "\", comments=\""+comments + "\")";
     }
 
     public String create(final TreeLogger logger) throws UnableToCompleteException
@@ -263,7 +265,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         pw.println("import " + AbstractJsonProxy + ";");
         writeImports(pw);
         pw.println();
-        pw.println(getGeneratorString());
+        pw.println(getGeneratorString(interfaceName));
         pw.println("public class " + className + " extends " + AbstractJsonProxy + " implements " + interfaceName);
         pw.println("{");
         pw.indent();

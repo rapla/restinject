@@ -4,6 +4,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.eclipse.jetty.server.Server;
 import org.rapla.rest.client.swing.HTTPConnector;
@@ -72,6 +73,52 @@ public class RestAPITest extends  TestCase {
             //authenticationToken = resultObject.get("accessToken").getAsString();
             //String validity = resultObject.get("validUntil").getAsString();
             assertEquals("Hello admin",resultObject);
+        }
+    }
+
+    public void testPatch() throws Exception
+    {
+        RestAPIExample example = new RestAPIExample()
+        {
+            protected void assertTrue( boolean condition)
+            {
+                TestCase.assertTrue(condition);
+            }
+
+            protected void assertEquals( Object o1, Object o2)
+            {
+                TestCase.assertEquals(o1, o2);
+            }
+        };
+        URL baseUrl = new URL("http://localhost:8052/rapla/");
+        String username = "christopher";
+        HTTPJsonConnector connector = new HTTPJsonConnector();
+        {
+            URL methodURL =new URL(baseUrl,"user/" + username );
+            //JsonObject callObj = new JsonObject();
+            //callObj.addProperty("username", username);
+            //callObj.addProperty("password", password);
+            String email;
+            JsonParser jsonParser = new JsonParser();
+            {
+                CallResult resultBody = connector.sendGet(methodURL);
+                final JsonObject asJsonObject = jsonParser.parse(resultBody.getResult()).getAsJsonObject();
+                String resultUsername = asJsonObject.get("name").getAsString();
+                email = asJsonObject.get("email").getAsString();
+                assertEquals(username, resultUsername);
+                assertTrue( email != null && email.length() > 0);
+            }
+            String newUsername = "martin";
+            final JsonObject patchObject = new JsonObject();
+            patchObject.add("name", new JsonPrimitive(newUsername));
+            {
+                CallResult resultBody = connector.sendPatch(methodURL, patchObject);
+                final JsonObject asJsonObject = jsonParser.parse(resultBody.getResult()).getAsJsonObject();
+                String resultUsername = asJsonObject.get("name").getAsString();
+                assertEquals(newUsername, resultUsername);
+                String resutEmail = asJsonObject.get("email").getAsString();
+                assertEquals(email, resutEmail);
+            }
         }
     }
 

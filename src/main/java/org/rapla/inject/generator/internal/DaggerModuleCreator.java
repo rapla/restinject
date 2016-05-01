@@ -215,8 +215,6 @@ public class DaggerModuleCreator
         createSourceWriter(packageName, artifactName, Scopes.Server);
         createSourceWriter(packageName, artifactName, Scopes.JavaClient);
         createSourceWriter(packageName, artifactName, Scopes.Gwt);
-//        createSourceWriter(packageName, artifactName, Scopes.WebserviceModule);
-//        createWebserviceComponentSourceWriter(packageName, artifactName, Scopes.Webservice);
 
         File f = AnnotationInjectionProcessor.getInterfaceList(processingEnvironment.getFiler());
         List<String> interfaces = AnnotationInjectionProcessor.readLines(f);
@@ -224,7 +222,6 @@ public class DaggerModuleCreator
         {
             createMethods(interfaceName, artifactName);
         }
-//        writeWebserviceList(packageName, artifactName);
         for (SourceWriter moduleWriter : sourceWriters.values())
         {
             moduleWriter.outdent();
@@ -240,12 +237,10 @@ public class DaggerModuleCreator
      * <code>package org.rapla.server.internal.dagger;</br>
      * import javax.inject.Singleton;</br>
      * import org.rapla.dagger.DaggerServerModule;</br>
-     * import org.rapla.dagger.DaggerWebserviceComponent;</br>
      * import org.rapla.server.internal.ServerServiceImpl;</br></code>
      * <code>@Singleton @dagger.Component(modules = { DaggerServerModule.class, MyModule.class })</br>
      * public interface ServerComponent</br>
      * {</br>
-     *   DaggerWebserviceComponent getWebservices0();</br>
      *   Starter getStarter();</br>
      * }</code></br>
      * </br>An example for swing:</br>
@@ -403,129 +398,6 @@ public class DaggerModuleCreator
         return foundLines;
     }
 
-//    private void writeWebserviceList(String originalPackageName, String artifactId) throws IOException
-//    {
-        // Example:
-        //   ServiceMap getMap();
-        //  @Singleton public static class ServiceMap extends LinkedHashMap<String,WebserviceCreator> {
-        //    final DaggerRaplaWebserviceComponent component;
-        //    @Inject ServiceMap(final DaggerRaplaWebserviceComponent component) {
-        //        this.component = component;
-        //        put("org.rapla.common.AnnotationProcessingTest");
-        //        put("org.rapla.common.AnnotationSimpleProcessingTest");
-        //    }
-        //    private void put(final String serviceName) {
-        //        put(serviceName,new WebserviceCreator()  {
-        //                @Override public Object create(HttpServletRequest request, HttpServletResponse response) {
-        //                    DaggerRaplaRequestModule requestModule = new DaggerRaplaRequestModule(request, response);
-        //                    switch (serviceName) {
-        //                        case "org.rapla.common.AnnotationProcessingTest": return component.org_rapla_common_annotationprocessingtest(requestModule).get();
-        //                        case "org.rapla.common.AnnotationSimpleProcessingTest": return component.org_rapla_common_annotationsimpleprocessingtest(requestModule).get();
-        //                        default: return null;
-        //                    }
-        //                } 
-        //            });
-//        String packageName = Scopes.WebserviceModule.getPackageName(originalPackageName);
-//        {
-//            SourceWriter writer = getWriter(Scopes.WebserviceModule);
-//            String serviceMapClass = packageName + "." + artifactId + "ServerComponent.ServiceMap";
-//            writer.println("@Provides " + WebserviceCreatorMap.class.getCanonicalName() + " getWebserviceList(" + serviceMapClass + " impl) { return impl;}");
-//        }
-//
-//        String className = "Dagger" + artifactId + "WebserviceMap";
-//        {
-//            SourceWriter writer = getWriter(Scopes.Webservice);
-//            writer.println(className + " getMap();");
-//        }
-//
-//        final Filer filer = processingEnvironment.getFiler();
-//        String fullFilename = packageName + "." + className;
-//        String webserviceCreatorClass = WebserviceCreator.class.getCanonicalName();
-//
-//        final JavaFileObject source = filer.createSourceFile(fullFilename);
-//        try (OutputStream out = source.openOutputStream())
-//        {
-//            final SourceWriter writer = new SourceWriter(out);
-//            writer.println("package " + packageName + ";");
-//            writer.println("import " + HttpServletRequest.class.getCanonicalName() + ";");
-//            writer.println("import " + HttpServletResponse.class.getCanonicalName() + ";");
-//            writer.println(getGeneratorString());
-//            writer.println("@javax.inject.Singleton public class " + className + " extends java.util.LinkedHashMap<String," + webserviceCreatorClass + "> {");
-//            writer.indent();
-//            final String componentName = "Dagger" + artifactId + "WebserviceComponent";
-//            writer.println("final " + componentName + " component;");
-//            writer.println("@javax.inject.Inject " + className + "(final " + componentName + " component) { ");
-//            writer.indent();
-//            //final String requestModuleName = "Dagger" + artifact + "RequestModule";
-//            final String requestModuleName = BasicRequestModule.class.getCanonicalName();
-//            writer.println("this.component = component;");
-//            for (TypeElement method : remoteMethods)
-//            {
-//                final String path = getPath(method);
-//                writer.println("put(\"" + path + "\");");
-//            }
-//            writer.println("}");
-//            writer.outdent();
-//            writer.println("private void put(final String serviceName) { ");
-//            writer.indent();
-//            writer.println("put(serviceName,new " + webserviceCreatorClass + "()  {");
-//            writer.indent();
-//            writer.println("@Override public Object create(HttpServletRequest request, HttpServletResponse response) {");
-//            writer.indent();
-//            writer.println(requestModuleName + " requestModule = new " + requestModuleName + "(request, response);");
-//            writer.println("switch (serviceName) {");
-//            writer.indent();
-//            for (TypeElement method : remoteMethods)
-//            {
-//                final String path = getPath(method);
-//                String methodName = toJavaName(method).toLowerCase();
-//                writer.println("case \"" + path + "\": return component." + methodName + "(requestModule).get();");
-//            }
-//            writer.println("default: return null;");
-//            writer.outdent();
-//            writer.println("}");
-//            writer.outdent();
-//            writer.println("}");
-//
-//            writer.println("@Override public Class getServiceClass() {");
-//            writer.indent();
-//            writer.println("switch (serviceName) {");
-//            writer.indent();
-//            for (TypeElement method : remoteMethods)
-//            {
-//                final String path = getPath(method);
-//                writer.println("case \"" + path + "\": return " + method.getQualifiedName().toString() + ".class;");
-//            }
-//            writer.println("default: return null;");
-//            writer.outdent();
-//            writer.println("}");
-//            writer.outdent();
-//            writer.println("}");
-//
-//            writer.outdent();
-//            writer.println("});");
-//            writer.outdent();
-//            writer.println("}");
-//            writer.outdent();
-//            writer.println("}");
-//            writer.close();
-//        }
-//    }
-
-    private String getPath(TypeElement method)
-    {
-        final String path;
-        final Path pathAnnotation = method.getAnnotation(Path.class);
-        if (pathAnnotation != null)
-        {
-            path = pathAnnotation.value();
-        }
-        else
-        {
-            path = method.getQualifiedName().toString();
-        }
-        return path;
-    }
 
     void appendLineToMetaInf(String filename, String line) throws IOException
     {
@@ -578,39 +450,6 @@ public class DaggerModuleCreator
         return "org.rapla.Dagger" + scope + "Exported";
     }
 
-//    private void createWebserviceComponentSourceWriter(String originalPackageName, String artifactId, Scopes scope) throws IOException
-//    {
-//        String packageName = scope.getPackageName(originalPackageName);
-//        String type = scope.toString();
-//        final String simpleComponentName = "Dagger" + artifactId + type + "Component";
-//        final String fullComponentName = packageName + "." + simpleComponentName;
-//        final Filer filer = processingEnvironment.getFiler();
-//        {// serviceFile filling
-//            appendLineToMetaInf(getModuleListFileName(Scopes.Webservice), fullComponentName);
-//        }
-//        final JavaFileObject source = filer.createSourceFile(fullComponentName);
-//        final SourceWriter moduleWriter = new SourceWriter(source.openOutputStream());
-//        moduleWriter.println("package " + packageName + ";");
-//        moduleWriter.println();
-//        moduleWriter.println("import " + Provides.class.getCanonicalName() + ";");
-//        moduleWriter.println("import " + Inject.class.getCanonicalName() + ";");
-//        moduleWriter.println("import " + Provider.class.getCanonicalName() + ";");
-//        moduleWriter.println("import " + Singleton.class.getCanonicalName() + ";");
-//        moduleWriter.println("import " + Provides.Type.class.getCanonicalName() + ";");
-//        moduleWriter.println("import " + Subcomponent.class.getCanonicalName() + ";");
-//        moduleWriter.println("import " + Module.class.getCanonicalName() + ";");
-//        moduleWriter.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
-//        moduleWriter.println("import " + MembersInjector.class.getCanonicalName() + ";");
-//        moduleWriter.println();
-//        moduleWriter.println(getGeneratorString());
-//        moduleWriter.println("@Singleton");
-//        //String basicRequestModuleName = BasicRequestModule.class.getSimpleName();
-//        moduleWriter.println("@Subcomponent");
-//        moduleWriter.println("public interface " + simpleComponentName + " {");
-//        moduleWriter.indent();
-//        sourceWriters.put(scope, moduleWriter);
-//    }
-
     private File getMetaInfFolder() throws IOException
     {
         return AnnotationInjectionProcessor.getInterfaceList(processingEnvironment.getFiler()).getParentFile();
@@ -622,10 +461,12 @@ public class DaggerModuleCreator
         File folder = getMetaInfFolder();
         final List<String> implementingClasses = AnnotationInjectionProcessor
                 .readLines(AnnotationInjectionProcessor.getFile(folder, "services/" + interfaceName));
+        interfaceName = interfaceName.replaceAll("\\$",".");
         final TypeElement interfaceClassTypeElement = processingEnvironment.getElementUtils().getTypeElement(interfaceName);
 
         for (String implementingClass : implementingClasses)
         {
+            implementingClass = implementingClass.replaceAll("\\$",".");
             final TypeElement implementingClassTypeElement = processingEnvironment.getElementUtils().getTypeElement(implementingClass);
             final Path path = implementingClassTypeElement != null ? implementingClassTypeElement.getAnnotation(Path.class) : null;
             if ( interfaceClassTypeElement == null && path == null)
@@ -710,45 +551,6 @@ public class DaggerModuleCreator
         }
     }
 
-
-
-    /*
-    private void generatePath(TypeElement implementingClassTypeElement, String path)
-    {
-        final String qualifiedName = implementingClassTypeElement.getQualifiedName().toString();
-        final String qualifiedRestPage = qualifiedName.replaceAll("\\.", "_");
-        final Generated generated = new Generated("RestPage", qualifiedRestPage);
-        if(notGenerated(Scopes.Server, generated))
-        {
-            if(path.contains("/"))
-            {
-                path = path.substring(0, path.indexOf("/"));
-            }
-            final SourceWriter writer = getWriter(Scopes.Server, generated);
-            writer.println("@Provides(type=Type.MAP) @javax.inject.Singleton");
-            writer.println("@" + DaggerMapKey.class.getSimpleName() + "(\"" + path + "\")");
-            final ExecutableElement constructor = getConstructor(implementingClassTypeElement);
-            final List<? extends VariableElement> parameters = constructor.getParameters();
-            final String factoryName = qualifiedName + "_Factory";
-            boolean hasMemberInjector = implementingClassTypeElement.getSuperclass() != null;
-            writer.print("public " + Factory.class.getCanonicalName() + " provide_Rest_" + qualifiedRestPage + "_Factory(");
-            if (hasMemberInjector)
-            {
-                writer.print(MembersInjector.class.getCanonicalName() + "<" + qualifiedName + "> members, ");
-            }
-            writer.println(createString(parameters, true) + ") {");
-            writer.indent();
-            writer.print("return " + factoryName + ".create(");
-            if (hasMemberInjector)
-            {
-                writer.print("members, ");
-            }
-            writer.println(createString(parameters, false) + ");");
-            writer.outdent();
-            writer.println("}");
-        }
-    }*/
-
     private String getGeneratorString()
     {
         return "@javax.annotation.Generated(\"" + generatorName + "\")";
@@ -812,11 +614,7 @@ public class DaggerModuleCreator
     private void generateDefaultImplementation(TypeElement interfaceTypeElement, ExtensionPoint annotation)
     {
         final InjectionContext[] context = annotation.context();
-        final Types typeUtils = processingEnvironment.getTypeUtils();
         final Generated generated = new Generated(interfaceTypeElement.getQualifiedName().toString(), "emtpy", annotation.id());
-        //final TypeMirror asTypeImpl = typeUtils.erasure(implementingClassTypeElement.asType());
-        //final TypeMirror asTypeOf = typeUtils.erasure(defaultImplementationOf.asType());
-        //boolean assignable = typeUtils.isAssignable(asTypeImpl, asTypeOf);
         if (InjectionContext.isInjectableOnGwt(context))
         {
             if (notGenerated(Scopes.Gwt, generated))
@@ -847,16 +645,6 @@ public class DaggerModuleCreator
     private void generateEmptyExtensionMethods(final TypeElement interfaceName, SourceWriter moduleWriter)
     {
         moduleWriter.println();
-        //        if (isSingleton)
-        //        {
-        //            final String fullQualifiedName = "provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName;
-        //            moduleWriter.println("private " + qualifiedName + " " + fullQualifiedName + "=null;");
-        //        }
-        writeEmptyMethod(interfaceName, moduleWriter);
-    }
-
-    private void writeEmptyMethod(TypeElement interfaceName, SourceWriter moduleWriter)
-    {
         final String collectionTypeString;
         moduleWriter.println();
         moduleWriter.println("@javax.inject.Singleton @Provides(type=Type.SET_VALUES)");
@@ -918,14 +706,6 @@ public class DaggerModuleCreator
         }
         if (InjectionContext.isInjectableOnServer(context))
         {
-//            if (interfaceTypeElement.getAnnotation(RemoteJsonMethod.class) != null)
-//            {
-//                if (notGenerated(Scopes.Server, generated))
-//                {
-//                    SourceWriter moduleWriter = getWriter(Scopes.Server, generated);
-//                    generateWebserviceComponent(artifactName, implementingClassTypeElement, interfaceTypeElement, moduleWriter);
-//                }
-//            }
             if (notGenerated(Scopes.Server, generated))
             {
                 SourceWriter moduleWriter = getWriter(Scopes.Server, generated);
@@ -970,7 +750,6 @@ public class DaggerModuleCreator
     private void generateWebserviceComponent(String artifactName, TypeElement implementingClassTypeElement, TypeElement interfaceName,
             SourceWriter moduleWriter)
     {
-        // public MembersInjector<RestExample> getRestExample();
         moduleWriter.println();
         moduleWriter.println("@Provides(type=Type.MAP) @"+Singleton.class.getCanonicalName());
         moduleWriter.println("@" + DaggerMapKey.class.getSimpleName() + "(\"" + implementingClassTypeElement.getQualifiedName().toString() + "\")");
@@ -1060,11 +839,6 @@ public class DaggerModuleCreator
             SourceWriter moduleWriter)
     {
         moduleWriter.println();
-        //        if (isSingleton)
-        //        {
-        //            final String fullQualifiedName = "provide_" + interfaceNameWithoutPackage + "_" + defaultImplClassName;
-        //            moduleWriter.println("private " + qualifiedName + " " + fullQualifiedName + "=null;");
-        //        }
         writeMethod(interfaceName, moduleWriter, defaultImplClassName, true, extension);
         writeMethod(interfaceName, moduleWriter, defaultImplClassName, false, extension);
     }
@@ -1128,70 +902,5 @@ public class DaggerModuleCreator
         return (TypeElement) TypeUtils.asElement(typeMirror);
     }
 
-    private String createString(List<? extends VariableElement> parameters, boolean withType)
-    {
-        final StringBuilder sb = new StringBuilder();
-        if (parameters != null)
-        {
-            boolean first = true;
-            for (VariableElement parameter : parameters)
-            {
-                if (first)
-                {
-                    first = false;
-                }
-                else
-                {
-                    sb.append(", ");
-                }
-                if (withType)
-                {
-                    sb.append(Provider.class.getCanonicalName() + "<");
-                    final TypeMirror asType = parameter.asType();
-                    if (asType instanceof PrimitiveType)
-                    {
-                        final String string = asType.toString();
-                        if ("int".equalsIgnoreCase(string))
-                        {
-                            sb.append("java.lang.Integer");
-                        }
-                        else
-                        {
-                            sb.append("java.lang.");
-                            final char[] charArray = string.toCharArray();
-                            charArray[0] = Character.toUpperCase(charArray[0]);
-                            sb.append(charArray);
-                        }
-                    }
-                    else
-                    {
-                        sb.append(asType.toString());
-                    }
-                    sb.append("> ");
-                }
-                sb.append(parameter.getSimpleName().toString());
-            }
-        }
-        return sb.toString();
-    }
 
-    private ExecutableElement getConstructor(TypeElement element)
-    {
-        final List<? extends Element> allMembers = processingEnvironment.getElementUtils().getAllMembers(element);
-        final List<ExecutableElement> constructors = ElementFilter.constructorsIn(allMembers);
-        ExecutableElement foundConstructor = null;
-        if (constructors != null)
-        {
-            for (ExecutableElement constructor : constructors)
-            {
-                final boolean hasInjectAnnotation = constructor.getAnnotation(Inject.class) != null;
-                if (hasInjectAnnotation)
-                {
-                    foundConstructor = constructor;
-                    break;
-                }
-            }
-        }
-        return foundConstructor;
-    }
 }
