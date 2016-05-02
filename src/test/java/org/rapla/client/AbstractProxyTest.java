@@ -66,10 +66,20 @@ public abstract class AbstractProxyTest
     @Test public void test3() throws Exception
     {
         ExampleSimpleService test = createExampleSimpleServiceProxy();
+
+        {
+            final String result = test.postHello(null);
+            assertEq(Boolean.TRUE, (Boolean) result.startsWith("null"));
+        }
+        {
+            final String result = test.postHello("");
+            assertEq(Boolean.TRUE, (Boolean) !result.startsWith("null"));
+        }
         final String message = "hello";
-        final String result = test.sayHello(message);
-        System.out.println("result");
-        assertEq(Boolean.TRUE, (Boolean) result.startsWith(message));
+        {
+            final String result = test.sayHello(message);
+            assertEq(Boolean.TRUE, (Boolean) result.startsWith(message));
+        }
     }
 
     @Test public void testListOfStrings() throws Exception
@@ -193,22 +203,25 @@ public abstract class AbstractProxyTest
 
     @Test public void testPrimitiveString() throws Exception
     {
+        final ExampleSimpleService exampleSimpleServiceProxy = createExampleSimpleServiceProxy();
         String param = "another param";
-        final String result = createExampleSimpleServiceProxy().sendString(param);
+        final String result = exampleSimpleServiceProxy.sendString(param);
         assertEq(param, result);
     }
 
     @Test public void testDouble() throws Exception
     {
+        final ExampleSimpleService exampleSimpleServiceProxy = createExampleSimpleServiceProxy();
         Double param = new Double(-2.0);
-        final Double result = createExampleSimpleServiceProxy().sendDouble(param);
+        final Double result = exampleSimpleServiceProxy.sendDouble(param);
         assertEq(param, -1 * result);
     }
 
     @Test public void testPrimDouble() throws Exception
     {
+        final ExampleSimpleService exampleSimpleServiceProxy = createExampleSimpleServiceProxy();
         double param = 12.;
-        final double result = createExampleSimpleServiceProxy().sendPrimDouble(param);
+        final double result = exampleSimpleServiceProxy.sendPrimDouble(param);
         assertEq(param, -1 * result);
     }
 
@@ -228,9 +241,22 @@ public abstract class AbstractProxyTest
 
     @Test public void testInt() throws Exception
     {
-        Integer param = new Integer(42);
-        final Integer result = createExampleSimpleServiceProxy().sendInt(param);
-        assertEq(param, -1 * result);
+        final ExampleSimpleService exampleSimpleServiceProxy = createExampleSimpleServiceProxy();
+        {
+            Integer param = new Integer(42);
+            {
+                final Integer result = exampleSimpleServiceProxy.sendInt(param);
+                assertEq(param, -1 * result);
+            }
+            {
+                final Integer result = exampleSimpleServiceProxy.postInt(param);
+                assertEq(param, -1 * result);
+            }
+        }
+        {
+            final Integer result = exampleSimpleServiceProxy.postInt(null);
+            assertEq(null, result);
+        }
     }
 
     @Test public void testPrimInt() throws Exception

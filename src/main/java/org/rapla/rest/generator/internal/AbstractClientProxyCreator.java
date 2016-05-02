@@ -75,22 +75,24 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
     protected void writeParam(SourceWriter w, String targetName, TypeMirror paramType, String pName, String serializerField, String annotationKey)
     {
-        if(annotationKey != null && isSetOrListOrArray( paramType))
+        if (annotationKey != null && isSetOrListOrArray(paramType))
         {
-            final TypeMirror typeMirror = isArray(paramType) ? ((ArrayType) paramType).getComponentType() :((DeclaredType) paramType).getTypeArguments().get(0);
+            final TypeMirror typeMirror = isArray(paramType) ?
+                    ((ArrayType) paramType).getComponentType() :
+                    ((DeclaredType) paramType).getTypeArguments().get(0);
             w.println("if (" + pName + " != null) {");
             w.indent();
             w.println("for(" + typeMirror.toString() + " innerParam : " + pName + ") {");
             w.indent();
             w.println("if(" + targetName + ".length() > 0) " + targetName + ".append(\"&" + annotationKey + "=\");");
             final boolean primitive = SerializerCreator.isPrimitive(typeMirror);
-            if ( !primitive)
+            if (!primitive)
             {
                 w.println("if(innerParam != null) {");
                 w.indent();
             }
-            serializeArg(w, targetName, serializerField, "innerParam",typeMirror, true);
-            if ( !primitive)
+            serializeArg(w, targetName, serializerField, "innerParam", typeMirror, true, false);
+            if (!primitive)
             {
                 w.outdent();
                 w.println("}");
@@ -103,13 +105,13 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         else
         {
             final boolean primitive = SerializerCreator.isPrimitive(paramType);
-            if ( !primitive)
+            if (!primitive)
             {
                 w.println("if (" + pName + " != null) {");
                 w.indent();
             }
-            serializeArg(w, targetName, serializerField, pName, paramType, false);
-            if ( !primitive)
+            serializeArg(w, targetName, serializerField, pName, paramType, false,annotationKey == null );
+            if (!primitive)
             {
                 w.outdent();
                 w.println("}");
@@ -118,9 +120,9 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         }
     }
 
-    private void serializeArg(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType, boolean encode)
+    private void serializeArg(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType, boolean encode, boolean forceJson)
     {
-        if ((SerializerCreator.isJsonPrimitive(paramType) || SerializerCreator.isBoxedPrimitive(paramType)))
+        if (((SerializerCreator.isJsonPrimitive(paramType) || SerializerCreator.isBoxedPrimitive(paramType))) && !(forceJson && SerializerCreator.isJsonString( paramType)))
         {
             if (SerializerCreator.isJsonString(paramType) && encode)
             {
@@ -147,8 +149,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         return processingEnvironment.getTypeUtils().isAssignable(declaredType, paramType);
     }
 
-    abstract protected void serializeArg2(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType,boolean encode);
-
+    abstract protected void serializeArg2(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType, boolean encode);
 
     abstract protected String[] writeSerializers(SourceWriter w, List<? extends VariableElement> params, TypeMirror resultType);
 
@@ -156,15 +157,15 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
     protected String getGeneratorString(String interfaceName)
     {
-        String comments = "annotation in "  + interfaceName;
-        return "@javax.annotation.Generated(value=\"" + generatorName + "\", comments=\""+comments + "\")";
+        String comments = "annotation in " + interfaceName;
+        return "@javax.annotation.Generated(value=\"" + generatorName + "\", comments=\"" + comments + "\")";
     }
 
     public String create(final TreeLogger logger) throws UnableToCompleteException
     {
         TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
         String interfaceName = erasedType.getQualifiedName().toString();
-        checkMethods(logger, interfaceName,processingEnvironment);
+        checkMethods(logger, interfaceName, processingEnvironment);
 
         final SourceWriter srcWriter = getSourceWriter(interfaceName);
         if (srcWriter == null)
@@ -181,7 +182,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         return getProxyQualifiedName();
     }
 
-    private void checkMethods(final TreeLogger logger, String interfaceName,final ProcessingEnvironment processingEnvironment) throws UnableToCompleteException
+    private void checkMethods(final TreeLogger logger, String interfaceName, final ProcessingEnvironment processingEnvironment) throws UnableToCompleteException
     {
         final List<ExecutableElement> methods = getMethods(processingEnvironment);
         for (final ExecutableElement m : methods)
@@ -223,7 +224,8 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
             }
             catch (UnableToCompleteException ex)
             {
-                throw new UnableToCompleteException("Can't generate method " + interfaceName + "."+m.getSimpleName().toString() +   " cause " + ex.getMessage(),ex);
+                throw new UnableToCompleteException("Can't generate method " + interfaceName + "." + m.getSimpleName().toString() + " cause " + ex.getMessage(),
+                        ex);
             }
         }
     }
@@ -250,7 +252,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         return modifiers.contains(Modifier.FINAL) || modifiers.contains(Modifier.PRIVATE) || methodClass.equals("java.lang.Object");
     }
 
-    protected SourceWriter getSourceWriter( String interfaceName) throws UnableToCompleteException
+    protected SourceWriter getSourceWriter(String interfaceName) throws UnableToCompleteException
     {
         final String pkgName = processingEnvironment.getElementUtils().getPackageOf(svcInf).getQualifiedName().toString();
         SourceWriter pw;
@@ -317,6 +319,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
     {
         return paramType.getAnnotation(QueryParam.class) != null || paramType.getAnnotation(HeaderParam.class) != null;
     }
+
     protected boolean isArray(TypeMirror paramType)
     {
         return paramType.getKind() == TypeKind.ARRAY;
@@ -444,7 +447,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
                     {
                         w.print("subPath += \"&");
                     }
-                    if(isSetOrListOrArray(paramType))
+                    if (isSetOrListOrArray(paramType))
                     {
                         w.println(queryAnnotation.value() + "=\"+param.toString();");
                     }
@@ -455,7 +458,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
                 }
                 if (headerAnnotation != null)
                 {
-                    if(isSetOrListOrArray(paramType))
+                    if (isSetOrListOrArray(paramType))
                     {
                         w.println("additionalHeaders.put(\"" + headerAnnotation.value() + "\", param.toString());");
                     }
@@ -485,7 +488,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
                     throw new UnableToCompleteException(" post param already set in " + className + "." + methodName + " " + postParamName + "," + pname
                             + " only one post param is allowed.");
                 }
-                writeParam(w, "postBody",paramType, pname, serializerFields[i], null);
+                writeParam(w, "postBody", paramType, pname, serializerFields[i], null);
                 postParamName = pname;
             }
         }

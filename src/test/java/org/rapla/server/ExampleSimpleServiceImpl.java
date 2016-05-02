@@ -32,6 +32,12 @@ public class ExampleSimpleServiceImpl implements ExampleSimpleService
     }
 
     @Override
+    public String postHello(String param)
+    {
+        return param + session.toString(request);
+    }
+
+    @Override
     public List<String> translations(String id)
     {
         final ArrayList<String> result = new ArrayList<String>();
@@ -67,6 +73,12 @@ public class ExampleSimpleServiceImpl implements ExampleSimpleService
 
     @Override
     public Integer sendInt(Integer param)
+    {
+        return param != null ? -1 * param : null;
+    }
+
+    @Override
+    public Integer postInt(Integer param)
     {
         return param != null ? -1 * param : null;
     }

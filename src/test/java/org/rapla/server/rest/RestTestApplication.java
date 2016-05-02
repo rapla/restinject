@@ -4,6 +4,7 @@ import org.rapla.rest.server.provider.exception.RestExceptionMapper;
 import org.rapla.rest.server.provider.filter.HttpMethodOverride;
 import org.rapla.rest.server.provider.json.JsonParamConverterProvider;
 import org.rapla.rest.server.provider.json.JsonReader;
+import org.rapla.rest.server.provider.json.JsonStringReader;
 import org.rapla.rest.server.provider.json.JsonStringWriter;
 import org.rapla.rest.server.provider.json.JsonWriter;
 import org.rapla.rest.server.provider.json.PatchReader;
@@ -42,6 +43,7 @@ public class RestTestApplication extends Application
             classes.add(JsonParamConverterProvider.class);
             classes.add(PatchReader.class);
             classes.add(JsonReader.class);
+            classes.add(JsonStringReader.class);
             classes.add(JsonWriter.class);
             classes.add(JsonStringWriter.class);
             classes.add(XmlWriter.class);
