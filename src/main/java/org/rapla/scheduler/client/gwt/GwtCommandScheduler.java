@@ -1,6 +1,6 @@
 package org.rapla.scheduler.client.gwt;
 
-import org.rapla.rest.client.AsyncCallback;
+import org.rapla.rest.client.gwt.internal.impl.AsyncCallback;
 import org.rapla.rest.client.gwt.internal.impl.GwtClientServerConnector;
 import org.rapla.scheduler.Cancelable;
 import org.rapla.scheduler.Command;

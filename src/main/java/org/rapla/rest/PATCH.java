@@ -17,7 +17,7 @@ import java.lang.annotation.Target;
  * A get method is matching if its return type is assignable to the post param of the patch body
  * and its paths and pathParmeters matches the PATCH method.
  * </li>
- * <li>all queryParams, headerParams and pathParams of the matching GET method must be string or primitve</li>
+ * <li>all queryParams, headerParams and pathParams of the matching GET method must be string or primitive</li>
  * <li>context params and other injected params are not supported in the matching GET method</li>
  * </ul>
  */

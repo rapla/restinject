@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.rapla.rest.client;
+package org.rapla.rest.client.gwt.internal.impl;
 
 /** Invoked with the result (or error) of an RPC. */
 public interface AsyncCallback<T> {
