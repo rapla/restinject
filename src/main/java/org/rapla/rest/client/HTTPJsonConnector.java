@@ -74,7 +74,7 @@ public class HTTPJsonConnector extends HTTPConnector
     }
 
     protected JsonObject sendCall(String requestMethod, URL methodURL, JsonElement jsonObject, String authenticationToken,Map<String, String>additionalHeaders) throws  IOException,JsonParseException   {
-        final String body = jsonToString(jsonObject);
+        final String body = parseJson(jsonObject);
         CallResult callResult = sendCallWithString(requestMethod, methodURL, body, authenticationToken, additionalHeaders);
         final int responseCode = callResult.getResponseCode();
         JsonObject response = new JsonObject();
@@ -91,7 +91,7 @@ public class HTTPJsonConnector extends HTTPConnector
         return response;
     }
 
-    protected String jsonToString(JsonElement jsonObject)
+    public String parseJson(JsonElement jsonObject)
     {
         final String body;
         if(jsonObject != null)
