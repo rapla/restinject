@@ -53,7 +53,12 @@ public class HTTPJsonConnector extends HTTPConnector
 
     public JsonObject sendPatch(URL methodURL, JsonElement jsonObject) throws IOException
     {
-        return sendPatch( methodURL,jsonObject,null, Collections.emptyMap());
+        return sendPatch( methodURL,jsonObject,null);
+    }
+
+    public JsonObject sendPatch(URL methodURL, JsonElement jsonObject,String authenticationToken) throws IOException
+    {
+        return sendPatch( methodURL,jsonObject, authenticationToken, Collections.emptyMap());
     }
     public JsonObject sendPatch(URL methodURL, JsonElement jsonObject, String authenticationToken,Map<String, String>additionalHeaders) throws IOException,JsonParseException  {
         return sendCall("PATCH", methodURL, jsonObject, authenticationToken, additionalHeaders);
