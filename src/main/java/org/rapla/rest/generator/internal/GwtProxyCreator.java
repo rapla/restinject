@@ -67,7 +67,14 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
         {
             serializerCreator.generateSerializerReference(paramType, w, false);
         }
-        w.println(".printJson(innerParamSb, " + pName + ");");
+        if (isDate( paramType))
+        {
+            w.println(".serializeDate(innerParamSb, " + pName + ");");
+        }
+        else
+        {
+            w.println(".printJson(innerParamSb, " + pName + ");");
+        }
         if (encode)
         {
             w.println(targetName + ".append(" + encode("innerParamSb.toString()") + ");");
@@ -90,7 +97,7 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
         {
             final VariableElement variableElement = params.get(i);
             TypeMirror pType = variableElement.asType();
-            if (isQueryOrHeaderParam(pType))
+            if (isQueryOrHeaderParam(pType) && (isSetOrList( pType) || isArray(pType)))
             {
                 // Take inner type
                 pType = ((DeclaredType) pType).getTypeArguments().get(0);

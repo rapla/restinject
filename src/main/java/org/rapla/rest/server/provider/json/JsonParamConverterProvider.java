@@ -2,6 +2,7 @@ package org.rapla.rest.server.provider.json;
 
 import com.google.gson.Gson;
 import org.rapla.rest.JsonParserWrapper;
+import org.rapla.rest.client.internal.isodate.ISODateTimeFormat;
 
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
@@ -9,6 +10,7 @@ import javax.ws.rs.ext.Provider;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Type;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -39,6 +41,21 @@ import java.util.Set;
 
     }
 
+    private static final class DateParamConverter implements ParamConverter<Date>
+    {
+
+        @Override public Date fromString(String value)
+        {
+            return (value != null ? ISODateTimeFormat.INSTANCE.parseTimestamp(value) : null);
+        }
+
+        @Override public String toString(Date value)
+        {
+            return value != null ? ISODateTimeFormat.INSTANCE.formatTimestamp(value) : null;
+        }
+
+    }
+
     public JsonParamConverterProvider()
     {
     }
@@ -47,8 +64,7 @@ import java.util.Set;
 
     static
     {
-        supportedClassed.add(String.class);
-        supportedClassed.add(Integer.class);
+        supportedClassed.add(String.class);supportedClassed.add(Integer.class);
         supportedClassed.add(Double.class);
         supportedClassed.add(Float.class);
         supportedClassed.add(Character.class);
@@ -58,7 +74,11 @@ import java.util.Set;
 
     @Override public <T> ParamConverter<T> getConverter(final Class<T> rawType, final Type genericType, Annotation[] annotations)
     {
-        if (genericType instanceof Class && ((Class)genericType).isArray())
+        if (rawType.equals(Date.class))
+        {
+            return (ParamConverter<T>) new DateParamConverter();
+        }
+        if (genericType instanceof Class && ((Class) genericType).isArray())
         {
             if (supportedClassed.contains(rawType))
             {
@@ -66,7 +86,6 @@ import java.util.Set;
             }
             return new JsonParamConverter<T>(rawType);
         }
-        //        else
         if (!rawType.isPrimitive() && !String.class.isAssignableFrom(rawType))
         {
             return new JsonParamConverter<T>(genericType);

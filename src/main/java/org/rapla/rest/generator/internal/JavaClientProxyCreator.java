@@ -98,12 +98,14 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
     }
 
 
+
     protected void serializeArg2(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType,boolean encode)
     {
+        final String methodName = isDate( paramType)? "serializeDate" : "serializeArgument" ;
         if (encode)
-            w.println(targetName + ".append(" + encode(serializerField + ".serializeArgument("+ pName+")") + ");");
+            w.println(targetName + ".append(" + encode(serializerField + "." + methodName +"("+ pName+")") + ");");
         else
-            w.println(targetName + ".append(" + serializerField + ".serializeArgument("+pName + "));");
+            w.println(targetName + ".append(" + serializerField + "." + methodName +"("+pName + "));");
     }
 
 }

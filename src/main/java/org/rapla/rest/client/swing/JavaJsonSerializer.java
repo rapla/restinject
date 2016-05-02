@@ -10,9 +10,11 @@ import com.google.gson.JsonParser;
 import org.rapla.rest.JsonParserWrapper;
 import org.rapla.rest.client.RemoteConnectException;
 import org.rapla.rest.client.SerializableExceptionInformation;
+import org.rapla.rest.client.internal.isodate.ISODateTimeFormat;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -51,6 +53,18 @@ public class JavaJsonSerializer
             result = "";
         }
         return result;
+    }
+
+    public String serializeDate(Date date)
+    {
+        if ( date != null)
+        {
+            return ISODateTimeFormat.INSTANCE.formatTimestamp(date);
+        }
+        else
+        {
+            return "";
+        }
     }
 
     public Object deserializeResult(String unparsedResult) throws RemoteConnectException

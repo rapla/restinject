@@ -1,6 +1,7 @@
 package org.rapla.server;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -38,6 +39,12 @@ public class ExampleSimpleServiceImpl implements ExampleSimpleService
         result.add(id + "_de");
         result.add(id + "_fr");
         return result;
+    }
+
+    @Override public Date addDay(Date date) throws Exception
+    {
+        final Date dateNextDay = new Date(date.getTime() + 1000l * 60l * 60l * 24l);
+        return dateNextDay;
     }
 
     @Override

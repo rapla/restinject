@@ -53,6 +53,7 @@ public class ExampleServiceImpl implements ExampleService
     public Result sayHello2(Parameter param)
     {
         Result result = new Result();
+        result.setDate( param.getLastRequestTime());
         final Collection<Integer> actionIds = param.getActionIds();
         final List<String> resultIds = new ArrayList<String>();
         for (Integer id : actionIds)

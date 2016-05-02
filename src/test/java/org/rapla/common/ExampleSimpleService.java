@@ -1,5 +1,6 @@
 package org.rapla.common;
 
+import java.util.Date;
 import java.util.List;
 
 import javax.ws.rs.GET;
@@ -12,6 +13,10 @@ import javax.ws.rs.core.MediaType;
 @Path("ExampleSimpleService")
 public interface ExampleSimpleService
 {
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("addDay") Date addDay(@QueryParam("date") Date date) throws Exception;
+
     @GET
     @Produces({MediaType.APPLICATION_JSON})
     @Path("sayHello")

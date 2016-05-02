@@ -14,6 +14,10 @@
 
 package org.rapla.rest.client;
 
+import org.rapla.rest.client.internal.isodate.ISODateTimeFormat;
+
+import java.util.Date;
+
 public abstract class AbstractJsonProxy
 {
     /** URL of the service implementation. */
@@ -41,5 +45,6 @@ public abstract class AbstractJsonProxy
         final String entryPoint = connector.getFullQualifiedUrl(contextPath);
         return entryPoint;
     }
+
 
 }

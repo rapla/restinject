@@ -17,6 +17,7 @@ public class UserService
         user.name = "christopher";
         user.email = "info@rapla.org";
     }
+
     @GET
     @Path("{username}")
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})

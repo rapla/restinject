@@ -376,7 +376,8 @@ class SerializerCreator implements SerializerClasses
         {
             TypeMirror t1 = erasedTyped;
             TypeMirror t2 = processingEnvironment.getElementUtils().getTypeElement(Map.class.getName()).asType();
-            if (processingEnvironment.getTypeUtils().isAssignable(t1, t2))
+            final boolean assignable = processingEnvironment.getTypeUtils().isAssignable(t1, t2);
+            if (assignable)
             {
                 return true;
             }

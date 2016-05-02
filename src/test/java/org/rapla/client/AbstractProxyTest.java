@@ -1,9 +1,17 @@
 package org.rapla.client;
 
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.rapla.common.ExampleService;
+import org.rapla.common.ExampleSimpleService;
+import org.rapla.rest.client.CustomConnector;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -11,13 +19,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.rapla.common.ExampleService;
-import org.rapla.common.ExampleSimpleService;
-import org.rapla.rest.client.CustomConnector;
-import org.rapla.rest.JsonParserWrapper;
 
 public abstract class AbstractProxyTest
 {
@@ -44,6 +45,8 @@ public abstract class AbstractProxyTest
 
         ExampleService.Parameter p = new ExampleService.Parameter();
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
+        Date date = new Date( System.currentTimeMillis());
+        p.setLastRequestTime( date);
         final Collection<ExampleService.Result> resultList = test.sayHello(p);
         final ExampleService.Result result = resultList.iterator().next();
         final Collection<String> ids = result.getIds();
@@ -51,7 +54,8 @@ public abstract class AbstractProxyTest
         final Iterator<String> iterator = ids.iterator();
         assertEq("1", iterator.next());
         assertEq("2", iterator.next());
-        test.sayHello2(p);
+        final ExampleService.Result result1 = test.sayHello2(p);
+        assertEq( date, result1.getDate());
         test.sayHello3(p);
 
     }
@@ -78,6 +82,15 @@ public abstract class AbstractProxyTest
         assertEq(message, resultFutureResult.get(0));
         assertEq(message + "_de", resultFutureResult.get(1));
         assertEq(message + "_fr", resultFutureResult.get(2));
+    }
+
+    @Test
+    public void testDate() throws Exception
+    {
+        Date currentDate = new Date(System.currentTimeMillis());
+        final ExampleSimpleService exampleSimpleServiceProxy = createExampleSimpleServiceProxy();
+        final Date nextDay = exampleSimpleServiceProxy.addDay(currentDate);
+        Assert.assertEquals(currentDate.getTime() + 1000l * 60l * 60l * 24l, nextDay.getTime());
     }
 
     @Test public void test4() throws Exception

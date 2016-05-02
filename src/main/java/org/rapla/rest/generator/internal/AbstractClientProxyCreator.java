@@ -2,6 +2,7 @@ package org.rapla.rest.generator.internal;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -138,6 +139,12 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         {
             serializeArg2(w, targetName, serializerField, pName, paramType, encode);
         }
+    }
+
+    protected boolean isDate(TypeMirror paramType)
+    {
+        final DeclaredType declaredType = getDeclaredType(Date.class);
+        return processingEnvironment.getTypeUtils().isAssignable(declaredType, paramType);
     }
 
     abstract protected void serializeArg2(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType,boolean encode);

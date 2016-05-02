@@ -41,6 +41,15 @@ public final class JavaUtilDate_JsonSerializer extends
     return null;
   }
 
+  public void serializeDate(final StringBuilder sb, final Date date)
+  {
+    if ( date != null)
+    {
+       sb.append(ISODateTimeFormat.INSTANCE.formatTimestamp(date));
+    }
+
+  }
+
   @Override
   public void printJson(final StringBuilder sb, final Date o) {
     sb.append('"');

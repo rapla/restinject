@@ -93,6 +93,7 @@ public interface ExampleService
         private String name;
         private Collection<String> ids;
         private Moyo[] moyos;
+        private Date date;
 
         public String getName()
         {
@@ -122,6 +123,16 @@ public interface ExampleService
         public void setMoyos(Moyo[] moyos)
         {
             this.moyos = moyos;
+        }
+
+        public Date getDate()
+        {
+            return date;
+        }
+
+        public void setDate(Date date)
+        {
+            this.date = date;
         }
 
         public static class Moyo{
