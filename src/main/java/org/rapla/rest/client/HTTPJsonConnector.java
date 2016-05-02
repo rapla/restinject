@@ -78,14 +78,16 @@ public class HTTPJsonConnector extends HTTPConnector
         CallResult callResult = sendCallWithString(requestMethod, methodURL, body, authenticationToken, additionalHeaders);
         final int responseCode = callResult.getResponseCode();
         JsonObject response = new JsonObject();
+        final String json = callResult.getResult();
+        final JsonParser jsonParser = new JsonParser();
         if ( responseCode == 200 )
         {
-            final JsonElement parse = new JsonParser().parse(callResult.toString());
+            final JsonElement parse = jsonParser.parse(json);
             response.add("result",parse );
         }
         else if ( responseCode != 204)
         {
-            final JsonElement parse = new JsonParser().parse(callResult.toString());
+            final JsonElement parse = jsonParser.parse(json);
             response.add("error",parse );
         }
         return response;
