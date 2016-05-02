@@ -9,7 +9,7 @@ import com.google.gson.JsonParser;
 import org.eclipse.jetty.server.Server;
 import org.rapla.rest.client.swing.HTTPConnector;
 import org.rapla.rest.client.swing.JsonRemoteConnector.CallResult;
-import org.rapla.rest.client.swing.HTTPJsonConnector;
+import org.rapla.rest.client.HTTPJsonConnector;
 import org.rapla.server.ServletTestContainer;
 
 import com.google.gson.JsonElement;
