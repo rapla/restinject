@@ -1,6 +1,5 @@
 package org.rapla.client;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.rapla.common.ExampleService;
@@ -90,7 +89,7 @@ public abstract class AbstractProxyTest
         Date currentDate = new Date(System.currentTimeMillis());
         final ExampleSimpleService exampleSimpleServiceProxy = createExampleSimpleServiceProxy();
         final Date nextDay = exampleSimpleServiceProxy.addDay(currentDate);
-        Assert.assertEquals(currentDate.getTime() + 1000l * 60l * 60l * 24l, nextDay.getTime());
+        assertEq(currentDate.getTime() + 1000l * 60l * 60l * 24l, nextDay.getTime());
     }
 
     @Test public void test4() throws Exception
