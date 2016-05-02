@@ -29,14 +29,7 @@ public class UserService
         return null;
     }
 
-    @PATCH
-    @Path("{username}")
-    @Produces({ MediaType.APPLICATION_JSON})
-    public User testPatch(@PathParam("username") String username,User newUser)
-    {
-        this.user = newUser;
-        return newUser;
-    }
+
 
     @GET
     @Path("{username}")
@@ -44,6 +37,15 @@ public class UserService
     public String test_(@PathParam("username") String username) throws IOException
     {
         return user.toString();
+    }
+
+    @PATCH
+    @Path("{username}")
+    @Produces({ MediaType.APPLICATION_JSON})
+    public User testPatch(@PathParam("username") String username,User newUser)
+    {
+        this.user = newUser;
+        return newUser;
     }
 
 
