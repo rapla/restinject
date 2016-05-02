@@ -66,9 +66,9 @@ public class RestAPITest extends  TestCase {
             //callObj.addProperty("password", password);
             String emptyAuthenticationToken = null;
             Map<String, String> additionalHeaders = new HashMap<>();
-            CallResult resultBody = connector.sendGet(methodURL,  emptyAuthenticationToken, additionalHeaders);
-            JsonParser jsonParser = new JsonParser();
-            final JsonElement parse = jsonParser.parse(resultBody.getResult());
+            JsonElement resultBody = connector.sendGet(methodURL,  emptyAuthenticationToken, additionalHeaders);
+            final JsonObject asJsonObject = resultBody.getAsJsonObject();
+            final JsonElement parse = asJsonObject.get("result");
             String resultObject = parse.getAsString();
             //authenticationToken = resultObject.get("accessToken").getAsString();
             //String validity = resultObject.get("validUntil").getAsString();
@@ -101,8 +101,8 @@ public class RestAPITest extends  TestCase {
             String email;
             JsonParser jsonParser = new JsonParser();
             {
-                CallResult resultBody = connector.sendGet(methodURL);
-                final JsonObject asJsonObject = jsonParser.parse(resultBody.getResult()).getAsJsonObject();
+                JsonElement resultBody = connector.sendGet(methodURL);
+                final JsonObject asJsonObject = resultBody.getAsJsonObject().get("result").getAsJsonObject();
                 String resultUsername = asJsonObject.get("name").getAsString();
                 email = asJsonObject.get("email").getAsString();
                 assertEquals(username, resultUsername);
@@ -112,8 +112,8 @@ public class RestAPITest extends  TestCase {
             final JsonObject patchObject = new JsonObject();
             patchObject.add("name", new JsonPrimitive(newUsername));
             {
-                CallResult resultBody = connector.sendPatch(methodURL, patchObject);
-                final JsonObject asJsonObject = jsonParser.parse(resultBody.getResult()).getAsJsonObject();
+                JsonElement resultBody = connector.sendPatch(methodURL, patchObject);
+                final JsonObject asJsonObject = resultBody.getAsJsonObject().get("result").getAsJsonObject();
                 String resultUsername = asJsonObject.get("name").getAsString();
                 assertEquals(newUsername, resultUsername);
                 String resutEmail = asJsonObject.get("email").getAsString();
