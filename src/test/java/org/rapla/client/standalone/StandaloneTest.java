@@ -75,6 +75,7 @@ public class StandaloneTest extends AbstractProxyTest
                 {
                     final ByteArrayBuffer requestsBuffer;
                     requestsBuffer = new ByteArrayBuffer(rawHttpRequest.getBytes("UTF-8"));
+                    connector.setMaxIdleTime(30000);
                     final String responses = connector.getResponses(requestsBuffer, false).toString("UTF-8");
                     return responses;
                 }

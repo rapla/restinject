@@ -33,6 +33,10 @@ public interface ExampleService
     @Path("sayHello")
     Collection<Result> sayHello(Parameter param);
 
+    @GET
+    @Path("helloChunk")
+    String helloChunk();
+
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Path("sayHello2")

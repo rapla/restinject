@@ -143,6 +143,16 @@ public abstract class AbstractProxyTest
 
 
     @Test
+    public void testChunk() throws Exception
+    {
+        ExampleService test = createExampleServiceProxy();
+        final String s = test.helloChunk();
+        final String[] split = s.split(";");
+        assertEq("0", split[0]);
+        assertEq("" + (split.length-1), split[split.length-1]);
+    }
+
+    @Test
     public void testLists() throws Exception
     {
         ExampleService test = createExampleServiceProxy();

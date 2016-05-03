@@ -47,14 +47,31 @@ Connection: close
         String body = "";
         Integer responseCode = null;
         boolean header = true;
+        boolean isChunked = false;
+        boolean firstBodyLine = true;
         String line;
         try
         {
             while ((line = br.readLine()) != null)
             {
-                if(!header)
+                if(header)
                 {
-                    body += line;
+                    final String headerLine = line.trim().toLowerCase();
+                    if(headerLine.startsWith("transfer-encoding") )
+                    {
+                        if(headerLine.contains("chunked"))
+                        {
+                            isChunked = true;
+                        }
+                    }
+                }
+                else
+                {
+                    if (!firstBodyLine || !isChunked)
+                    {
+                        body += line + "\n";
+                    }
+                    firstBodyLine = false;
                 }
                 if(responseCode == null)
                 {
@@ -65,6 +82,11 @@ Connection: close
                 {
                     header = false;
                 }
+            }
+            if ( isChunked)
+            {
+                final int length = ("0\r\n\r\n").length();
+                body = body.substring(0, body.length() - length + 1);
             }
         }
         catch (IOException e)

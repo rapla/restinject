@@ -15,8 +15,10 @@ import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class GwtClientServerConnector<T>
 {
@@ -204,18 +206,28 @@ public class GwtClientServerConnector<T>
         processResponse(sc, responseText, statusText, contentType, callback);
     }
 
+    private Set<String> notAllowedNulls = new HashSet<>();
+    {
+        notAllowedNulls.add("double");
+        notAllowedNulls.add("int");
+        notAllowedNulls.add("char");
+        notAllowedNulls.add("float");
+        notAllowedNulls.add("byte");
+        notAllowedNulls.add("short");
+        notAllowedNulls.add("boolean");
+    }
     protected void processResponse(final int sc, final String responseText, final String statusText, String contentType,    AsyncCallback callback)
     {
         log("Response " + responseText + " for " + contentType + " Status " + statusText + " [" + sc + "]");
         if (sc == Response.SC_NO_CONTENT)
         {
-            if (resultType.equals("void"))
+            if (notAllowedNulls.contains(resultType))
             {
-                callback.onSuccess(null);
+                callback.onFailure(new RemoteConnectException("Expected " + resultType + " but no JSON response: " + responseText + " Status " + statusText));
             }
             else
             {
-                callback.onFailure(new RemoteConnectException("Expected " + resultType + " but no JSON response: " + responseText + " Status " + statusText));
+                callback.onSuccess(null);
             }
             return;
         }

@@ -1,23 +1,21 @@
 package org.rapla.server;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import org.rapla.common.ExampleService;
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.InjectionContext;
 
 import javax.inject.Inject;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-
-import org.rapla.common.ExampleService;
-import org.rapla.inject.DefaultImplementation;
-import org.rapla.inject.InjectionContext;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @DefaultImplementation(context = InjectionContext.server, of = ExampleService.class)
 public class ExampleServiceImpl implements ExampleService
@@ -47,6 +45,18 @@ public class ExampleServiceImpl implements ExampleService
         List<Result> list = new ArrayList<>();
         list.add(result);
         return list;
+    }
+
+    @Override
+    public String helloChunk()
+    {
+        StringBuilder buf = new StringBuilder();
+        int size = 20000;
+        for (int i=0;i<size;i++)
+        {
+            buf.append(""+i + ";");
+        }
+        return buf.toString();
     }
 
     @Override

@@ -96,6 +96,11 @@ public class GwtProxyTest extends GWTTestCase
         genericTest.test();
     }
 
+    public void testChunk() throws Exception
+    {
+        genericTest.testChunk();
+    }
+
     public void testDate() throws Exception
     {
         genericTest.testDate();
