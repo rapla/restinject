@@ -8,6 +8,8 @@ import java.util.function.Function;
 /** same as @CompletableFuture but usable in gwt */
 public interface Promise<T>
 {
+    Void VOID = null;
+
     <U> Promise<U> thenApply(Function<? super T, ? extends U> fn);
 
     Promise<Void> thenAccept(Consumer<? super T> fn);
