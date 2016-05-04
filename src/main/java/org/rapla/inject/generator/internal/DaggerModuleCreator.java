@@ -450,13 +450,13 @@ public class DaggerModuleCreator
         moduleWriter.print("@Module(includes={");
         final String commonModuleName = getFullModuleName(originalPackageName, artifactId, Scopes.Common) + "Module.class";
         final String clientModuleName = getFullModuleName(originalPackageName, artifactId, Scopes.Client) + "Module.class";
-        if (scope != Scopes.Common)
+        if (scope == Scopes.Server || scope == Scopes.Client)
         {
             moduleWriter.print(commonModuleName);
         }
-        if (scope != Scopes.Common && scope != Scopes.Server && scope != Scopes.Client)
+        else
         {
-            moduleWriter.print("," + clientModuleName);
+            moduleWriter.print( clientModuleName);
         }
         moduleWriter.println("})");
         moduleWriter.println("public class Dagger" + artifactId + scope + "Module {");
