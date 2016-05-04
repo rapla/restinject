@@ -415,7 +415,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     public static File getInterfaceList(Filer filer) throws IOException
     {
         CharSequence pkg = "";
-        JavaFileManager.Location location = StandardLocation.SOURCE_OUTPUT;
+        JavaFileManager.Location location = StandardLocation.CLASS_OUTPUT;
 
         File f;
         try

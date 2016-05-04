@@ -1,7 +1,5 @@
 package org.rapla.client.standalone;
 
-import java.io.File;
-
 import org.eclipse.jetty.io.ByteArrayBuffer;
 import org.eclipse.jetty.server.LocalConnector;
 import org.eclipse.jetty.server.Server;
@@ -23,8 +21,9 @@ import org.rapla.rest.client.swing.AbstractLocalJsonConnector;
 import org.rapla.rest.client.swing.HTTPConnector;
 import org.rapla.rest.client.swing.JavaClientServerConnector;
 import org.rapla.rest.client.swing.JsonRemoteConnector;
-import org.rapla.rest.server.ServiceInfLoader;
 import org.rapla.server.TestServlet;
+
+import java.io.File;
 
 @RunWith(JUnit4.class)
 public class StandaloneTest extends AbstractProxyTest
@@ -43,9 +42,6 @@ public class StandaloneTest extends AbstractProxyTest
         server.addConnector(localConnector);
         String contextPath = "/";
         WebAppContext context = new WebAppContext(server, contextPath, "/");
-        context.setInitParameter("resteasy.servlet.mapping.prefix", "/rapla");
-        context.setInitParameter("resteasy.use.builtin.providers", "false");
-        context.setInitParameter("javax.ws.rs.Application", ServiceInfLoader.class.getCanonicalName());
         context.setResourceBase(webappFolder.getAbsolutePath());
         context.setMaxFormContentSize(64000000);
 

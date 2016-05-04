@@ -383,7 +383,7 @@ public class DaggerModuleCreator
     {
         Set<String> foundLines = new LinkedHashSet<>();
         final ClassLoader classLoader = DaggerModuleCreator.class.getClassLoader();
-        final FileObject resource = processingEnvironment.getFiler().getResource(StandardLocation.SOURCE_OUTPUT, "", file);
+        final FileObject resource = processingEnvironment.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", file);
         if (resource != null && new File(resource.toUri()).exists())
         {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.openInputStream(), "UTF-8"));)
