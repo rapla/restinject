@@ -37,7 +37,6 @@ import org.rapla.inject.DefaultImplementationRepeatable;
 import org.rapla.inject.Extension;
 import org.rapla.inject.ExtensionPoint;
 import org.rapla.inject.ExtensionRepeatable;
-import org.rapla.inject.generator.internal.DaggerModuleCreator;
 import org.rapla.rest.generator.internal.GwtProxyCreator;
 import org.rapla.rest.generator.internal.JavaClientProxyCreator;
 import org.rapla.rest.generator.internal.TreeLogger;
@@ -56,6 +55,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 {
     public static final String MODULE_LIST = "META-INF/org.rapla.servicelist";
 
+    final DaggerModuleCreatorProcessor daggerModuleProcessor = new DaggerModuleCreatorProcessor();
+
     @Override
     public SourceVersion getSupportedSourceVersion()
     {
@@ -69,6 +70,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     public synchronized void init(ProcessingEnvironment processingEnv)
     {
         super.init(processingEnv);
+        daggerModuleProcessor.init( processingEnv);
     }
 
     @Override
@@ -92,7 +94,14 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         }
         try
         {
-            process(roundEnv);
+            boolean daggerModuleRebuildNeeded = process(roundEnv);
+            // only generate the modules if we processed a class
+            if (daggerModuleRebuildNeeded)
+            {
+                // Dagger
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Dagger Modules");
+                daggerModuleProcessor.process(annotations,roundEnv);
+            }
         }
         catch (Exception ioe)
         {
@@ -101,10 +110,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, stringWriter.toString());
             return false;
         }
-        return true;
+        return false;
     }
 
-    private void process(RoundEnvironment roundEnv) throws Exception
+    private boolean process(RoundEnvironment roundEnv) throws Exception
     {
         File interfaceListFile = getInterfaceList(processingEnv.getFiler());
         File interfaceListFileFolder = interfaceListFile.getParentFile();
@@ -188,14 +197,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 addServiceFile(Provider.class.getCanonicalName(), (TypeElement) elem, interfaceListFileFolder);
             }
         }
-        // only generate the modules if we processed a class
-        if (daggerModuleRebuildNeeded)
-        {
-            // Dagger
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Dagger Modules");
-            final DaggerModuleCreator daggerModuleProcessor = new DaggerModuleCreator(processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
-            daggerModuleProcessor.process();
-        }
+        return daggerModuleRebuildNeeded;
     }
 
     private void handleExtension(File interfaceListFile, File interfaceListFileFolder, final Element elem, final Extension annotation)

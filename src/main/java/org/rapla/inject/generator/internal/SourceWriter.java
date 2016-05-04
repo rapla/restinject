@@ -1,6 +1,6 @@
 package org.rapla.inject.generator.internal;
 
-import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.HashSet;
@@ -17,10 +17,31 @@ public class SourceWriter
     {
         printWriter = new PrintWriter(writer);
     }
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
-    public SourceWriter(OutputStream os)
+    String packageName;
+    String componentName;
+
+    public SourceWriter(String packageName,String componentName)
     {
-        printWriter = new PrintWriter(os);
+        this.packageName = packageName;
+        this.componentName = componentName;
+        printWriter = new PrintWriter(stream);
+    }
+
+    public byte[] toBytes()
+    {
+        return stream.toByteArray();
+    }
+
+    public String getComponentName()
+    {
+        return componentName;
+    }
+
+    public String getPackageName()
+    {
+        return packageName;
     }
 
     public void indent()

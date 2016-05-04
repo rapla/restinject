@@ -14,7 +14,7 @@ import org.rapla.common.OtherInterfaceUser;
 public class ServerInjectionTest extends TestCase
 {
     
-    @Component(modules={org.rapla.common.dagger.DaggerRaplaCommonModule.class,org.rapla.server.dagger.DaggerRaplaServerModule.class})
+    @Component(modules={org.rapla.server.dagger.DaggerRaplaServerModule.class})
     @Singleton
     public interface ServerInterface{
         ImplInterfaceUser getImplInterfaceUser();
