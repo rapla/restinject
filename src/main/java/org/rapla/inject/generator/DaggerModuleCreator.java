@@ -323,6 +323,7 @@ public class DaggerModuleCreator
                 }
                 if (generate)
                 {
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating for Dagger " + key);
                     final JavaFileObject sourceFile = filer.createSourceFile(key);
                     try (OutputStream outputStream = sourceFile.openOutputStream())
                     {
@@ -332,7 +333,7 @@ public class DaggerModuleCreator
                 existingWriters.add(key);
             }
         }
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Finished generating Module " + moduleName + " took " + ms + " ms");
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Finished generating artifact " + moduleName + " took " + ms + " ms");
     }
 
     public static byte[] getBytesFromInputStream(InputStream is) throws IOException
