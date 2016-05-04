@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.Generated;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -32,10 +31,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.InjectionContext;
 import org.rapla.inject.generator.internal.SourceWriter;
 import org.rapla.rest.client.CustomConnector;
-import org.rapla.rest.client.swing.JavaClientServerConnector;
-import org.rapla.rest.client.swing.JsonRemoteConnector;
 
 public abstract class AbstractClientProxyCreator implements SerializerClasses
 {
@@ -45,9 +44,11 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
     protected ResultDeserializerCreator deserializerCreator;
     protected String generatorName;
     protected int instanceField;
+    private final InjectionContext context;
 
-    public AbstractClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName)
+    protected AbstractClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName, InjectionContext context)
     {
+        this.context = context;
         serializerCreator = new SerializerCreator(processingEnvironment, generatorName);
         deserializerCreator = new ResultDeserializerCreator(serializerCreator, processingEnvironment, generatorName);
         this.processingEnvironment = processingEnvironment;
@@ -271,10 +272,13 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         pw.println("import " + Map.class.getCanonicalName() + ";");
         pw.println("import " + HashMap.class.getCanonicalName() + ";");
         pw.println("import " + CustomConnector.class.getCanonicalName() + ";");
-        pw.println("import " + AbstractJsonProxy + ";");
+        pw.println("import " + DefaultImplementation.class.getCanonicalName() + ";");
+        pw.println("import " + InjectionContext.class.getCanonicalName() + ";");
+        pw.println("import " + AbstractJsonProxy + ";");        
         writeImports(pw);
         pw.println();
         pw.println(getGeneratorString(interfaceName));
+        pw.println("@"+DefaultImplementation.class.getSimpleName()+"(of = "+interfaceName+".class, context="+InjectionContext.class.getSimpleName()+"."+context+")");
         pw.println("public class " + className + " extends " + AbstractJsonProxy + " implements " + interfaceName);
         pw.println("{");
         pw.indent();

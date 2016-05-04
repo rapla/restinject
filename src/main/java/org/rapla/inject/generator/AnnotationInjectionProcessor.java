@@ -54,7 +54,7 @@ import org.rapla.rest.generator.internal.UnableToCompleteException;
  */
 public class AnnotationInjectionProcessor extends AbstractProcessor
 {
-    public static final String GWT_MODULE_LIST = "META-INF/org.rapla.servicelist";
+    public static final String MODULE_LIST = "META-INF/org.rapla.servicelist";
 
     @Override
     public SourceVersion getSupportedSourceVersion()
@@ -62,7 +62,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return SourceVersion.latestSupported();
     }
 
-    Class<?>[] supportedAnnotations = new Class[] { Extension.class, ExtensionRepeatable.class, ExtensionPoint.class, DefaultImplementation.class,
+    private final Class<?>[] supportedAnnotations = new Class[] { Extension.class, ExtensionRepeatable.class, ExtensionPoint.class, DefaultImplementation.class,
             DefaultImplementationRepeatable.class, Path.class, Provider.class };
 
     @Override
@@ -104,164 +104,61 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return true;
     }
 
-    private boolean process(RoundEnvironment roundEnv) throws Exception
+    private void process(RoundEnvironment roundEnv) throws Exception
     {
-        File f = getInterfaceList(processingEnv.getFiler());
-        File folder = f.getParentFile();
-        boolean found = false;
+        File interfaceListFile = getInterfaceList(processingEnv.getFiler());
+        File interfaceListFileFolder = interfaceListFile.getParentFile();
+        boolean daggerModuleRebuildNeeded = false;
         TreeLogger proxyLogger = new TreeLogger();
-        /*
-        final Set<? extends Element> remoteMethods = roundEnv.getElementsAnnotatedWith(RemoteJsonMethod.class);
-        for (Element element : remoteMethods)
-        {
-            final TypeElement interfaceElement = (TypeElement) element;
-            if (interfaceElement.getKind() != ElementKind.INTERFACE)
-            {
-                continue;
-            }
-            GwtProxyCreator proxyCreator = new GwtProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
-            String proxyClassName = proxyCreator.create(proxyLogger);
-
-            JavaClientProxyCreator swingProxyCreator = new JavaClientProxyCreator(interfaceElement, processingEnv,
-                    AnnotationInjectionProcessor.class.getCanonicalName());
-            String swingproxyClassName = swingProxyCreator.create(proxyLogger);
-
-            final String qualifiedName = interfaceElement.getQualifiedName().toString();
-            appendToServiceList(f, qualifiedName);
-            final File serviceFile = getFile(f.getParentFile(), "services/" + qualifiedName);
-            appendToFile(serviceFile, proxyClassName);
-            appendToFile(serviceFile, swingproxyClassName);
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Proxies " + proxyClassName + ", " + swingproxyClassName);
-            if (interfaceElement.getAnnotation(Generated.class) == null)
-            {
-                found = true;
-            }
-        }
-        */
-        /*
-        for (Element elem : roundEnv.getElementsAnnotatedWith(RequestScoped.class))
-        {
-            TypeElement implementationElement = (TypeElement) elem;
-            TypeElement interfaceElement = processingEnv.getElementUtils().getTypeElement(RequestScoped.class.getCanonicalName());
-            final String qualifiedName = interfaceElement.getQualifiedName().toString();
-            appendToServiceList(f, qualifiedName);
-            appendToFile(interfaceElement, implementationElement, f);
-            if (implementationElement.getAnnotation(Generated.class) == null)
-            {
-                found = true;
-            }
-        }
-        */
         boolean pathAnnotationFound = false;
 
         //        List<InjectionContext> gwtContexts = Arrays.asList(new InjectionContext[] { InjectionContext.gwt, InjectionContext.gwt });
-        for (Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementation.class))
+        for (final Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementation.class))
         {
-            TypeElement implementationElement = (TypeElement) elem;
-            DefaultImplementation annotation = elem.getAnnotation(DefaultImplementation.class);
-            TypeElement interfaceElement = getDefaultImplementationOf(annotation);
-            if(interfaceElement.getAnnotation(Path.class) != null)
-            {
-                if (interfaceElement.getKind() != ElementKind.INTERFACE)
-                {
-                    continue;
-                }
-                GwtProxyCreator proxyCreator = new GwtProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
-                String proxyClassName = proxyCreator.create(proxyLogger);
+            final DefaultImplementation defaultImplementationAnnotation = elem.getAnnotation(DefaultImplementation.class);
+            boolean pathAnnotationFoundInHandle = handleDefaultImplemenatationForType(interfaceListFile, interfaceListFileFolder, proxyLogger, elem,
+                    defaultImplementationAnnotation);
+            pathAnnotationFound |= pathAnnotationFoundInHandle;
+            // we also created proxies for gwt and java, so rebuild is needed
+            daggerModuleRebuildNeeded |= pathAnnotationFoundInHandle;
+        }
 
-                JavaClientProxyCreator swingProxyCreator = new JavaClientProxyCreator(interfaceElement, processingEnv,
-                        AnnotationInjectionProcessor.class.getCanonicalName());
-                String swingproxyClassName = swingProxyCreator.create(proxyLogger);
-
-                {
-                    final String qualifiedName = interfaceElement.getQualifiedName().toString();
-                    appendToServiceList(f, qualifiedName);
-                    final File serviceFile = getFile(f.getParentFile(), "services/" + qualifiedName);
-                    appendToFile(serviceFile, proxyClassName);
-                    appendToFile(serviceFile, swingproxyClassName);
-                    processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Proxies " + proxyClassName + ", " + swingproxyClassName);
-                    if (interfaceElement.getAnnotation(Generated.class) == null)
-                    {
-                        found = true;
-                    }
-                }
-                {
-                    final File serviceFile = getFile(f.getParentFile(), "services/" + Path.class.getCanonicalName());
-                    appendToFile(serviceFile, implementationElement.getQualifiedName().toString());
-                    pathAnnotationFound = true;
-                }
-            }
+        for (final Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementationRepeatable.class))
+        {
+            final DefaultImplementationRepeatable annotation = elem.getAnnotation(DefaultImplementationRepeatable.class);
+            for (final DefaultImplementation defaultImplementation : annotation.value())
             {
-                final String qualifiedName = interfaceElement.getQualifiedName().toString();
-                appendToServiceList(f, qualifiedName);
-                addServiceFile(interfaceElement, implementationElement, folder);
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding DefaultImplemenation " + implementationElement);
-                if (implementationElement.getAnnotation(Generated.class) == null)
-                {
-                    found = true;
-                }
+                boolean pathAnnotationFoundInHandle = handleDefaultImplemenatationForType(interfaceListFile, interfaceListFileFolder, proxyLogger, elem,
+                        defaultImplementation);
+                pathAnnotationFound |= pathAnnotationFoundInHandle;
+                // we also created proxies for gwt and java, so rebuild is needed
+                daggerModuleRebuildNeeded |= pathAnnotationFoundInHandle;
             }
         }
 
-        for (Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementationRepeatable.class))
+        for (final Element elem : roundEnv.getElementsAnnotatedWith(ExtensionPoint.class))
         {
-            TypeElement implementationElement = (TypeElement) elem;
-            DefaultImplementationRepeatable annotation = elem.getAnnotation(DefaultImplementationRepeatable.class);
-            for (DefaultImplementation defaultImplementation : annotation.value())
-            {
-                TypeElement interfaceElement = getDefaultImplementationOf(defaultImplementation);
-                final String interfaceQualifiedName = interfaceElement.getQualifiedName().toString();
-                appendToServiceList(f, interfaceQualifiedName);
-                addServiceFile(interfaceElement, implementationElement, folder);
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding DefaultImplemenation " + implementationElement);
-                if (implementationElement.getAnnotation(Generated.class) == null)
-                {
-                    found = true;
-                }
-            }
-
-        }
-
-        for (Element elem : roundEnv.getElementsAnnotatedWith(ExtensionPoint.class))
-        {
-            TypeElement typeElement = (TypeElement) elem;
+            final TypeElement typeElement = (TypeElement) elem;
             final String qualifiedName = typeElement.getQualifiedName().toString();
-            appendToServiceList(f, qualifiedName);
-            addServiceFile(typeElement, null, folder);
-            found = true;
+            appendToServiceList(interfaceListFile, qualifiedName);
+            addServiceFile(typeElement, null, interfaceListFileFolder);
+            daggerModuleRebuildNeeded = true;
         }
 
-        for (Element elem : roundEnv.getElementsAnnotatedWith(Extension.class))
+        for (final Element elem : roundEnv.getElementsAnnotatedWith(Extension.class))
         {
-            TypeElement typeElement = (TypeElement) elem;
-            final Extension annotation = typeElement.getAnnotation(Extension.class);
-            TypeElement extensionPoint = getProvides(annotation);
-            final String interfaceQualifiedName = extensionPoint.getQualifiedName().toString();
-            appendToServiceList(f, interfaceQualifiedName);
-            addServiceFile(extensionPoint, typeElement, folder);
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding extension " + typeElement);
-            if (typeElement.getAnnotation(Generated.class) == null)
-            {
-                found = true;
-            }
-
+            final Extension annotation = elem.getAnnotation(Extension.class);
+            handleExtension(interfaceListFile, interfaceListFileFolder, elem, annotation);
+            daggerModuleRebuildNeeded = true;
         }
-        for (Element elem : roundEnv.getElementsAnnotatedWith(ExtensionRepeatable.class))
+
+        for (final Element elem : roundEnv.getElementsAnnotatedWith(ExtensionRepeatable.class))
         {
-            TypeElement typeElement = (TypeElement) elem;
-            final ExtensionRepeatable annotation = typeElement.getAnnotation(ExtensionRepeatable.class);
+            final ExtensionRepeatable annotation = elem.getAnnotation(ExtensionRepeatable.class);
             final Extension[] value = annotation.value();
-            for (Extension extension : value)
+            for (final Extension extension : value)
             {
-                TypeElement extensionPoint = getProvides(extension);
-                final String interfaceQualifiedName = extensionPoint.getQualifiedName().toString();
-                appendToServiceList(f, interfaceQualifiedName);
-                addServiceFile(extensionPoint, typeElement, folder);
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding extension " + typeElement);
-            }
-            if (typeElement.getAnnotation(Generated.class) == null)
-            {
-                found = true;
+                handleExtension(interfaceListFile, interfaceListFileFolder, elem, extension);
             }
         }
 
@@ -270,42 +167,93 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         {
             if (elem instanceof TypeElement)
             {
-                final TypeElement typeElement=(TypeElement) elem;
-                if(typeElement.getKind() != ElementKind.INTERFACE)
+                final TypeElement typeElement = (TypeElement) elem;
+                // all interfaces annotated with path are handled with default implementation of server (@see handleDefaultImplementation)
+                if (typeElement.getKind() != ElementKind.INTERFACE)
                 {
-                    addServiceFile(Path.class.getCanonicalName(), typeElement, folder);
+                    addServiceFile(Path.class.getCanonicalName(), typeElement, interfaceListFileFolder);
                     pathAnnotationFound = true;
                 }
             }
         }
         if (pathAnnotationFound)
         {
-            appendToServiceList(f, Path.class.getCanonicalName());
-            found = true;
+            appendToServiceList(interfaceListFile, Path.class.getCanonicalName());
+            daggerModuleRebuildNeeded = true;
         }
         for (Element elem : roundEnv.getElementsAnnotatedWith(Provider.class))
         {
             if (elem instanceof TypeElement)
             {
-                addServiceFile(Provider.class.getCanonicalName(), (TypeElement) elem, folder);
+                addServiceFile(Provider.class.getCanonicalName(), (TypeElement) elem, interfaceListFileFolder);
             }
         }
         // only generate the modules if we processed a class
-        if (found)
+        if (daggerModuleRebuildNeeded)
         {
-            //            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating RaplaGinModulesGenerated");
-            //            String className = "RaplaGinModulesGenerated";
-            //            String packageName = "org.rapla.inject.client.gwt";
-            //            final RaplaGwtModuleGenerator raplaGwtModuleProcessor = new RaplaGwtModuleGenerator(processingEnv);
-            //            raplaGwtModuleProcessor.process(packageName, className);
-
             // Dagger
             processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Dagger Modules");
             final DaggerModuleCreator daggerModuleProcessor = new DaggerModuleCreator(processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
             daggerModuleProcessor.process();
         }
+    }
 
-        return found;
+    private void handleExtension(File interfaceListFile, File interfaceListFileFolder, final Element elem, final Extension annotation)
+            throws IOException, UnableToCompleteException
+    {
+        final TypeElement typeElement = (TypeElement) elem;
+        final TypeElement extensionPoint = getProvides(annotation);
+        final String interfaceQualifiedName = extensionPoint.getQualifiedName().toString();
+        appendToServiceList(interfaceListFile, interfaceQualifiedName);
+        addServiceFile(extensionPoint, typeElement, interfaceListFileFolder);
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding extension " + typeElement);
+    }
+
+    private boolean handleDefaultImplemenatationForType(File interfaceListFile, File interfaceListFileFolder, TreeLogger proxyLogger,
+            final Element defaultImplementationElement, DefaultImplementation defaultImplementationAnnotation) throws UnableToCompleteException, IOException
+    {
+        if(isGeneratedByAnnotationInjectionProcessor(defaultImplementationElement))
+        {
+            return false;
+        }
+        final TypeElement implementationElement = (TypeElement) defaultImplementationElement;
+        final TypeElement interfaceElement = getDefaultImplementationOf(defaultImplementationAnnotation);
+        boolean pathAnnotationFound = false;
+        // Check if we need to generate proxies for java or gwt 
+        if (interfaceElement.getAnnotation(Path.class) != null && interfaceElement.getKind() == ElementKind.INTERFACE)
+        {
+            final GwtProxyCreator proxyCreator = new GwtProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
+            final String proxyClassName = proxyCreator.create(proxyLogger);
+
+            final JavaClientProxyCreator swingProxyCreator = new JavaClientProxyCreator(interfaceElement, processingEnv,
+                    AnnotationInjectionProcessor.class.getCanonicalName());
+            final String swingproxyClassName = swingProxyCreator.create(proxyLogger);
+            {
+                final String qualifiedName = interfaceElement.getQualifiedName().toString();
+                appendToServiceList(interfaceListFile, qualifiedName);
+                final File serviceFile = getFile(interfaceListFile.getParentFile(), "services/" + qualifiedName);
+                appendToFile(serviceFile, proxyClassName);
+                appendToFile(serviceFile, swingproxyClassName);
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Proxies " + proxyClassName + ", " + swingproxyClassName);
+            }
+            {
+                final File serviceFile = getFile(interfaceListFile.getParentFile(), "services/" + Path.class.getCanonicalName());
+                appendToFile(serviceFile, implementationElement.getQualifiedName().toString());
+                pathAnnotationFound = true;
+            }
+        }
+        final String qualifiedName = interfaceElement.getQualifiedName().toString();
+        appendToServiceList(interfaceListFile, qualifiedName);
+        addServiceFile(interfaceElement, implementationElement, interfaceListFileFolder);
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding DefaultImplemenation " + implementationElement);
+        return pathAnnotationFound;
+    }
+
+    private boolean isGeneratedByAnnotationInjectionProcessor(Element element)
+    {
+        final Generated generatedAnnotation = element.getAnnotation(Generated.class);
+        final boolean generatedByAnnotationInjectionProcessor = generatedAnnotation != null && generatedAnnotation.value()[0].equals(AnnotationInjectionProcessor.class.getCanonicalName());
+        return generatedByAnnotationInjectionProcessor;
     }
 
     private void appendToServiceList(File serviceListFile, String interfaceName) throws IOException
@@ -329,11 +277,11 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     private String getClassname(TypeElement element) throws UnableToCompleteException
     {
         final NestingKind nestingKind = element.getNestingKind();
-        if ( nestingKind.equals( NestingKind.TOP_LEVEL))
+        if (nestingKind.equals(NestingKind.TOP_LEVEL))
         {
             return element.getQualifiedName().toString();
         }
-        else if ( nestingKind.equals( NestingKind.MEMBER))
+        else if (nestingKind.equals(NestingKind.MEMBER))
         {
             final Element enclosingElement = element.getEnclosingElement();
             if (!(enclosingElement instanceof TypeElement))
@@ -420,12 +368,12 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         File f;
         try
         {
-            FileObject resource = filer.getResource(location, pkg, GWT_MODULE_LIST);
+            FileObject resource = filer.getResource(location, pkg, MODULE_LIST);
             f = new File(resource.toUri());
         }
         catch (IOException ex)
         {
-            FileObject resource = filer.createResource(location, pkg, GWT_MODULE_LIST);
+            FileObject resource = filer.createResource(location, pkg, MODULE_LIST);
             f = new File(resource.toUri());
         }
         f.getParentFile().mkdirs();

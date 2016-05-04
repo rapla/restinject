@@ -14,7 +14,7 @@
 
 package org.rapla.rest.generator.internal;
 
-import org.rapla.inject.generator.internal.SourceWriter;
+import java.util.List;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.TypeElement;
@@ -22,10 +22,9 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.QueryParam;
 
-import java.util.List;
+import org.rapla.inject.InjectionContext;
+import org.rapla.inject.generator.internal.SourceWriter;
 
 public class GwtProxyCreator extends AbstractClientProxyCreator
 {
@@ -33,7 +32,7 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
 
     public GwtProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName)
     {
-        super(remoteService, processingEnvironment, generatorName);
+        super(remoteService, processingEnvironment, generatorName, InjectionContext.gwt);
     }
 
     @Override protected String encode(String encodedParam)

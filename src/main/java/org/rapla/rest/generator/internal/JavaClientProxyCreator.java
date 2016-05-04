@@ -14,6 +14,7 @@
 
 package org.rapla.rest.generator.internal;
 
+import org.rapla.inject.InjectionContext;
 import org.rapla.inject.generator.internal.SourceWriter;
 import org.rapla.rest.client.swing.JavaClientServerConnector;
 import org.rapla.rest.client.swing.JsonRemoteConnector;
@@ -31,7 +32,7 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
 
     public JavaClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName)
     {
-        super(remoteService, processingEnvironment, generatorName);
+        super(remoteService, processingEnvironment, generatorName, InjectionContext.swing);
     }
 
     @Override
