@@ -454,7 +454,7 @@ public class DaggerModuleCreator
         {
             moduleWriter.print(commonModuleName);
         }
-        else
+        else if ( scope != Scopes.Common)
         {
             moduleWriter.print( clientModuleName);
         }
