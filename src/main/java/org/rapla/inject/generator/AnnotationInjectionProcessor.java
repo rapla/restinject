@@ -55,7 +55,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 {
     public static final String MODULE_LIST = "META-INF/org.rapla.servicelist";
 
-    final DaggerModuleCreatorProcessor daggerModuleProcessor = new DaggerModuleCreatorProcessor();
+    final DaggerModuleCreator daggerModuleProcessor = new DaggerModuleCreator();
 
     @Override
     public SourceVersion getSupportedSourceVersion()
@@ -110,7 +110,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, stringWriter.toString());
             return false;
         }
-        return false;
+        return true;
     }
 
     private boolean process(RoundEnvironment roundEnv) throws Exception

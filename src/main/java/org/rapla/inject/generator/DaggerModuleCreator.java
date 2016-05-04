@@ -15,7 +15,6 @@ import org.rapla.inject.internal.DaggerMapKey;
 import org.rapla.rest.generator.internal.GwtProxyCreator;
 import org.rapla.rest.generator.internal.JavaClientProxyCreator;
 
-import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
@@ -57,8 +56,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class DaggerModuleCreatorProcessor extends AbstractProcessor
+public class DaggerModuleCreator
 {
+    private ProcessingEnvironment processingEnv;
     private static class Generated
     {
         private final String interfaceName;
@@ -155,7 +155,7 @@ public class DaggerModuleCreatorProcessor extends AbstractProcessor
         }
     }
 
-    @Override public SourceVersion getSupportedSourceVersion()
+    public SourceVersion getSupportedSourceVersion()
     {
         return SourceVersion.latestSupported();
     }
@@ -163,12 +163,12 @@ public class DaggerModuleCreatorProcessor extends AbstractProcessor
     private final Class<?>[] supportedAnnotations = new Class[] { Extension.class, ExtensionRepeatable.class, ExtensionPoint.class, DefaultImplementation.class,
             DefaultImplementationRepeatable.class, Path.class, Provider.class };
 
-    @Override public synchronized void init(ProcessingEnvironment processingEnv)
+    public synchronized void init(ProcessingEnvironment processingEnv)
     {
-        super.init(processingEnv);
+        this.processingEnv = processingEnv;
     }
 
-    @Override public Set<String> getSupportedAnnotationTypes()
+    public Set<String> getSupportedAnnotationTypes()
     {
         Set<String> supported = new HashSet<String>();
         for (Class<?> annotationClass : supportedAnnotations)
@@ -179,7 +179,7 @@ public class DaggerModuleCreatorProcessor extends AbstractProcessor
         return supported;
     }
 
-    @Override synchronized public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
+    synchronized public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
     {
         if (roundEnv.processingOver() || annotations.isEmpty())
         {
@@ -221,7 +221,7 @@ public class DaggerModuleCreatorProcessor extends AbstractProcessor
     private final Map<Scopes, SourceWriter> componentSourceWriters = new LinkedHashMap<>();
     //private final Map<String, byte[]> existingWriters = new LinkedHashMap<>();
     private final Set<String> existingWriters = new LinkedHashSet<>();
-    private final String generatorName = DaggerModuleCreatorProcessor.class.getCanonicalName();
+    private final String generatorName = DaggerModuleCreator.class.getCanonicalName();
 
     synchronized public void process() throws Exception
     {
@@ -520,7 +520,7 @@ public class DaggerModuleCreatorProcessor extends AbstractProcessor
     private Set<String> loadLinesFromMetaInfo(String file) throws IOException
     {
         Set<String> foundLines = new LinkedHashSet<>();
-        final ClassLoader classLoader = DaggerModuleCreatorProcessor.class.getClassLoader();
+        final ClassLoader classLoader = DaggerModuleCreator.class.getClassLoader();
         final FileObject resource = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", file);
         if (resource != null && new File(resource.toUri()).exists())
         {
