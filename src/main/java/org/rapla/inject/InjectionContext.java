@@ -23,6 +23,18 @@ public enum InjectionContext
     ios,
     all;
 
+
+    public static boolean inList(InjectionContext context,InjectionContext... contexts)
+    {
+        for ( InjectionContext cont:contexts)
+        {
+            if (cont == context)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
     public static boolean isInjectableOnSwing(InjectionContext... contexts)
     {
         for ( InjectionContext context:contexts)
@@ -89,7 +101,7 @@ public enum InjectionContext
     {
         for ( InjectionContext context:contexts)
         {
-            if (context == all || context == server)
+            if (context == all ||context == client)
             {
                 return true;
             }
@@ -97,6 +109,58 @@ public enum InjectionContext
         return false;
     }
 
+    public static boolean isInjectableEverywhere(InjectionContext... contexts)
+    {
+        if ( contexts.length == 0)
+        {
+            return true;
+        }
+        boolean isServer = false;
+        boolean isClient = false;
+        boolean isGwt = false;
+        boolean isSwing = false;
+        boolean isAndroid = false;
+        boolean isIos = false;
+        for ( InjectionContext context:contexts)
+        {
+            if (context == all)
+            {
+                return true;
+            }
+            if (context == client)
+            {
+                isClient = true;
+            }
+            if (context == server)
+            {
+                isServer = true;
+            }
+            if (context == swing)
+            {
+                isSwing = true;
+            }
+            if (context == gwt)
+            {
+                isGwt = true;
+            }
+            if (context == android)
+            {
+                isAndroid = true;
+            }
+            if (context == ios)
+            {
+                isIos = true;
+            }
 
-
+        }
+        if ( isGwt && isSwing && isAndroid && isIos)
+        {
+            isClient = true;
+        }
+        if ( isClient && isServer)
+        {
+            return true;
+        }
+        return false;
+    }
 }

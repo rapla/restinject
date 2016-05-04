@@ -14,7 +14,7 @@ import java.util.Set;
 public class TestExtensionPointInjection
 {
 
-    @Component(modules=org.rapla.server.dagger.DaggerRaplaServerModule.class)
+    @Component(modules={org.rapla.server.dagger.DaggerRaplaServerModule.class, org.rapla.common.dagger.DaggerRaplaCommonModule.class})
     @Singleton
     public interface ExtensionContext{
         Set<ExampleExtensionPoint> getExtensionPointImpls(); 

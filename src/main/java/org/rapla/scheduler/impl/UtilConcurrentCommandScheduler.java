@@ -359,7 +359,7 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
         return promise;
     }
 
-    private <Void> Promise<Void> run(final Command command, Executor executor)
+    private Promise<Void> run(final Command command, Executor executor)
     {
         if (command == null)
             throw new NullPointerException();
@@ -372,6 +372,7 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
                 try
                 {
                     command.execute();
+                    future.complete( Promise.VOID);
                 }
                 catch (Exception ex)
                 {

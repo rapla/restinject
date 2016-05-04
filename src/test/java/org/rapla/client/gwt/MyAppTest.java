@@ -13,7 +13,7 @@ import java.util.Set;
 
 public class MyAppTest extends TestCase
 {
-    @Component(modules = { org.rapla.client.gwt.dagger.DaggerRaplaGwtModule.class })
+    @Component(modules = {org.rapla.common.dagger.DaggerRaplaCommonModule.class,org.rapla.client.dagger.DaggerRaplaClientModule.class, org.rapla.client.gwt.dagger.DaggerRaplaGwtModule.class })
     @Singleton
     public interface GwtInjectionInterface
     {

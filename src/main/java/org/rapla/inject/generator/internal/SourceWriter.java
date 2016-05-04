@@ -3,6 +3,8 @@ package org.rapla.inject.generator.internal;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.HashSet;
+import java.util.Set;
 
 public class SourceWriter
 {
@@ -10,6 +12,7 @@ public class SourceWriter
     private int indent = 0;
     private boolean newLine = true;
 
+    final Set<String> methodNames = new HashSet<String>();
     public SourceWriter(Writer writer)
     {
         printWriter = new PrintWriter(writer);
@@ -66,5 +69,13 @@ public class SourceWriter
         newLine = true;
     }
 
+    public boolean containsMethod(String methodName)
+    {
+        return methodNames.contains( methodName);
+    }
 
+    public void addMethod(String methodName)
+    {
+        methodNames.add( methodName);
+    }
 }

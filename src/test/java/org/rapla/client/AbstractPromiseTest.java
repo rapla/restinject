@@ -47,6 +47,24 @@ public abstract class AbstractPromiseTest
     {
     }
 
+    @Test public void testCatch() throws Exception
+    {
+        Promise<String> async4 = scheduler.supply(() -> {return 0/0+"Hello";});
+        async4.thenAccept((string)->System.out.println(string)).exceptionally( (ex)->{ex.printStackTrace();return null;});
+        try
+        {
+            String asd;
+            asd = 0 / 0 + "Hello";
+            System.out.println("All done: " + asd);
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        System.out.println("All done.");
+
+    }
+
     @Test public void testAccept() throws Exception
     {
         ExampleService test = createAnnotationProcessingProxy();

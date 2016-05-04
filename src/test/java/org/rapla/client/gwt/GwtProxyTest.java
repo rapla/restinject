@@ -72,7 +72,7 @@ public class GwtProxyTest extends GWTTestCase
         return "org.rapla.GwtTest";
     }
 
-    @Component(modules = org.rapla.client.gwt.dagger.DaggerRaplaGwtModule.class)
+    @Component(modules = {org.rapla.client.gwt.dagger.DaggerRaplaGwtModule.class, org.rapla.client.dagger.DaggerRaplaClientModule.class,org.rapla.common.dagger.DaggerRaplaCommonModule.class })
     @Singleton
     public interface BootstrapInterface
     {
