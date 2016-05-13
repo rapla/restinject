@@ -13,7 +13,7 @@ public class ServerComponentTest
     public void startGeneratedServerComponent()
     {
         StartupParams params = new StartupParams();
-        org.rapla.server.dagger.RaplaServerComponent serverComponent = org.rapla.server.dagger.DaggerRaplaServerComponent.builder().daggerRaplaServerStartupModule(new org.rapla.server.dagger.DaggerRaplaServerStartupModule(params)).build();
+        org.rapla.server.dagger.RaplaServerComponent serverComponent = null;//org.rapla.server.dagger.DaggerRaplaServerComponent.builder().daggerRaplaServerStartupModule(new org.rapla.server.dagger.DaggerRaplaServerStartupModule(params)).build();
         ComponentStarter starter = serverComponent.getComponentStarter();
         Assert.assertEquals("server",starter.start());
     }

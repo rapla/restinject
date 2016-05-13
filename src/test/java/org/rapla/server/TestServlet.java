@@ -2,7 +2,6 @@ package org.rapla.server;
 
 import dagger.MembersInjector;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
-import org.rapla.server.dagger.DaggerRaplaServerComponent;
 import org.rapla.server.dagger.DaggerRaplaServerStartupModule;
 import org.rapla.server.dagger.RaplaServerComponent;
 import org.rapla.server.rest.RestTestApplication;
@@ -67,8 +66,8 @@ public class TestServlet extends HttpServlet
         System.out.println("Init done ");
         StartupParams params  = new StartupParams();
         final DaggerRaplaServerStartupModule startupModule = new DaggerRaplaServerStartupModule(params);
-        final RaplaServerComponent mod = DaggerRaplaServerComponent.builder().daggerRaplaServerStartupModule(startupModule).build();
-        membersInjector = mod.getComponentStarter().getMembersInjector();
+        final RaplaServerComponent mod = org.rapla.server.dagger.DaggerRaplaServerComponent.builder().daggerRaplaServerStartupModule(startupModule).build();
+        membersInjector = null;//mod.getComponentStarter().getMembersInjector();
     }
 
 

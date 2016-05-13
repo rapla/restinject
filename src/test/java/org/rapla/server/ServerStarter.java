@@ -13,19 +13,12 @@ import javax.inject.Inject;
 @DefaultImplementation(context=InjectionContext.server, of=ComponentStarter.class,export = true)
 public class ServerStarter implements ComponentStarter
 {
-    private Map<String, MembersInjector> membersInjector;
 
     @Inject
-    public ServerStarter(Map<String, MembersInjector> membersInjector)
+    public ServerStarter()
     {
-        this.membersInjector = membersInjector;
     }
     
-    @Override
-    public Map<String, MembersInjector> getMembersInjector()
-    {
-        return membersInjector;
-    }
 
     public String start()
     {

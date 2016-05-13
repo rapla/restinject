@@ -19,12 +19,6 @@ public class GwtStarter implements ComponentStarter
     {
     }
     
-    @Override
-    public Map<String, MembersInjector> getMembersInjector()
-    {
-        return null;
-    }
-
     public String start()
     {
         return "gwt";

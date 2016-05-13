@@ -129,7 +129,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                     defaultImplementationAnnotation);
             pathAnnotationFound |= pathAnnotationFoundInHandle;
             // we also created proxies for gwt and java, so rebuild is needed
-            daggerModuleRebuildNeeded |= pathAnnotationFoundInHandle;
+            if(!isGeneratedByAnnotationInjectionProcessor(elem))
+                daggerModuleRebuildNeeded = true;
         }
 
         for (final Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementationRepeatable.class))
@@ -141,7 +142,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                         defaultImplementation);
                 pathAnnotationFound |= pathAnnotationFoundInHandle;
                 // we also created proxies for gwt and java, so rebuild is needed
-                daggerModuleRebuildNeeded |= pathAnnotationFoundInHandle;
+                if(!isGeneratedByAnnotationInjectionProcessor(elem))
+                    daggerModuleRebuildNeeded = true;
             }
         }
 

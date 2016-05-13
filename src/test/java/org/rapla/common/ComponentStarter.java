@@ -9,5 +9,5 @@ public interface ComponentStarter extends GwtComponentMarker
 {
     public String start();
     
-    Map<String, MembersInjector> getMembersInjector();
+    //Map<String, MembersInjector> getMembersInjector();
 }

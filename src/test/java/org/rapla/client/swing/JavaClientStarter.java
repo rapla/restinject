@@ -18,12 +18,6 @@ public class JavaClientStarter implements ComponentStarter
     {
     }
 
-    @Override
-    public Map<String, MembersInjector> getMembersInjector()
-    {
-        return null;
-    }
-
     public String start()
     {
         return "swing";
