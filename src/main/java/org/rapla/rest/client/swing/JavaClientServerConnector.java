@@ -55,22 +55,30 @@ public class JavaClientServerConnector
             throw customConnector.deserializeException(exInfo,resultStatus);
         }
         Exception error = getError(customConnector, resultMessage, serializer);
-        if ( error instanceof AuthenticationException)
+        if ( error != null)
         {
-            String newAuthCode = customConnector.reauth(this.getClass());
-            // try the same call again with the new result, this time with no auth code failed fallback
-            if (newAuthCode != null)
+            if (error instanceof AuthenticationException)
             {
-                try
+                String newAuthCode = customConnector.reauth(this.getClass());
+                // try the same call again with the new result, this time with no auth code failed fallback
+                if (newAuthCode != null)
                 {
-                    resultMessage = remote.sendCallWithString(requestMethodType, new URL(url), body, authenticationToken, contentType,additionalHeaders);
+                    try
+                    {
+                        resultMessage = remote.sendCallWithString(requestMethodType, new URL(url), body, authenticationToken, contentType, additionalHeaders);
+                    }
+                    catch (IOException ex)
+                    {
+                        // TODO: Workaround to allow internatianlization of internal connect errors
+                        SerializableExceptionInformation exInfo = new SerializableExceptionInformation(new RemoteConnectException(ex.getMessage()));
+                        int resultStatus = Response.Status.BAD_GATEWAY.getStatusCode();
+                        throw customConnector.deserializeException(exInfo, resultStatus);
+                    }
                 }
-                catch (IOException ex)
+                else
                 {
-                    // TODO: Workaround to allow internatianlization of internal connect errors
-                    SerializableExceptionInformation exInfo = new SerializableExceptionInformation(new RemoteConnectException(ex.getMessage()));
-                    int resultStatus = Response.Status.BAD_GATEWAY.getStatusCode();
-                    throw customConnector.deserializeException(exInfo,resultStatus);                }
+                    throw error;
+                }
             }
             else
             {
@@ -88,8 +96,9 @@ public class JavaClientServerConnector
         {
 
             Exception ex = deserializeExceptionObject(customConnector, resultMessage, serializer);
-            SerializableExceptionInformation exInfo = new SerializableExceptionInformation(new RemoteConnectException(ex.getMessage()));
-            return customConnector.deserializeException(exInfo, responseCode);
+            return ex;
+            //SerializableExceptionInformation exInfo = new SerializableExceptionInformation(new RemoteConnectException(ex.getMessage()));
+            //return customConnector.deserializeException(exInfo, responseCode);
         }
         return null;
     }

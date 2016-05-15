@@ -1,11 +1,12 @@
 package org.rapla.server;
 
-import dagger.MembersInjector;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
+import org.rapla.rest.server.Injector;
+import org.rapla.rest.server.ReflectionMembersInjector;
 import org.rapla.server.dagger.DaggerRaplaServerStartupModule;
 import org.rapla.server.dagger.RaplaServerComponent;
 import org.rapla.server.rest.RestTestApplication;
-import org.rapla.server.rest.ResteasyMembersInjector;
+import org.rapla.rest.server.provider.resteasy.ResteasyMembersInjector;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -22,7 +23,7 @@ public class TestServlet extends HttpServlet
 {
 
     HttpServletDispatcher dispatcher;
-    private Map<String, MembersInjector> membersInjector;
+    private Injector membersInjector;
 
     protected String getPrefix()
     {
@@ -67,14 +68,14 @@ public class TestServlet extends HttpServlet
         StartupParams params  = new StartupParams();
         final DaggerRaplaServerStartupModule startupModule = new DaggerRaplaServerStartupModule(params);
         final RaplaServerComponent mod = org.rapla.server.dagger.DaggerRaplaServerComponent.builder().daggerRaplaServerStartupModule(startupModule).build();
-        membersInjector = null;//mod.getComponentStarter().getMembersInjector();
+        membersInjector = new ReflectionMembersInjector( RaplaServerComponent.class, mod);
     }
 
 
     @Override protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         System.out.println( "QueryString " +request.getQueryString() + " Test param " + request.getParameter("param"));
-        request.setAttribute(ResteasyMembersInjector.RAPLA_CONTEXT, membersInjector);
+        request.setAttribute(ResteasyMembersInjector.INJECTOR_CONTEXT, membersInjector);
         Map<String,String> headers = new LinkedHashMap<>();
         final Enumeration<String> headerNames = request.getHeaderNames();
         while ( headerNames.hasMoreElements())

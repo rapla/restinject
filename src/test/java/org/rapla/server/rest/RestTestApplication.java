@@ -8,6 +8,7 @@ import org.rapla.rest.server.provider.json.JsonStringReader;
 import org.rapla.rest.server.provider.json.JsonStringWriter;
 import org.rapla.rest.server.provider.json.JsonWriter;
 import org.rapla.rest.server.provider.json.PatchReader;
+import org.rapla.rest.server.provider.resteasy.ResteasyMembersInjector;
 import org.rapla.rest.server.provider.xml.XmlReader;
 import org.rapla.rest.server.provider.xml.XmlWriter;
 import org.rapla.server.ExampleServiceImpl;
@@ -48,7 +49,7 @@ public class RestTestApplication extends Application
             classes.add(JsonStringWriter.class);
             classes.add(XmlWriter.class);
             classes.add(XmlReader.class);
-            classes.add(RaplaRestDaggerContextProvider.class);
+            classes.add(ResteasyMembersInjector.class);
 
             classes.add(MyRestApi.class);
             classes.add(UserService.class);

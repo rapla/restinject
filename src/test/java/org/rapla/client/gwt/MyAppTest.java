@@ -7,6 +7,7 @@ import org.rapla.common.extension.ExampleExtensionPoint;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Map;
+import java.util.Set;
 
 public class MyAppTest extends TestCase
 {
@@ -24,11 +25,11 @@ public class MyAppTest extends TestCase
 
     static public class Rapla
     {
-        private Map<String, ExampleExtensionPoint> exampelMap;
+        private Set< ExampleExtensionPoint> exampelMap;
         //private Set<ExampleExtensionPoint> exampleSet;
 
         @Inject
-        public Rapla(Map<String, ExampleExtensionPoint> exampleMap)
+        public Rapla(Set< ExampleExtensionPoint> exampleMap)
         {
             this.exampelMap = exampleMap;
             //this.exampleSet = exampleSet;

@@ -32,27 +32,16 @@ public class DaggerReflectionStarter
 
     public static <T> T startWithReflectionAndStartupModule(String moduleId,Class<T> starterClass, Scope scope, Object startupModule) throws Exception
     {
-        final int i = moduleId.lastIndexOf(".");
-        final String packageName = (i > 0 ? moduleId.substring(0, i + 1) : "") + scope.subpackage +".dagger";
-        final String artifactName = GeneratorUtil.firstCharUp(i >= 0 ? moduleId.substring(i + 1) : moduleId);
-        final String componentClassName = packageName + "." + artifactName + scope + "Component";
-        final String daggerComponentClassNamme = packageName + ".Dagger" + artifactName + scope + "Component";
-        final String starterMethod = "get" + starterClass.getSimpleName();
-        final Class<?> clazz = Class.forName(daggerComponentClassNamme);
-        final Class<?> interfacClazz = Class.forName(componentClassName);
-        Object builder = clazz.getMethod("builder").invoke(null);
-        final Class<?> builderClazz = Class.forName(daggerComponentClassNamme + "$Builder");
+        final Object component = buildComponent(moduleId, scope, startupModule);
+        return createObject(starterClass, component);
+    }
+
+    public static <T> T createObject(Class<T> starterClass, Object component) throws Exception
+    {
         try
         {
-            if ( startupModule != null)
-            {
-                Class startupModuleClass = startupModule.getClass();
-                final String paramMethod = GeneratorUtil.firstCharLow(startupModuleClass.getSimpleName());
-                final Method method = builderClazz.getMethod(paramMethod, startupModuleClass);
-                builder = method.invoke(builder, startupModule);
-            }
-            final Object component = builderClazz.getMethod("build").invoke( builder);
-            final Method method1 = interfacClazz.getMethod(starterMethod);
+            final String starterMethod = "get" + starterClass.getSimpleName();
+            final Method method1 = component.getClass().getMethod(starterMethod);
             final Object serverUncasted = method1.invoke(component);
             T starter = starterClass.cast( serverUncasted);
             return starter;
@@ -69,6 +58,45 @@ public class DaggerReflectionStarter
                 throw ex;
             }
         }
+    }
+
+    public static Object buildComponent(String moduleId, Scope scope, Object startupModule)
+            throws Exception
+    {
+        final int i = moduleId.lastIndexOf(".");
+        final String packageName = (i > 0 ? moduleId.substring(0, i + 1) : "") + scope.subpackage +".dagger";
+        final String artifactName = GeneratorUtil.firstCharUp(i >= 0 ? moduleId.substring(i + 1) : moduleId);
+        //final String componentClassName = packageName + "." + artifactName + scope + "Component";
+        final String daggerComponentClassNamme = packageName + ".Dagger" + artifactName + scope + "Component";
+        final Class<?> clazz = Class.forName(daggerComponentClassNamme);
+        //final Class<?> interfacClazz = Class.forName(componentClassName);
+        Object builder = clazz.getMethod("builder").invoke(null);
+        final Class<?> builderClazz = Class.forName(daggerComponentClassNamme + "$Builder");
+        final Object component;
+        try
+        {
+            if (startupModule != null)
+            {
+                Class startupModuleClass = startupModule.getClass();
+                final String paramMethod = GeneratorUtil.firstCharLow(startupModuleClass.getSimpleName());
+                final Method method = builderClazz.getMethod(paramMethod, startupModuleClass);
+                builder = method.invoke(builder, startupModule);
+            }
+           component = builderClazz.getMethod("build").invoke(builder);
+        }
+        catch (InvocationTargetException ex)
+        {
+            final Throwable targetException = ex.getTargetException();
+            if (targetException != null && targetException instanceof Exception)
+            {
+                throw (Exception) targetException;
+            }
+            else
+            {
+                throw ex;
+            }
+        }
+        return component;
     }
 
     public static String loadModuleId(ClassLoader classLoader) throws ModuleDescriptionNotFoundException

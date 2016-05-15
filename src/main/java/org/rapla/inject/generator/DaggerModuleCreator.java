@@ -281,7 +281,7 @@ public class DaggerModuleCreator
             final String packageName = (i >= 0 ? moduleName.substring(0, i) : "");
             String artifactName = firstCharUp(i >= 0 ? moduleName.substring(i + 1) : moduleName);
             generateModuleClass(packageName, artifactName, scopes);
-            generateWebserviceComponents(packageName, artifactName, scopes);
+            //generateWebserviceComponents(packageName, artifactName, scopes);
             generateComponents(packageName, artifactName, scopes);
         }
         final long ms = System.currentTimeMillis() - start;
@@ -403,114 +403,202 @@ public class DaggerModuleCreator
      */
     private void generateComponents(String packageName, String artifactName, Collection<Scopes> scopes) throws Exception
     {
-        Map<String, BitSet> exportedInterfaces = new LinkedHashMap<>();
+        //Map<String, BitSet> exportedInterfaces = new LinkedHashMap<>();
         for (Scopes scope : Scopes.components())
         {
+            if (!scopes.contains(scope))
+            {
+                continue;
+            }
             String fileName = "META-INF/" + getExportListFilename(scope);
             final Set<String> exportInterfaces = loadLinesFromMetaInfo(fileName);
+            SourceWriter writer = createComponentSourceWriter(packageName, artifactName, scope);
             for (String interfaceName : exportInterfaces)
             {
-                BitSet bitSet = exportedInterfaces.get(interfaceName);
-                if (bitSet == null)
-                {
-                    bitSet = new BitSet();
-                    exportedInterfaces.put(interfaceName, bitSet);
-                }
-                int bit = scope.ordinal();
-                bitSet.set(bit);
-            }
-        }
-        for (Scopes scope : Scopes.components())
-        {
-            if (scopes.contains(scope))
-            {
-                SourceWriter sourceWriter = createComponentSourceWriter(packageName, artifactName, scope);
-                printExported(exportedInterfaces, sourceWriter, scope);
-                if (scope == Scopes.Server)
-                {
-                    final String simpleComponentName = "Dagger" + artifactName +  "WebserviceComponent";
-                    final String fullComponentName = Scopes.Webservice.getPackageName(packageName) + "." + simpleComponentName;
-                    sourceWriter.println(fullComponentName + " getWebservices();");
-                }
-                sourceWriter.outdent();
-                sourceWriter.println("}");
-                sourceWriter.close();
-                componentSourceWriters.put(scope, sourceWriter);
-            }
-        }
-    }
-
-    private void generateWebserviceComponents(String packageName, String artifactName, Collection<Scopes> scopes) throws Exception
-    {
-        if (!scopes.contains(Scopes.Server))
-        {
-            return;
-        }
-        final SourceWriter sourceWriter = createWebserviceComponentSourceWriter(packageName, artifactName);
-        componentSourceWriters.put(Scopes.Webservice, sourceWriter);
-        File f = AnnotationInjectionProcessor.getInterfaceList(processingEnv.getFiler());
-        List<String> interfaces = AnnotationInjectionProcessor.readLines(f);
-        for (String interfaceName : interfaces)
-        {
-            createWebserviceMethods(interfaceName, artifactName);
-        }
-        //for (SourceWriter sourceWriter : this.webcomponentSourceWriters.values())
-        {
-            sourceWriter.outdent();
-            sourceWriter.println("}");
-            sourceWriter.close();
-        }
-    }
-
-    private void printExported(Map<String, BitSet> exportedInterfaces, SourceWriter sourceWriter, Scopes sourceWriterIndex)
-    {
-        for (Map.Entry<String, BitSet> entry : exportedInterfaces.entrySet())
-        {// create starter
-            String key = entry.getKey();
-            BitSet bitSet = entry.getValue();
-            if (bitSet.get(sourceWriterIndex.ordinal()))
-            {
+                String key = interfaceName;
                 final int i = key.lastIndexOf(".");
                 String simpleName = i > 0 ? key.substring(i + 1) : key;
                 String javaname = firstCharUp(simpleName);
-                sourceWriter.println(key + " get" + javaname + "();");
+                writer.println(key + " get" + javaname + "();");
+
+//                BitSet bitSet = exportedInterfaces.get(interfaceName);
+//                if (bitSet == null)
+//                {
+//                    bitSet = new BitSet();
+//                    exportedInterfaces.put(interfaceName, bitSet);
+//                }
+//                int bit = scope.ordinal();
+//                bitSet.set(bit);
             }
+
+//            for (Map.Entry<String, BitSet> entry : exportedInterfaces.entrySet())
+//            {// create starter
+//                String key = entry.getKey();
+//                BitSet bitSet = entry.getValue();
+//                if (bitSet.get(scope.ordinal()))
+//                {
+//
+//                }
+//            }
+            if (scope == Scopes.Server)
+            {
+                final String webserviceLocation = "META-INF/services/javax.ws.rs.Path";
+                final Set<String> paths = loadLinesFromMetaInfo(webserviceLocation);
+                for (String path:paths)
+                {
+                    String implementingClass = path;
+                    final TypeElement implementingClassTypeElement = processingEnv.getElementUtils().getTypeElement(implementingClass);
+                    final String methodName = toJavaName(implementingClassTypeElement);
+                    writer.println("void " + "inject_" +
+                            methodName + "(" + implementingClassTypeElement.getQualifiedName().toString() + " injector);");
+                }
+//                final String simpleComponentName = "Dagger" + artifactName + "WebserviceComponent";
+//                final String fullComponentName = Scopes.Webservice.getPackageName(packageName) + "." + simpleComponentName;
+//                writer.println(fullComponentName + " getWebservices();");
+            }
+            writer.outdent();
+            writer.println("}");
+            writer.close();
+            componentSourceWriters.put(scope, writer);
+
         }
     }
 
-    private SourceWriter createWebserviceComponentSourceWriter(String originalPackageName, String artifactId) throws IOException
-    {
-        Scopes scope = Scopes.Webservice;
-        String packageName = scope.getPackageName(originalPackageName);
-        String type = scope.toString();
-        final String simpleComponentName = "Dagger" + artifactId + type + "Component";
-        final String fullComponentName = packageName + "." + simpleComponentName;
-        {// serviceFile filling
-            appendLineToMetaInf(getModuleListFileName(Scopes.Webservice), fullComponentName);
-        }
-        final SourceWriter sourceWriter = createSourceWriter(packageName, simpleComponentName);
-        sourceWriter.println("package " + packageName + ";");
-        sourceWriter.println();
-        //sourceWriter.println("import " + BasicRequestModule.class.getCanonicalName() + ";");
-        sourceWriter.println("import " + Provides.class.getCanonicalName() + ";");
-        sourceWriter.println("import " + Inject.class.getCanonicalName() + ";");
-        sourceWriter.println("import " + Provider.class.getCanonicalName() + ";");
-        sourceWriter.println("import " + Singleton.class.getCanonicalName() + ";");
-        sourceWriter.println("import " + Provides.Type.class.getCanonicalName() + ";");
-        sourceWriter.println("import " + Subcomponent.class.getCanonicalName() + ";");
-        sourceWriter.println("import " + Module.class.getCanonicalName() + ";");
-        sourceWriter.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
-        //sourceWriter.println("import " + RequestScoped.class.getCanonicalName() + ";");
-        sourceWriter.println();
-        sourceWriter.println(getGeneratorString());
-        sourceWriter.println("@Singleton");
-        //String basicRequestModuleName = BasicRequestModule.class.getSimpleName();
-        final String modules = getModules(originalPackageName, artifactId, Scopes.Server);
-        sourceWriter.println("@Subcomponent(" + modules + ")");
-        sourceWriter.println("public interface " + simpleComponentName + " {");
-        sourceWriter.indent();
-        return sourceWriter;
-    }
+//    private void generateWebserviceComponents(String packageName, String artifactName, Collection<Scopes> scopes) throws Exception
+//    {
+//        if (!scopes.contains(Scopes.Server))
+//        {
+//            return;
+//        }
+//        final SourceWriter sourceWriter = createWebserviceComponentSourceWriter(packageName, artifactName);
+//        componentSourceWriters.put(Scopes.Webservice, sourceWriter);
+//        File f = AnnotationInjectionProcessor.getInterfaceList(processingEnv.getFiler());
+//        List<String> interfaces = AnnotationInjectionProcessor.readLines(f);
+//        Set<String> webserviceSet = new LinkedHashSet<>();
+//        for (String interfaceName : interfaces)
+//        {
+//            final Set<String> webservices = createWebserviceMethods(interfaceName, artifactName);
+//            webserviceSet.addAll(webservices);
+//        }
+//
+//        sourceWriter.println();
+//        sourceWriter.print("String[] SERVICES = new String[] {");
+//        boolean first = true;
+//        for (String webservice : webserviceSet)
+//        {
+//            if (first)
+//            {
+//                first = false;
+//            }
+//            else
+//            {
+//                sourceWriter.print(", ");
+//            }
+//            sourceWriter.print(webservice);
+//        }
+//        sourceWriter.print("};");
+//
+//        //for (SourceWriter sourceWriter : this.webcomponentSourceWriters.values())
+//        {
+//            sourceWriter.outdent();
+//            sourceWriter.println("}");
+//            sourceWriter.close();
+//        }
+//    }
+//
+//    private SourceWriter createWebserviceComponentSourceWriter(String originalPackageName, String artifactId) throws IOException
+//    {
+//        Scopes scope = Scopes.Webservice;
+//        String packageName = scope.getPackageName(originalPackageName);
+//        String type = scope.toString();
+//        final String simpleComponentName = "Dagger" + artifactId + type + "Component";
+//        final String fullComponentName = packageName + "." + simpleComponentName;
+//        {// serviceFile filling
+//            appendLineToMetaInf(getModuleListFileName(Scopes.Webservice), fullComponentName);
+//        }
+//        final SourceWriter sourceWriter = createSourceWriter(packageName, simpleComponentName);
+//        sourceWriter.println("package " + packageName + ";");
+//        sourceWriter.println();
+//        //sourceWriter.println("import " + BasicRequestModule.class.getCanonicalName() + ";");
+//        sourceWriter.println("import " + Provides.class.getCanonicalName() + ";");
+//        sourceWriter.println("import " + Inject.class.getCanonicalName() + ";");
+//        sourceWriter.println("import " + Provider.class.getCanonicalName() + ";");
+//        sourceWriter.println("import " + Singleton.class.getCanonicalName() + ";");
+//        sourceWriter.println("import " + Provides.Type.class.getCanonicalName() + ";");
+//        sourceWriter.println("import " + Subcomponent.class.getCanonicalName() + ";");
+//        sourceWriter.println("import " + Module.class.getCanonicalName() + ";");
+//        sourceWriter.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
+//        //sourceWriter.println("import " + RequestScoped.class.getCanonicalName() + ";");
+//        sourceWriter.println();
+//        sourceWriter.println(getGeneratorString());
+//        sourceWriter.println("@Singleton");
+//        //String basicRequestModuleName = BasicRequestModule.class.getSimpleName();
+//        final String modules = getModules(originalPackageName, artifactId, Scopes.Server);
+//        sourceWriter.println("@Subcomponent(" + modules + ")");
+//        sourceWriter.println("public interface " + simpleComponentName + " {");
+//        sourceWriter.indent();
+//        return sourceWriter;
+//    }
+
+//    Set<String> createWebserviceMethods(String interfaceName, String artifactName) throws Exception
+//    {
+//        Set<String> result = new LinkedHashSet<>();
+//        File folder = getMetaInfFolder();
+//        final List<String> implementingClasses = AnnotationInjectionProcessor
+//                .readLines(AnnotationInjectionProcessor.getFile(folder, "services/" + interfaceName));
+//        interfaceName = interfaceName.replaceAll("\\$", ".");
+//        final TypeElement interfaceClassTypeElement = processingEnv.getElementUtils().getTypeElement(interfaceName);
+//
+//        for (String implementingClass : implementingClasses)
+//        {
+//            implementingClass = implementingClass.replaceAll("\\$", ".");
+//            final TypeElement implementingClassTypeElement = processingEnv.getElementUtils().getTypeElement(implementingClass);
+//            final Path path = implementingClassTypeElement != null ? implementingClassTypeElement.getAnnotation(Path.class) : null;
+//            if (interfaceClassTypeElement == null && path == null)
+//            {
+//                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "No interface class found for " + interfaceName, implementingClassTypeElement);
+//                break;
+//            }
+//            else
+//            {
+//                if (implementingClass.endsWith(GwtProxyCreator.PROXY_SUFFIX))
+//                {
+//                    //   generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, Scopes.Gwt, "gwt");
+//                }
+//                else if (implementingClass.endsWith(JavaClientProxyCreator.PROXY_SUFFIX))
+//                {
+//                    //   generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, Scopes.JavaClient, "javaClient");
+//                }
+//                else if (implementingClassTypeElement != null)
+//                {
+//
+//                    Collection<DefaultImplementation> implementations = getDefaultImplementations(implementingClassTypeElement);
+//                    for (DefaultImplementation defaultImplementation : implementations)
+//                    {
+//                        if (interfaceClassTypeElement.getQualifiedName().toString().equals(Path.class.getCanonicalName()))
+//                        {
+//                            final String id = "DefaultImplementation";
+//                            final String s = generateWebserviceComponent(implementingClassTypeElement, id);
+//                            if (s != null)
+//                            {
+//                                result.add(s);
+//                            }
+//                        }
+//                    }
+//                    if (implementingClassTypeElement.getAnnotation(Path.class) != null)
+//                    {
+//                        final String id = implementingClassTypeElement.getAnnotation(Path.class).value();
+//                        final String s = generateWebserviceComponent(implementingClassTypeElement, id);
+//                        if (s != null)
+//                        {
+//                            result.add(s);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        return result;
+//    }
 
     private SourceWriter createComponentSourceWriter(String originalPackageName, String artifactId, Scopes scope) throws Exception
     {
@@ -536,19 +624,19 @@ public class DaggerModuleCreator
         final String simpleComponentName = artifactId + scope.toString() + "Component";
         //final String componentName = packageName + "." + simpleComponentName;
 
-        final SourceWriter sourceWriter = createSourceWriter(packageName, simpleComponentName);
-        sourceWriter.println("package " + packageName + ";");
-        sourceWriter.println();
-        sourceWriter.println("import " + Inject.class.getCanonicalName() + ";");
-        sourceWriter.println("import " + Singleton.class.getCanonicalName() + ";");
-        sourceWriter.println("import " + Component.class.getCanonicalName() + ";");
-        sourceWriter.println();
-        sourceWriter.println(getGeneratorString());
+        final SourceWriter writer = createSourceWriter(packageName, simpleComponentName);
+        writer.println("package " + packageName + ";");
+        writer.println();
+        writer.println("import " + Inject.class.getCanonicalName() + ";");
+        writer.println("import " + Singleton.class.getCanonicalName() + ";");
+        writer.println("import " + Component.class.getCanonicalName() + ";");
+        writer.println();
+        writer.println(getGeneratorString());
         final String modules = getModules(originalPackageName, artifactId, scope);
-        sourceWriter.println("@Singleton @Component(" + modules + ")");
-        sourceWriter.println("public interface " + simpleComponentName + " {");
-        sourceWriter.indent();
-        return sourceWriter;
+        writer.println("@Singleton @Component(" + modules + ")");
+        writer.println("public interface " + simpleComponentName + " {");
+        writer.indent();
+        return writer;
     }
 
     private String getModules(String originalPackageName, String artifactId, Scopes scope) throws IOException
@@ -650,31 +738,30 @@ public class DaggerModuleCreator
             }
         }
         final String simpleModuleName = getSimpleModuleName(artifactId, scope) + "Module";
-        final SourceWriter moduleWriter = createSourceWriter(packageName, simpleModuleName);
-        moduleWriter.println("package " + packageName + ";");
-        moduleWriter.println();
-        moduleWriter.println("import " + Provides.class.getCanonicalName() + ";");
-        moduleWriter.println("import " + Provides.Type.class.getCanonicalName() + ";");
-        moduleWriter.println("import " + Module.class.getCanonicalName() + ";");
-        moduleWriter.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
-        moduleWriter.println();
-        moduleWriter.println(getGeneratorString());
-        moduleWriter.print("@Module(includes={");
+        final SourceWriter writer = createSourceWriter(packageName, simpleModuleName);
+        writer.println("package " + packageName + ";");
+        writer.println();
+        writer.println("import " + Provides.class.getCanonicalName() + ";");
+        writer.println("import " + Provides.Type.class.getCanonicalName() + ";");
+        writer.println("import " + Module.class.getCanonicalName() + ";");
+        writer.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
+        writer.println();
+        writer.println(getGeneratorString());
+        writer.print("@Module(includes={");
         final String commonModuleName = getFullModuleName(originalPackageName, artifactId, Scopes.Common) + "Module.class";
         final String clientModuleName = getFullModuleName(originalPackageName, artifactId, Scopes.Client) + "Module.class";
         if (scope == Scopes.Server || scope == Scopes.Client)
         {
-            moduleWriter.print(commonModuleName);
+            writer.print(commonModuleName);
         }
         else if (scope != Scopes.Common)
         {
-            moduleWriter.print(clientModuleName);
+            writer.print(clientModuleName);
         }
-        moduleWriter.println("})");
-        moduleWriter.println("public class Dagger" + artifactId + scope + "Module {");
-        moduleWriter.indent();
-
-        moduleSourceWriters.put(scope, moduleWriter);
+        writer.println("})");
+        writer.println("public class Dagger" + artifactId + scope + "Module {");
+        writer.indent();
+        moduleSourceWriters.put(scope, writer);
     }
 
     private String getFullModuleName(String originalPackageName, String artifactId, Scopes scope)
@@ -754,7 +841,7 @@ public class DaggerModuleCreator
             final ExtensionPoint annotation = interfaceClassTypeElement.getAnnotation(ExtensionPoint.class);
             if (annotation != null)
             {
-                //generateDefaultImplementation(interfaceClassTypeElement, annotation);
+                generateDefaultImplementation(interfaceClassTypeElement, annotation);
             }
         }
         for (Scopes scope : Scopes.values())
@@ -767,55 +854,7 @@ public class DaggerModuleCreator
         }
     }
 
-    void createWebserviceMethods(String interfaceName, String artifactName) throws Exception
-    {
-        File folder = getMetaInfFolder();
-        final List<String> implementingClasses = AnnotationInjectionProcessor
-                .readLines(AnnotationInjectionProcessor.getFile(folder, "services/" + interfaceName));
-        interfaceName = interfaceName.replaceAll("\\$", ".");
-        final TypeElement interfaceClassTypeElement = processingEnv.getElementUtils().getTypeElement(interfaceName);
 
-        for (String implementingClass : implementingClasses)
-        {
-            implementingClass = implementingClass.replaceAll("\\$", ".");
-            final TypeElement implementingClassTypeElement = processingEnv.getElementUtils().getTypeElement(implementingClass);
-            final Path path = implementingClassTypeElement != null ? implementingClassTypeElement.getAnnotation(Path.class) : null;
-            if (interfaceClassTypeElement == null && path == null)
-            {
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "No interface class found for " + interfaceName, implementingClassTypeElement);
-                break;
-            }
-            else
-            {
-                if (implementingClass.endsWith(GwtProxyCreator.PROXY_SUFFIX))
-                {
-                    //   generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, Scopes.Gwt, "gwt");
-                }
-                else if (implementingClass.endsWith(JavaClientProxyCreator.PROXY_SUFFIX))
-                {
-                    //   generateProxyMethods(interfaceName, implementingClass, interfaceClassTypeElement, Scopes.JavaClient, "javaClient");
-                }
-                else if (implementingClassTypeElement != null)
-                {
-
-                    Collection<DefaultImplementation> implementations = getDefaultImplementations(implementingClassTypeElement);
-                    for (DefaultImplementation defaultImplementation : implementations)
-                    {
-                        if (interfaceClassTypeElement.getQualifiedName().toString().equals(Path.class.getCanonicalName()))
-                        {
-                            final String id = "DefaultImplementation";
-                            generateWebserviceComponent(implementingClassTypeElement, id);
-                        }
-                    }
-                    if (implementingClassTypeElement.getAnnotation(Path.class) != null)
-                    {
-                        final String id = implementingClassTypeElement.getAnnotation(Path.class).value();
-                        generateWebserviceComponent(implementingClassTypeElement, id);
-                    }
-                }
-            }
-        }
-    }
 
     private Collection<DefaultImplementation> getDefaultImplementations(TypeElement typeElement)
     {
@@ -866,15 +905,15 @@ public class DaggerModuleCreator
         final Generated generated = new Generated(interfaceName, implementingClass, id);
         if (notGenerated(sourceWriterIndex, generated))
         {
-            final SourceWriter sourceWriter = getWriter(moduleSourceWriters, sourceWriterIndex, generated);
-            sourceWriter.println();
-            sourceWriter.println("@Provides");
-            final String methodName = createMethodName(sourceWriter, interfaceClassTypeElement);
-            sourceWriter.println("public " + interfaceName + " " + methodName + "(" + implementingClass + " result) {");
-            sourceWriter.indent();
-            sourceWriter.println("return result;");
-            sourceWriter.outdent();
-            sourceWriter.println("}");
+            final SourceWriter writer = getWriter(moduleSourceWriters, sourceWriterIndex, generated);
+            writer.println();
+            writer.println("@Provides");
+            final String methodName = createMethodName(writer, interfaceClassTypeElement);
+            writer.println("public " + interfaceName + " " + methodName + "(" + implementingClass + " result) {");
+            writer.indent();
+            writer.println("return result;");
+            writer.outdent();
+            writer.println("}");
         }
     }
 
@@ -964,19 +1003,19 @@ public class DaggerModuleCreator
 
     }
 
-    private void generateEmptyExtensionMethods(final TypeElement interfaceName, SourceWriter moduleWriter)
+    private void generateEmptyExtensionMethods(final TypeElement interfaceName, SourceWriter writer)
     {
-        moduleWriter.println();
+        writer.println();
         final String collectionTypeString;
-        moduleWriter.println();
-        moduleWriter.println("@javax.inject.Singleton @Provides(type=Type.SET_VALUES)");
+        writer.println();
+        writer.println("@javax.inject.Singleton @Provides(type=Type.SET_VALUES)");
         collectionTypeString = "Set";
-        final String methodName = createMethodName(moduleWriter, interfaceName) + "_empty";
-        moduleWriter.println("public java.util.Set<" + interfaceName.getQualifiedName().toString() + "> " + methodName + "_" + collectionTypeString + "() {");
-        moduleWriter.indent();
-        moduleWriter.println("return java.util.Collections.emptySet();");
-        moduleWriter.outdent();
-        moduleWriter.println("}");
+        final String methodName = createMethodName(writer, interfaceName) + "_empty";
+        writer.println("public java.util.Set<" + interfaceName.getQualifiedName().toString() + "> " + methodName + "_" + collectionTypeString + "() {");
+        writer.indent();
+        writer.println("return java.util.Collections.emptySet();");
+        writer.outdent();
+        writer.println("}");
     }
 
     private BitSet generateDefaultImplementation(final TypeElement implementingClassTypeElement, final TypeElement interfaceTypeElement,
@@ -1084,7 +1123,7 @@ public class DaggerModuleCreator
         moduleWriter.println("}");
     }
 
-    private void generateWebserviceComponent(TypeElement implementingClassTypeElement, String id)
+    private String generateWebserviceComponent(TypeElement implementingClassTypeElement, String id)
     {
         final TypeElement implClass = implementingClassTypeElement;
         final Generated generated = new Generated(implementingClassTypeElement.getQualifiedName().toString(), implClass.getQualifiedName().toString(), id);
@@ -1095,9 +1134,10 @@ public class DaggerModuleCreator
             //final String methodName = createMethodName(sourceWriter, implementingClassTypeElement);
             final String methodName = toJavaName(implementingClassTypeElement);
             sourceWriter.println("public void " + "inject_" +
-                    methodName + "(" + implementingClassTypeElement.getQualifiedName().toString()
-                    + " injector);");
+                    methodName + "(" + implementingClassTypeElement.getQualifiedName().toString() + " injector);");
+            return methodName;
         }
+        return null;
     }
 
     private String createMethodName(SourceWriter moduleWriter, final TypeElement typeElement)
@@ -1139,14 +1179,15 @@ public class DaggerModuleCreator
         }
         final InjectionContext[] context = extensionPoint.context();
         final TypeElement defaultImpl = ((TypeElement) typeUtils.asElement(typeUtils.erasure(implementingClassTypeElement.asType())));
-        final Generated generated = new Generated(interfaceElementType.getQualifiedName().toString(), defaultImpl.getQualifiedName().toString(),
-                extension.id());
+        final String className = defaultImpl.getQualifiedName().toString();
+        final String id = className;
+        final Generated generated = new Generated(interfaceElementType.getQualifiedName().toString(), className, id);
         if (InjectionContext.isInjectableEverywhere(context))
         {
             if (notGenerated(Scopes.Common, generated))
             {
-                SourceWriter moduleWriter = getWriter(moduleSourceWriters, Scopes.Common, generated);
-                generateExtensionMethods(extension, interfaceElementType, defaultImpl, moduleWriter);
+                SourceWriter writer = getWriter(moduleSourceWriters, Scopes.Common, generated);
+                generateExtensionMethods(extension, interfaceElementType, defaultImpl, writer);
             }
         }
         else if (InjectionContext.isInjectableOnClient(context))
@@ -1171,7 +1212,7 @@ public class DaggerModuleCreator
             {
                 if (notGenerated(Scopes.Gwt, generated))
                 {
-                    SourceWriter moduleWriter = getWriter(moduleSourceWriters,Scopes.Gwt, generated);
+                    SourceWriter moduleWriter = getWriter(moduleSourceWriters, Scopes.Gwt, generated);
                     generateExtensionMethods(extension, interfaceElementType, defaultImpl, moduleWriter);
                 }
             }
@@ -1180,53 +1221,52 @@ public class DaggerModuleCreator
             {
                 if (notGenerated(Scopes.JavaClient, generated))
                 {
-                    SourceWriter moduleWriter = getWriter(moduleSourceWriters,Scopes.JavaClient, generated);
+                    SourceWriter moduleWriter = getWriter(moduleSourceWriters, Scopes.JavaClient, generated);
                     generateExtensionMethods(extension, interfaceElementType, defaultImpl, moduleWriter);
                 }
             }
         }
     }
 
-    private void generateExtensionMethods(Extension extension, final TypeElement interfaceName, final TypeElement defaultImplClassName,
-            SourceWriter moduleWriter)
+    private void generateExtensionMethods(Extension extension, final TypeElement interfaceName, final TypeElement defaultImplClassName, SourceWriter writer)
     {
-        moduleWriter.println();
-        writeMethod(interfaceName, moduleWriter, defaultImplClassName, true, extension);
-        //writeMethod(interfaceName, moduleWriter, defaultImplClassName, false, extension);
+        writer.println();
+        writeMethod(interfaceName, writer, defaultImplClassName, true, extension);
+        writeMethod(interfaceName, writer, defaultImplClassName, false, extension);
     }
 
-    private void writeMethod(TypeElement interfaceName, SourceWriter moduleWriter, final TypeElement defaultImplClassName, final boolean isMap,
+    private void writeMethod(TypeElement interfaceName, SourceWriter writer, final TypeElement defaultImplClassName, final boolean isMap,
             final Extension extension)
     {
         final String methodSuffix;
         if (isMap)
         {
-            moduleWriter.println("@Provides(type=Type.MAP)");// @javax.inject.Singleton");
-            moduleWriter.println("@" + DaggerMapKey.class.getSimpleName() + "(\"" + extension.id() + "\")");
+            writer.println("@Provides(type=Type.MAP)");// @javax.inject.Singleton");
+            writer.println("@" + DaggerMapKey.class.getSimpleName() + "(\"" + extension.id() + "\")");
             //final String id = extension.id().replaceAll("\\.", "_");
             methodSuffix = "_Map";
         }
         else
         {
-            moduleWriter.println();
-            moduleWriter.println("@Provides(type=Type.SET)");//@javax.inject.Singleton");
+            writer.println();
+            writer.println("@Provides(type=Type.SET)");//@javax.inject.Singleton");
             //final String id = extension.id().replaceAll("\\.", "_");
             methodSuffix = "_Set";
         }
         final String methodName = defaultImplClassName.getSimpleName() + "_" + methodSuffix;
         int counter = 0;
         String finalMethodName = methodName;
-        while (moduleWriter.containsMethod(finalMethodName))
+        while (writer.containsMethod(finalMethodName))
         {
             finalMethodName = methodName + counter;
             counter++;
         }
-        moduleWriter.addMethod(finalMethodName);
-        moduleWriter.println("public " + interfaceName + " " + finalMethodName + "(" + defaultImplClassName.getQualifiedName().toString() + " impl) {");
-        moduleWriter.indent();
-        moduleWriter.println("return impl;");
-        moduleWriter.outdent();
-        moduleWriter.println("}");
+        writer.addMethod(finalMethodName);
+        writer.println("public " + interfaceName + " " + finalMethodName + "(" + defaultImplClassName.getQualifiedName().toString() + " impl) {");
+        writer.indent();
+        writer.println("return impl;");
+        writer.outdent();
+        writer.println("}");
     }
 
     private TypeElement getProvides(Extension annotation)

@@ -283,7 +283,7 @@
 					<groupId>org.scannotation</groupId>
 				</exclusion>
 			</exclusions>
-			<scope>test</scope>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
