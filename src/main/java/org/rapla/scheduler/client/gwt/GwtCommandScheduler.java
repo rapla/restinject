@@ -1,5 +1,6 @@
 package org.rapla.scheduler.client.gwt;
 
+import org.rapla.logger.Logger;
 import org.rapla.rest.client.gwt.internal.impl.AsyncCallback;
 import org.rapla.rest.client.gwt.internal.impl.GwtClientServerConnector;
 import org.rapla.scheduler.Cancelable;
@@ -10,12 +11,13 @@ import org.rapla.scheduler.Promise;
 import com.google.gwt.core.client.Scheduler;
 import org.rapla.scheduler.impl.UnsynchronizedPromise;
 
-public abstract class GwtCommandScheduler implements CommandScheduler
+public  class GwtCommandScheduler implements CommandScheduler
 {
 
-    public GwtCommandScheduler()
+    Logger logger;
+    public GwtCommandScheduler(Logger logger)
     {
-
+        this.logger= logger;
     }
 
     /*
@@ -169,6 +171,9 @@ public abstract class GwtCommandScheduler implements CommandScheduler
         return schedule(task,delay);
     }
 
-    abstract protected void warn(String message, Exception e);
+    protected void warn(String message, Exception e)
+    {
+        logger.warn( message, e);
+    }
 
 }

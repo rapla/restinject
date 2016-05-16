@@ -1,8 +1,11 @@
 package org.rapla.server;
 
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
+import org.rapla.inject.InjectionContext;
+import org.rapla.inject.raplainject.SimpleRaplaInjector;
+import org.rapla.logger.ConsoleLogger;
+import org.rapla.logger.Logger;
 import org.rapla.rest.server.Injector;
-import org.rapla.rest.server.ReflectionMembersInjector;
 import org.rapla.server.dagger.DaggerRaplaServerStartupModule;
 import org.rapla.server.dagger.RaplaServerComponent;
 import org.rapla.server.rest.RestTestApplication;
@@ -66,9 +69,23 @@ public class TestServlet extends HttpServlet
         super.init(config);
         System.out.println("Init done ");
         StartupParams params  = new StartupParams();
+
         final DaggerRaplaServerStartupModule startupModule = new DaggerRaplaServerStartupModule(params);
         final RaplaServerComponent mod = org.rapla.server.dagger.DaggerRaplaServerComponent.builder().daggerRaplaServerStartupModule(startupModule).build();
-        membersInjector = new ReflectionMembersInjector( RaplaServerComponent.class, mod);
+        //membersInjector = new ReflectionMembersInjector( RaplaServerComponent.class, mod);
+
+        Logger logger = new ConsoleLogger();
+        SimpleRaplaInjector container = new SimpleRaplaInjector(logger);
+        container.addComponentInstance( StartupParams.class,params);
+        try
+        {
+            container.initFromMetaInfService(InjectionContext.server);
+        }
+        catch (Exception e)
+        {
+            throw new ServletException( e);
+        }
+        membersInjector = container.getMembersInjector( );
     }
 
 

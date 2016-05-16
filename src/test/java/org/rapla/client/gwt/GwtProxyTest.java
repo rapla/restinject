@@ -13,6 +13,7 @@ import org.rapla.common.ExampleService_GwtJsonProxy;
 import org.rapla.common.ExampleSimpleService;
 import org.rapla.common.ExampleSimpleService_GwtJsonProxy;
 import org.rapla.common.ComponentStarter;
+import org.rapla.logger.ConsoleLogger;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.Promise;
@@ -214,16 +215,8 @@ public class GwtProxyTest extends GWTTestCase
         final Bootstrap bootstrap = createBootstrap();
         ExampleService.Parameter p = new ExampleService.Parameter();
         p.setActionIds(Arrays.asList(new Integer[] { 1, 2 }));
-        CommandScheduler scheduler = new GwtCommandScheduler()
-        {
-            @Override
-            protected void warn(String message, Exception e)
-            {
-                e.printStackTrace(System.err);
-                System.err.println(message);
-            }
+        CommandScheduler scheduler = new GwtCommandScheduler(new ConsoleLogger());
 
-        };
         final Promise<Collection<ExampleService.Result>> promise = bootstrap.callAsync(p, scheduler);
         delayTestFinish(10000);
         promise.thenAccept((list) ->

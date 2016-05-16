@@ -163,4 +163,17 @@ public enum InjectionContext
         }
         return false;
     }
+
+    public boolean isSupported(InjectionContext... context)
+    {
+        switch ( this)
+        {
+            case  server: return isInjectableOnServer(context);
+            case  swing: return isInjectableOnSwing(context);
+            case  android: return isInjectableOnAndroid(context);
+            case  ios: return isInjectableOnAndroid(context);
+            case  gwt: return isInjectableOnGwt(context);
+        }
+        return false;
+    }
 }

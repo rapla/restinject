@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.rapla.logger.ConsoleLogger;
 import org.rapla.scheduler.impl.UnsynchronizedPromise;
 import org.rapla.scheduler.impl.UtilConcurrentCommandScheduler;
 
@@ -40,28 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
     @Test public void testAccept1CompletableFuture() throws Exception
     {
         String text = "Hello World";
-        final UtilConcurrentCommandScheduler utilConcurrentCommandScheduler = new UtilConcurrentCommandScheduler()
-        {
-            @Override protected void error(String message, Exception ex)
-            {
-
-            }
-
-            @Override protected void debug(String message)
-            {
-
-            }
-
-            @Override protected void info(String message)
-            {
-
-            }
-
-            @Override protected void warn(String message)
-            {
-
-            }
-        };
+        final UtilConcurrentCommandScheduler utilConcurrentCommandScheduler = new UtilConcurrentCommandScheduler(new ConsoleLogger());
         Promise<String> promise = utilConcurrentCommandScheduler.supply(() -> {
             Thread.sleep(500);
             return text;

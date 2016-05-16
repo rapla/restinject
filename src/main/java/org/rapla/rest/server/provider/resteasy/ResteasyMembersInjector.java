@@ -4,6 +4,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.validation.GeneralValidator;
 import org.rapla.rest.server.Injector;
 
+import javax.validation.ValidationException;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 import java.lang.reflect.Method;
@@ -12,15 +13,15 @@ import java.lang.reflect.Method;
 public class ResteasyMembersInjector implements ContextResolver<GeneralValidator>
 {
     public static final String INJECTOR_CONTEXT = Injector.class.getCanonicalName();
-    final RestDaggerValidator raplaRestDaggerListener = new RestDaggerValidator();
+    final MembersInjectionValidator membersInjectionValidator = new MembersInjectionValidator();
 
     @Override
     public GeneralValidator getContext(Class<?> type)
     {
-        return raplaRestDaggerListener;
+        return membersInjectionValidator;
     }
 
-    public static class RestDaggerValidator implements GeneralValidator
+    public static class MembersInjectionValidator implements GeneralValidator
     {
 
         @Override
@@ -31,14 +32,14 @@ public class ResteasyMembersInjector implements ContextResolver<GeneralValidator
             {
                 if ( !(context instanceof Injector))
                 {
-                    IllegalStateException newEx = new IllegalStateException("Request attribute in " + INJECTOR_CONTEXT + " does not implement: " + Injector.class);
+                    ValidationException newEx = new ValidationException("Request attribute in " + INJECTOR_CONTEXT + " does not implement: " + Injector.class);
                     throw newEx;
                 }
                 final Class<?> aClass = object.getClass();
                 final Injector membersInjector = (Injector) context;
                 if ( membersInjector == null)
                 {
-                    IllegalStateException newEx = new IllegalStateException("No members injector available for " + aClass);
+                    ValidationException newEx = new ValidationException("No members injector available for " + aClass);
                     throw newEx;
                 }
                 try
@@ -47,7 +48,7 @@ public class ResteasyMembersInjector implements ContextResolver<GeneralValidator
                 }
                 catch (Exception e)
                 {
-                    IllegalStateException newEx = new IllegalStateException("Could not inject dependencies for " + object + ": " + e.getMessage(), e);
+                    ValidationException newEx = new ValidationException("Could not inject dependencies for " + object + ": " + e.getMessage(), e);
                     //newEx.printStackTrace();
                     throw newEx;
                 }

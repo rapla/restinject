@@ -27,7 +27,7 @@ public class ReflectionMembersInjector implements Injector
 
     }
 
-    @Override public  void injectMembers(Object instance)
+    @Override public  void injectMembers(Object instance) throws Exception
     {
         Class t = instance.getClass();
         final Method method = methodMap.get( t);
@@ -35,16 +35,12 @@ public class ReflectionMembersInjector implements Injector
         {
             method.invoke( component,instance );
         }
-        catch (IllegalAccessException e)
-        {
-            throw new IllegalStateException(e);
-        }
         catch (InvocationTargetException e)
         {
             final Throwable cause = e.getCause();
             if ( cause instanceof Exception)
             {
-                throw new IllegalStateException((Exception)cause);
+                throw (Exception)cause;
             }
             else if (cause instanceof Error)
             {

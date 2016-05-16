@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.rapla.client.AbstractPromiseTest;
 import org.rapla.common.ExampleService;
 import org.rapla.common.ExampleService_GwtJsonProxy;
+import org.rapla.logger.ConsoleLogger;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.client.gwt.GwtCommandScheduler;
@@ -16,7 +17,7 @@ public class GwtPromiseTest extends GWTTestCase
     {
         @Override protected CommandScheduler createScheduler()
         {
-            CommandScheduler scheduler = new GwtCommandScheduler()
+            CommandScheduler scheduler = new GwtCommandScheduler(new ConsoleLogger())
             {
                 @Override protected void warn(String message, Exception e)
                 {

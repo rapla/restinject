@@ -11,6 +11,7 @@ import org.junit.runners.JUnit4;
 import org.rapla.client.AbstractPromiseTest;
 import org.rapla.common.ExampleService;
 import org.rapla.common.ExampleService_JavaJsonProxy;
+import org.rapla.logger.ConsoleLogger;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.impl.UtilConcurrentCommandScheduler;
@@ -62,29 +63,7 @@ import junit.framework.TestCase;
 
     protected CommandScheduler createScheduler()
     {
-        return new UtilConcurrentCommandScheduler()
-        {
-            @Override protected void error(String message, Exception ex)
-            {
-                System.err.println(message);
-            }
-
-            @Override protected void debug(String message)
-            {
-                System.out.println(message);
-            }
-
-            @Override protected void info(String message)
-            {
-                System.out.println(message);
-            }
-
-            @Override protected void warn(String message)
-            {
-                System.err.println(message);
-            }
-
-        };
+        return new UtilConcurrentCommandScheduler(new ConsoleLogger());
     }
 
     protected ExampleService createAnnotationProcessingProxy()

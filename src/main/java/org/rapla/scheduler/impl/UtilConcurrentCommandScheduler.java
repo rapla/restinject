@@ -1,5 +1,6 @@
 package org.rapla.scheduler.impl;
 
+import org.rapla.logger.Logger;
 import org.rapla.scheduler.Cancelable;
 import org.rapla.scheduler.Command;
 import org.rapla.scheduler.CommandScheduler;
@@ -15,18 +16,20 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
+public class UtilConcurrentCommandScheduler implements CommandScheduler
 {
     private final ScheduledExecutorService executor;
     private final Executor promiseExecuter;
+    private final Logger logger;
 
-    public UtilConcurrentCommandScheduler()
+    public UtilConcurrentCommandScheduler(Logger logger)
     {
-        this(6);
+        this(logger,6);
     }
 
-    public UtilConcurrentCommandScheduler(int poolSize)
+    public UtilConcurrentCommandScheduler(Logger logger,int poolSize)
     {
+        this.logger = logger;
         final ScheduledExecutorService executor = Executors.newScheduledThreadPool(poolSize, new ThreadFactory()
         {
 
@@ -111,13 +114,26 @@ public abstract class UtilConcurrentCommandScheduler implements CommandScheduler
         };
     }
 
-    abstract protected void error(String message, Exception ex);
 
-    abstract protected void debug(String message);
+    protected void error(String message, Exception ex)
+    {
+        logger.error( message,ex);
+    }
 
-    abstract protected void info(String message);
+    protected void debug(String message)
+    {
+        logger.debug( message);
+    }
 
-    abstract protected void warn(String message);
+    protected void info(String message)
+    {
+        logger.info( message);
+    }
+
+    protected void warn(String message)
+    {
+        logger.warn( message);
+    }
 
     private Cancelable schedule(Runnable task, long delay, long period)
     {
