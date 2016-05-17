@@ -12,12 +12,12 @@
  *--------------------------------------------------------------------------*/
 package org.rapla.inject.raplainject;
 
-import com.google.gwt.dev.util.collect.HashSet;
-import com.google.gwt.editor.client.Editor.Path;
 import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.DefaultImplementationRepeatable;
 import org.rapla.inject.Disposable;
 import org.rapla.inject.Extension;
 import org.rapla.inject.ExtensionPoint;
+import org.rapla.inject.ExtensionRepeatable;
 import org.rapla.inject.InjectionContext;
 import org.rapla.logger.Logger;
 import org.rapla.rest.server.Injector;
@@ -43,6 +43,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -96,6 +97,37 @@ public class SimpleRaplaInjector
         }
     }
 
+    public  <T> T getInstance(Class<T> componentRole, Object... params) throws RaplaContainerContextException
+    {
+        String key = componentRole.getName();//+ "/" + hint;
+        ComponentHandler<T> handler = getHandler(key);
+        if (handler != null)
+        {
+            try
+            {
+                if (handler instanceof RequestComponentHandler)
+                {
+                    RequestComponentHandler<T> handler1 = (RequestComponentHandler) handler;
+                    T o = handler1.get(0, params);
+                    return o;
+                }
+                else
+                {
+                    return handler.get(0);
+                }
+            }
+            catch (RaplaContainerContextException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                throw new RaplaContainerContextException(ex.getMessage(), ex);
+            }
+        }
+        throw new RaplaContainerContextException(key);
+    }
+
     public <T> void injectMembers(T instance, Class<T> injectorClass, Object... params) throws Exception
     {
         Set<Field> fields = new HashSet<>();
@@ -138,51 +170,50 @@ public class SimpleRaplaInjector
         addComponent(roleInterface, implementingClass, null);
     }
 
-    public <T, I extends T> void addComponentInstance(Class<T> roleInterface, I implementingInstance)
+    public <T, I extends T> void addComponentProvider(Class<T> roleInterface, Class<? extends Provider<I>> implementingClass)
     {
-        addComponentInstance(roleInterface, implementingInstance, implementingInstance.toString());
+        boolean provider = true;
+        addComponentPrivate(roleInterface.getName(), implementingClass, null,provider);
     }
 
-    protected <T, I extends T> void addComponentInstance(Class<T> roleInterface, I implementingInstance, String hint)
+    public <T, I extends T> void addComponentInstance(Class<T> roleInterface, I implementingInstance)
     {
-        addComponentInstance(roleInterface.getName(), implementingInstance, hint);
+        boolean provider = false;
+        addComponentInstance(roleInterface, implementingInstance, implementingInstance.toString(),provider);
+    }
+
+    public <T> void addNamedComponentInstance(String name, T implementingInstance)
+    {
+        boolean provider = false;
+        addComponentInstancePrivate(name, implementingInstance, implementingInstance.toString(),provider);
+    }
+
+    public <T> void addNamedComponentInstanceProvider(String name, Provider<T> implementingInstance)
+    {
+        boolean provider = true;
+        addComponentInstancePrivate(name, implementingInstance, implementingInstance.toString(),provider);
+    }
+
+    public <T, I extends Provider<T>> void addComponentInstanceProvider(Class<T> roleInterface, I implementingInstance)
+    {
+        boolean provider = true;
+        addComponentInstancePrivate(roleInterface.getName(), implementingInstance, implementingInstance.toString(), provider);
+    }
+
+
+
+    protected <T, I extends T> void addComponentInstance(Class<T> roleInterface, I implementingInstance, String hint, boolean provider)
+    {
+        addComponentInstancePrivate(roleInterface.getName(), implementingInstance, hint, provider);
     }
 
     protected <T, I extends T> void addComponent(Class<T> roleInterface, Class<I> implementingClass, String hint)
     {
-        addComponentPrivate(roleInterface.getName(), implementingClass, hint);
+        boolean provider = false;
+        addComponentPrivate(roleInterface.getName(), implementingClass, hint, provider);
     }
 
-    protected <T> T getInstance(Class<T> componentRole, Object... params) throws RaplaContainerContextException
-    {
-        String key = componentRole.getName();//+ "/" + hint;
-        ComponentHandler<T> handler = getHandler(key);
-        if (handler != null)
-        {
-            try
-            {
-                if (handler instanceof RequestComponentHandler)
-                {
-                    RequestComponentHandler<T> handler1 = (RequestComponentHandler) handler;
-                    T o = handler1.get(0, params);
-                    return o;
-                }
-                else
-                {
-                    return handler.get(0);
-                }
-            }
-            catch (RaplaContainerContextException ex)
-            {
-                throw ex;
-            }
-            catch (Exception ex)
-            {
-                throw new RaplaContainerContextException(ex.getMessage(), ex);
-            }
-        }
-        throw new RaplaContainerContextException(key);
-    }
+
 
     protected boolean has(Class componentRole, String hint)
     {
@@ -202,18 +233,7 @@ public class SimpleRaplaInjector
 
     protected Object lookupPrivateWithNull(String role, int depth) throws RaplaContainerContextException
     {
-        ComponentHandler handler = getHandler(role);
-        if (handler != null)
-        {
-            try
-            {
-                return handler.get(depth);
-            }
-            catch (Exception e)
-            {
-                throw new RaplaContainerContextException(e.getMessage(), e);
-            }
-        }
+
         return null;
     }
 
@@ -247,31 +267,31 @@ public class SimpleRaplaInjector
         return result;
     }
 
-    synchronized private void addComponentPrivate(String role, Class implementingClass, String hint)
+    synchronized private void addComponentPrivate(String role, Class implementingClass, String hint, boolean provider)
     {
         if (implementingClass.getAnnotation(Singleton.class) != null)
         {
-            ComponentHandler handler = new SingletonComponentHandler(implementingClass);
+            ComponentHandler handler = new SingletonComponentHandler(implementingClass, provider);
             addHandler(role, hint, handler);
         }
         else
         {
-            ComponentHandler handler = new RequestComponentHandler(implementingClass);
+            ComponentHandler handler = new RequestComponentHandler(implementingClass, provider);
             addHandler(role, hint, handler);
         }
 
     }
 
-    synchronized private void addComponentInstance(String role, Object componentInstance, String hint)
+    synchronized private void addComponentInstancePrivate(String role, Object componentInstance, String hint, boolean provider)
     {
-        addHandler(role, hint, new SingletonComponentHandler(componentInstance));
+        addHandler(role, hint, new SingletonComponentHandler(componentInstance, provider));
     }
 
-    synchronized private <T> void addRequestComponent(Class<T> role, Class<? extends T> implementingClass, String hint)
-    {
-        ComponentHandler handler = new RequestComponentHandler(implementingClass);
-        addHandler(role.getCanonicalName(), hint, handler);
-    }
+//    synchronized private <T> void addRequestComponent(Class<T> role, Class<? extends T> implementingClass, String hint)
+//    {
+//        ComponentHandler handler = new RequestComponentHandler(implementingClass, provider);
+//        addHandler(role.getCanonicalName(), hint, handler);
+//    }
 
     private <T> Map<String, T> lookupServiceMapFor(Class clazz, int depth)
     {
@@ -657,31 +677,42 @@ public class SimpleRaplaInjector
     private Object resolveParam(int depth, List<Object> additionalParams, Type type, Annotation[] annotations, Type genericType,
             boolean throwSingletonExceptionOnMatchingParam) throws Exception
     {
+
+
+        final boolean isParameterizedTyped = genericType instanceof ParameterizedType;
+        if (isParameterizedTyped)
+        {
+            final ParameterizedType parameterizedType = (ParameterizedType) genericType;
+            Object result = resolveParameterized(depth, parameterizedType, annotations);
+            if (result != null)
+            {
+                return result;
+            }
+            type = parameterizedType.getRawType();
+        }
         for (Annotation annotation : annotations)
         {
             if (annotation.annotationType().equals(Named.class))
             {
                 String value = ((Named) annotation).value();
                 final String id = value.intern();
-                Object lookup = lookupPrivateWithNull(id, depth);
-                if (lookup == null)
+                ComponentHandler handler = getHandler(id);
+                if (handler != null)
+                {
+                    try
+                    {
+                        return handler.get(depth);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new RaplaContainerContextException(e.getMessage(), e);
+                    }
+                }
+                else
                 {
                     throw new RaplaContainerContextException("No constant found for id " + id + " with name " + value);
                 }
-                return lookup;
             }
-        }
-
-        final boolean isParameterizedTyped = genericType instanceof ParameterizedType;
-        if (isParameterizedTyped)
-        {
-            final ParameterizedType parameterizedType = (ParameterizedType) genericType;
-            Object result = resolveParameterized(depth, parameterizedType);
-            if (result != null)
-            {
-                return result;
-            }
-            type = parameterizedType.getRawType();
         }
         if (!(type instanceof Class))
         {
@@ -716,7 +747,7 @@ public class SimpleRaplaInjector
         return p;
     }
 
-    private Object resolveParameterized(final int depth, ParameterizedType parameterizedType) throws RaplaContainerContextException
+    private Object resolveParameterized(final int depth, ParameterizedType parameterizedType,Annotation[] annotations) throws RaplaContainerContextException
     {
         final Object result;
         String typeName = parameterizedType.getRawType().getTypeName();
@@ -734,8 +765,6 @@ public class SimpleRaplaInjector
                 {
                     try
                     {
-
-                        Annotation[] annotations = new Annotation[0];
                         Type genericType = param;
                         final boolean throwSingletonExceptionOnMatchingParam = false;
                         final List additionalParams = Collections.EMPTY_LIST;
@@ -766,7 +795,7 @@ public class SimpleRaplaInjector
             else if (valueParam instanceof ParameterizedType)
             {
                 final ParameterizedType paramType = (ParameterizedType) valueParam;
-                if (!paramType.getRawType().toString().equals("javax.inject.Provider"))
+                if (!paramType.getRawType().getTypeName().equals("javax.inject.Provider"))
                 {
                     if (paramType.getRawType() instanceof Class)
                     {
@@ -807,7 +836,7 @@ public class SimpleRaplaInjector
                     else if (valueParam instanceof ParameterizedType)
                     {
                         final ParameterizedType paramType = (ParameterizedType) valueParam;
-                        if (!paramType.getRawType().toString().equals("javax.inject.Provider"))
+                        if (!paramType.getRawType().getTypeName().equals("javax.inject.Provider"))
                         {
                             if (paramType.getRawType() instanceof Class)
                             {
@@ -845,28 +874,81 @@ public class SimpleRaplaInjector
     abstract private class ComponentHandler<T>
     {
         protected Class componentClass;
+        protected boolean provider;
+        ComponentHandler(Class componentClass, boolean provider)
+        {
+            this.componentClass = componentClass;
+            this.provider =provider;
+        }
+
 
         abstract T get(int depth) throws Exception;
+
+        protected T getComponent(Object o)
+        {
+            if ( isProvider())
+            {
+                final Provider provider = (Provider) o;
+                final Object o1 = provider.get();
+                return (T) o1;
+            }
+            else
+            {
+                return (T) o;
+            }
+        }
+        public boolean isProvider()
+        {
+            return provider;
+        }
+        abstract String _toString();
+        public String toString()
+        {
+            StringBuilder buf = new StringBuilder();
+            if (provider)
+            {
+                buf.append("Provider<");
+            }
+            buf.append(_toString());
+            if (provider)
+            {
+                buf.append(">");
+            }
+            return buf.toString();
+        }
     }
 
     private class RequestComponentHandler<T> extends ComponentHandler<T>
     {
-        protected RequestComponentHandler(Class<T> componentClass)
+        protected RequestComponentHandler(Class<T> componentClass, boolean provider)
         {
-            this.componentClass = componentClass;
-
+            super(componentClass,provider);
+            if ( componentClass == null)
+            {
+                throw new NullPointerException("componentClass not set");
+            }
         }
 
         @Override T get(int depth) throws Exception
         {
-            Object component = instanciate(componentClass, depth);
-            return (T) component;
+            T component =  get( depth, new Object[] {});
+            return component;
         }
 
         T get(int depth, Object... params) throws Exception
         {
             Object component = instanciate(componentClass, depth, params);
-            return (T) component;
+            return getComponent(component);
+        }
+
+        @Override
+        public String _toString()
+        {
+            if (componentClass != null)
+            {
+                return componentClass.getName() ;
+            }
+            return super.toString();
         }
     }
 
@@ -875,25 +957,33 @@ public class SimpleRaplaInjector
         protected Object component;
         boolean dispose = true;
 
-        protected SingletonComponentHandler(Object component)
+        protected SingletonComponentHandler(Object component, boolean provider)
         {
+            super(null, provider);
+            if ( component == null)
+            {
+                throw new NullPointerException("instance not set");
+            }
             this.component = component;
             this.dispose = false;
         }
 
-        protected SingletonComponentHandler(Class componentClass)
+        protected SingletonComponentHandler(Class componentClass, boolean provider)
         {
-            this.componentClass = componentClass;
+            super(componentClass, provider);
+            if ( componentClass == null)
+            {
+                throw new NullPointerException("componentClass not set");
+            }
         }
 
         Object get(int depth) throws Exception
         {
-            if (component != null)
+            if (component == null)
             {
-                return component;
+                component = instanciate(componentClass, depth);
             }
-            component = instanciate(componentClass, depth);
-            return component;
+            return getComponent(component);
         }
 
         boolean disposing;
@@ -931,7 +1021,8 @@ public class SimpleRaplaInjector
             }
         }
 
-        public String toString()
+        @Override
+        public String _toString()
         {
             if (component != null)
             {
@@ -1005,7 +1096,7 @@ public class SimpleRaplaInjector
     {
         for ( Class aClass:classes)
         {
-            final Collection<Extension> extensions = getAnnotationsByType(aClass, Extension.class);
+            final Collection<Extension> extensions = getExtensions(aClass);
             for ( Extension extension:extensions)
             {
                 final Class provides = extension.provides();
@@ -1016,7 +1107,7 @@ public class SimpleRaplaInjector
                     addComponent(provides, aClass, id);
                 }
             }
-            final Collection<DefaultImplementation> defaultImplementations = getAnnotationsByType(aClass, DefaultImplementation.class);
+            final Collection<DefaultImplementation> defaultImplementations = getDefaultImplementations(aClass);
             for ( DefaultImplementation defaultImplementation:defaultImplementations)
             {
                 final Class provides = defaultImplementation.of();
@@ -1067,8 +1158,7 @@ public class SimpleRaplaInjector
                     }
                     // load class for implementation or extension
                     final Class<T> aClass = (Class<T>) Class.forName(implementationClassName);
-                    final Class<Extension> annotationClass = Extension.class;
-                    final Collection<Extension> extensions = getAnnotationsByType(aClass, annotationClass);
+                    final Collection<Extension> extensions = getExtensions(aClass);
                     Collection<String> idList = getImplementingIds(interfaceClass, extensions);
                     // add extension implementations
                     if (idList.size() > 0)
@@ -1089,8 +1179,7 @@ public class SimpleRaplaInjector
                         }
                     }
                     // add default implementations
-                    final Class<DefaultImplementation> annotationClass2 = DefaultImplementation.class;
-                    final Collection<DefaultImplementation> defaultImplementations = getAnnotationsByType(aClass, annotationClass2);
+                    final Collection<DefaultImplementation> defaultImplementations = getDefaultImplementations(aClass);
                     final boolean implementing = isImplementing(interfaceClass, defaultImplementations, baseContext);
                     if (implementing)
                     {
@@ -1175,6 +1264,45 @@ public class SimpleRaplaInjector
             }
         };
         return injector;
+    }
+
+
+    private Collection<DefaultImplementation> getDefaultImplementations(Class typeElement)
+    {
+        Collection<DefaultImplementation> result = new ArrayList<>();
+        {
+            final DefaultImplementationRepeatable repeatable = (DefaultImplementationRepeatable) typeElement.getAnnotation(DefaultImplementationRepeatable.class);
+            if (repeatable != null)
+            {
+                result.addAll(Arrays.asList(repeatable.value()));
+            }
+
+            final DefaultImplementation single = (DefaultImplementation) typeElement.getAnnotation(DefaultImplementation.class);
+            if (single != null)
+            {
+                result.add(single);
+            }
+        }
+        return result;
+    }
+
+    private Collection<Extension> getExtensions(Class typeElement)
+    {
+        Collection<Extension> result = new ArrayList<>();
+        {
+            final ExtensionRepeatable repeatable = (ExtensionRepeatable) typeElement.getAnnotation(ExtensionRepeatable.class);
+            if (repeatable != null)
+            {
+                result.addAll(Arrays.asList(repeatable.value()));
+            }
+
+            final Extension single = (Extension) typeElement.getAnnotation(Extension.class);
+            if (single != null)
+            {
+                result.add(single);
+            }
+        }
+        return result;
     }
 
 

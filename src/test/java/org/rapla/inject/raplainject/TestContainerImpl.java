@@ -59,10 +59,11 @@ public class TestContainerImpl
     @Test public void testMapProvider() throws Exception
     {
         container.addComponent(MyExtensionPoint.class, MyOtherClass.class);
-        container.addComponent(MyExtensionPoint.class, MyOtherClass2.class);
+        container.addComponentProvider(MyExtensionPoint.class, MyOtherClass2Provider.class);
         final MyExtensionMapUserClass myClass = container.inject(MyExtensionMapUserClass.class);
         myClass.doAll();
     }
+
 
     @Test public void testCylce() throws Exception
     {
@@ -136,6 +137,21 @@ public class TestContainerImpl
         }
     }
 
+    public static class MyOtherClass2Provider implements Provider<MyOtherClass2>
+    {
+        Logger logger;
+        @Inject
+        public MyOtherClass2Provider(Logger logger)
+        {
+            this.logger = logger;
+        }
+
+        public MyOtherClass2 get()
+        {
+            return new MyOtherClass2(logger);
+        }
+    }
+
     public static class MyExtensionSetUserClass
     {
         //private final Set<MyExtensionPoint<Integer>> set;
@@ -194,7 +210,8 @@ public class TestContainerImpl
             for (Provider<MyExtensionPoint> p : setProvider.values()){
                 p.get().doSomething(i++);
             }
-            for (MyExtensionPoint<String> p : providerSet.get().values()){
+            final Map<String, MyExtensionPoint<String>> stringMyExtensionPointMap = providerSet.get();
+            for (MyExtensionPoint<String> p : stringMyExtensionPointMap.values()){
                 p.doSomething("" + i++);
             }
         }
