@@ -38,7 +38,7 @@
 	</scm>
 	<properties>
 		<slf4j.version>1.7.21</slf4j.version>
-		<gwt.plugin.productionmode>false</gwt.plugin.productionmode>
+		<gwt.plugin.productionmode>true</gwt.plugin.productionmode>
 		<gwt.version>2.8.0-beta1</gwt.version>
 		<gwt.plugin.version>2.8.0-beta1</gwt.plugin.version>
 		<dagger.version>2.4</dagger.version>
@@ -175,6 +175,7 @@
 					<productionMode>${gwt.plugin.productionmode}</productionMode>
 					<testTimeOut>12360</testTimeOut>
 					<sourceLevel>1.8</sourceLevel>
+					<logLevel>INFO</logLevel>
 					<generateDirectory>${project.build.testOutputDirectory}/generated-gwt-test-code</generateDirectory>
 					<warSourceDirectory>${project.build.testSourceDirectory}/webapp</warSourceDirectory>
 					<detail>false</detail>
@@ -333,6 +334,27 @@
 			<version>${slf4j.version}</version>
 			<scope>provided</scope>
 		</dependency>
+		<!--
+
+<dependency>
+<groupId>com.google.guava</groupId>
+<artifactId>guava</artifactId>
+<version>19.0</version>
+<scope>provided</scope>
+</dependency>
+
+<dependency>
+<groupId>xyz.jsinterop</groupId>
+<artifactId>jsinterop</artifactId>
+<version>0.1.1</version>
+<exclusions>
+    <exclusion>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+    </exclusion>
+</exclusions>
+		</dependency>
+-->
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>

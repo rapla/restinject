@@ -55,7 +55,6 @@ public class RestTestApplication extends Application
             classes.add(UserService.class);
             classes.add(ExampleServiceImpl.class);
             classes.add(ExampleSimpleServiceImpl.class);
-
         }
         this.classes = Collections.unmodifiableSet(classes);
     }

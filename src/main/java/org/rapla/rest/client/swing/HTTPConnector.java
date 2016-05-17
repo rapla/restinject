@@ -32,7 +32,7 @@ public class HTTPConnector implements JsonRemoteConnector
         {
             conn.setRequestProperty(additionalHeader.getKey(), additionalHeader.getValue());
         }
-        if (!requestMethod.equals("POST") && !requestMethod.equals("GET"))
+        if (!requestMethod.equals("POST") && !requestMethod.equals("GET") && !requestMethod.equals("OPTIONS"))
         {
             conn.setRequestMethod("POST");
             // we tunnel all non POST or GET requests to avoid proxy filtering (e.g. URLConnection does not allow PATCH)

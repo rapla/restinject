@@ -64,7 +64,8 @@ public class SimpleRaplaInjector
         {
             super(text);
         }
-        public RaplaContainerContextException(String text,Exception ex)
+
+        public RaplaContainerContextException(String text, Exception ex)
         {
             super(text, ex);
         }
@@ -106,10 +107,10 @@ public class SimpleRaplaInjector
                 aClass = aClass.getSuperclass();
             }
         }
-        List<Object> additionalParams = Arrays.asList( params);
-        for ( Field field:fields)
+        List<Object> additionalParams = Arrays.asList(params);
+        for (Field field : fields)
         {
-            if ( field.getAnnotation(Inject.class) == null)
+            if (field.getAnnotation(Inject.class) == null)
             {
                 continue;
             }
@@ -121,8 +122,8 @@ public class SimpleRaplaInjector
             final Type genericType = field.getGenericType();
             boolean throwSingletonExceptionOnMatchingParam = false;
             Object p = resolveParam(depth, additionalParams, type, annotations, genericType, throwSingletonExceptionOnMatchingParam);
-            field.setAccessible( true );
-            field.set( instance,p);
+            field.setAccessible(true);
+            field.set(instance, p);
         }
 
     }
@@ -196,14 +197,8 @@ public class SimpleRaplaInjector
         {
             return true;
         }
-        //        Constructor injectableConstructor = findInjectableConstructor(componentRole);
-        //        if ( injectableConstructor != null)
-        //        {
-        //            return true;
-        //        }
         return false;
     }
-
 
     protected Object lookupPrivateWithNull(String role, int depth) throws RaplaContainerContextException
     {
@@ -242,7 +237,7 @@ public class SimpleRaplaInjector
                 throw new RaplaContainerContextException(e.getMessage(), e);
             }
         }
-        throw new RaplaContainerContextException(" Implementation not found for " +clazz.getName());
+        throw new RaplaContainerContextException(" Implementation not found for " + clazz.getName());
     }
 
     protected <T> Set<T> lookupServicesFor(Class<T> role, int depth) throws RaplaContainerContextException
@@ -384,11 +379,6 @@ public class SimpleRaplaInjector
         return result;
     }
 
-    /**
-     * @param roleName
-     * @param hint
-     * @param handler
-     */
     private void addHandler(String roleName, String hint, ComponentHandler handler)
     {
         m_componentHandler.add(handler);
@@ -646,8 +636,7 @@ public class SimpleRaplaInjector
         }
     }
 
-    private Object[] resolveParams(int depth, List<Object> additionalParams, Constructor c, boolean throwSingletonExceptionOnMatchingParam)
-            throws Exception
+    private Object[] resolveParams(int depth, List<Object> additionalParams, Constructor c, boolean throwSingletonExceptionOnMatchingParam) throws Exception
     {
         Object[] params = null;
         Class[] types = c.getParameterTypes();
@@ -736,7 +725,6 @@ public class SimpleRaplaInjector
         {
             throw new IllegalStateException("Paramater of generic " + typeName + " must be specified for injection ");
         }
-        //Provider<Provider<Class>>
         if (typeName.equals("javax.inject.Provider"))
         {
             final Type param = actualTypeArguments[0];
@@ -1009,9 +997,119 @@ public class SimpleRaplaInjector
                     continue;
                 }
             }
-            addImplementations(baseContext,interfaceClass);
+            addImplementations(baseContext, interfaceClass);
         }
     }
+
+    public void initFromClasses(InjectionContext baseContext, Set<Class> classes) throws Exception
+    {
+        for ( Class aClass:classes)
+        {
+            final Collection<Extension> extensions = getAnnotationsByType(aClass, Extension.class);
+            for ( Extension extension:extensions)
+            {
+                final Class provides = extension.provides();
+                final ExtensionPoint annotation = (ExtensionPoint)provides.getAnnotation(ExtensionPoint.class);
+                if ( baseContext.isSupported(annotation.context()))
+                {
+                    String id = aClass.getCanonicalName();
+                    addComponent(provides, aClass, id);
+                }
+            }
+            final Collection<DefaultImplementation> defaultImplementations = getAnnotationsByType(aClass, DefaultImplementation.class);
+            for ( DefaultImplementation defaultImplementation:defaultImplementations)
+            {
+                final Class provides = defaultImplementation.of();
+                if ( baseContext.isSupported(defaultImplementation.context()))
+                {
+                    String id = aClass.getCanonicalName();
+                    addComponent(provides, aClass, id);
+                }
+            }
+        }
+    }
+
+    private <T> void addImplementations(InjectionContext baseContext, Class<T> interfaceClass) throws IOException
+    {
+        final ExtensionPoint extensionPointAnnotation = interfaceClass.getAnnotation(ExtensionPoint.class);
+        final boolean isExtensionPoint = extensionPointAnnotation != null;
+        if (isExtensionPoint)
+        {
+            final InjectionContext[] context = extensionPointAnnotation.context();
+            if (!baseContext.isSupported(context))
+            {
+                return;
+            }
+        }
+
+        final String folder = "META-INF/services/";
+        // load all implementations or extensions from service list file
+        Set<String> implementations = new LinkedHashSet<String>();
+        final String interfaceName = interfaceClass.getCanonicalName();
+        Collection<URL> resources = find(folder + interfaceName);
+        for (URL url : resources)
+        {
+            //final URL def = moduleDefinition.nextElement();
+            final InputStream in = url.openStream();
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+            String implementationClassName = null;
+            while ((implementationClassName = reader.readLine()) != null)
+            {
+                try
+                {
+                    if (implementations.contains(implementationClassName))
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        implementations.add(implementationClassName);
+                    }
+                    // load class for implementation or extension
+                    final Class<T> aClass = (Class<T>) Class.forName(implementationClassName);
+                    final Class<Extension> annotationClass = Extension.class;
+                    final Collection<Extension> extensions = getAnnotationsByType(aClass, annotationClass);
+                    Collection<String> idList = getImplementingIds(interfaceClass, extensions);
+                    // add extension implementations
+                    if (idList.size() > 0)
+                    {
+
+                        for (String id : idList)
+                        {
+                            addComponent(interfaceClass, aClass, id);
+                            getLogger().info("Found extension for " + interfaceName + " : " + implementationClassName);
+                        }
+                    }
+                    else
+                    {
+                        if (isExtensionPoint)
+                        {
+                            logger.warn(aClass + " provides no extension for " + interfaceName + " but is in the service list of " + interfaceName
+                                    + ". You may need run a clean build.");
+                        }
+                    }
+                    // add default implementations
+                    final Class<DefaultImplementation> annotationClass2 = DefaultImplementation.class;
+                    final Collection<DefaultImplementation> defaultImplementations = getAnnotationsByType(aClass, annotationClass2);
+                    final boolean implementing = isImplementing(interfaceClass, defaultImplementations, baseContext);
+                    if (implementing)
+                    {
+                        addComponent(interfaceClass, aClass, null);
+                        getLogger().info("Found implementation for " + interfaceName + " : " + implementationClassName);
+                        // not necessary in current impl
+                        //src.println("binder.bind(" + interfaceName + ".class).to(" + implementationClassName + ".class).in(Singleton.class);");
+                    }
+
+                }
+                catch (Throwable e)
+                {
+                    logger.warn("Error loading implementationClassName (" + implementationClassName + ") for " + interfaceName + " from file " + url);
+                }
+            }
+            reader.close();
+        }
+    }
+
 
     private Collection<URL> find(String fileWithfolder) throws IOException
     {
@@ -1054,12 +1152,11 @@ public class SimpleRaplaInjector
         return false;
     }
 
-
-    public  Injector getMembersInjector()
+    public Injector getMembersInjector()
     {
         final Injector injector = new Injector()
         {
-            @Override public void injectMembers(Object instance) throws  Exception
+            @Override public void injectMembers(Object instance) throws Exception
             {
                 final Class aClass = instance.getClass();
                 SimpleRaplaInjector.this.injectMembers(instance, aClass);
@@ -1067,11 +1164,12 @@ public class SimpleRaplaInjector
         };
         return injector;
     }
+
     public <T> Injector<T> getMembersInjector(Class<T> injectorClass)
     {
         final Injector<T> injector = new Injector<T>()
         {
-            @Override public void injectMembers(T instance) throws  Exception
+            @Override public void injectMembers(T instance) throws Exception
             {
                 SimpleRaplaInjector.this.injectMembers(instance, injectorClass);
             }
@@ -1080,131 +1178,16 @@ public class SimpleRaplaInjector
     }
 
 
-
-    private <T> void addImplementations(InjectionContext baseContext,Class<T> interfaceClass) throws IOException
-    {
-        final ExtensionPoint extensionPointAnnotation = interfaceClass.getAnnotation(ExtensionPoint.class);
-        final Path pathAnnotation = interfaceClass.getAnnotation(Path.class);
-        final boolean isExtensionPoint = extensionPointAnnotation != null;
-        final boolean isRemoteMethod = false;//remoteJsonMethodAnnotation != null;
-        if (isExtensionPoint)
-        {
-            final InjectionContext[] context = extensionPointAnnotation.context();
-            if (!baseContext.isSupported(context))
-            {
-                return;
-            }
-        }
-
-        final String folder = "META-INF/services/";
-        boolean foundExtension = false;
-        boolean foundDefaultImpl = false;
-        // load all implementations or extensions from service list file
-        Set<String> implemantations = new LinkedHashSet<String>();
-        final String interfaceName = interfaceClass.getCanonicalName();
-        Collection<URL> resources = find(folder + interfaceName);
-        for (URL url : resources)
-        {
-            //final URL def = moduleDefinition.nextElement();
-            final InputStream in = url.openStream();
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-            String implementationClassName = null;
-            boolean implOrExtensionFound = false;
-            while ((implementationClassName = reader.readLine()) != null)
-            {
-                try
-                {
-                    if (implemantations.contains(implementationClassName))
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        implemantations.add(implementationClassName);
-                    }
-                    // load class for implementation or extension
-                    final Class<T> clazz = (Class<T>) Class.forName(implementationClassName);
-                    final Class<Extension> annotationClass = Extension.class;
-                    final Collection<Extension> extensions = getAnnotationsByType(clazz, annotationClass);
-
-                    Collection<String> idList = getImplementingIds(interfaceClass, extensions);
-                    // add extension implementations
-                    if (idList.size() > 0)
-                    {
-
-                        for (String id : idList)
-                        {
-                            foundExtension = true;
-                            addComponent(interfaceClass, clazz, id);
-                            getLogger().info("Found extension for " + interfaceName + " : " + implementationClassName);
-                        }
-                    }
-                    else
-                    {
-                        if (isExtensionPoint)
-                        {
-                            logger.warn(clazz + " provides no extension for " + interfaceName + " but is in the service list of " + interfaceName
-                                    + ". You may need run a clean build.");
-                        }
-                    }
-                    // add default implementations
-                    final Class<DefaultImplementation> annotationClass2 = DefaultImplementation.class;
-                    final Collection<DefaultImplementation> defaultImplementations = getAnnotationsByType(clazz, annotationClass2);
-                    final boolean implementing = isImplementing(interfaceClass, defaultImplementations, baseContext);
-                    if (implementing)
-                    {
-                        addComponent(interfaceClass, clazz, null);
-                        getLogger().info("Found implementation for " + interfaceName + " : " + implementationClassName);
-                        foundDefaultImpl = true;
-                        // not necessary in current impl
-                        //src.println("binder.bind(" + interfaceName + ".class).to(" + implementationClassName + ".class).in(Singleton.class);");
-                    }
-                    if (isRemoteMethod && implementationClassName.endsWith("JavaJsonProxy"))
-                    {
-                        String id = pathAnnotation.value();
-                        if (id == null || id.isEmpty())
-                        {
-                            id = interfaceName;
-                        }
-                        addRequestComponent(interfaceClass, clazz, id);
-                    }
-
-                }
-                catch (Throwable e)
-                {
-                    logger.warn("Error loading implementationClassName (" + implementationClassName + ") for " + interfaceName + " from file " + url);
-                }
-
-            }
-            reader.close();
-        }
-
-        if (isExtensionPoint)
-        {
-            if (!foundExtension)
-            {
-                // not necessary to create a default Binding
-            }
-        }
-        else
-        {
-            if (!foundDefaultImpl)
-            {
-                logger.warn( "No DefaultImplementation found for " + interfaceName + " Interface will not be available in the supported Contexts " + baseContext  + " ");
-            }
-        }
-    }
-
     private <T> Collection<T> getAnnotationsByType(final Class clazz, final Class<T> annotationClass2)
     {
         final Annotation[] annotations = clazz.getAnnotations();
         List<T> annotationList = new ArrayList<T>();
-        for ( Annotation annotation:annotations)
+        for (Annotation annotation : annotations)
         {
             final Class<? extends Annotation> aClass = annotation.annotationType();
-            if ( aClass.equals( annotationClass2))
+            if (aClass.equals(annotationClass2))
             {
-                annotationList.add( (T)annotation);
+                annotationList.add((T) annotation);
             }
         }
         return annotationList;

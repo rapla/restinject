@@ -31,7 +31,7 @@ public class GwtDaggerGenerator extends Generator
         final InputStream resourceAsStream = classLoader.getResourceAsStream(file);
         if (resourceAsStream == null)
         {
-            final String message = "Can't load module descritption file " + file;
+            final String message = "Can't load module description file " + file;
             logger.log(Type.ERROR, message);
             throw new UnableToCompleteException();
         }

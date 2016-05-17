@@ -2,16 +2,24 @@
         "http://google-web-toolkit.googlecode.com/svn/releases/2.0/distro-source/core/src/gwt-module.dtd">
 <module>
     <inherits name='com.google.gwt.core.Core'/>
-    <inherits name='com.google.gwt.user.User'/>
     <inherits name='org.rapla.rest.rest'/>
     <inherits name='org.rapla.inject.inject'/>
     <inherits name='org.rapla.scheduler.scheduler'/>
     <inherits name='RestinjectExternal'/>
+    <!--
+    <inherits name="com.google.gwt.logging.Logging"/>
+    <set-property name="gwt.logging.logLevel" value="INFO" />
+    <set-property name="gwt.logging.enabled" value="TRUE" />
+-->
+    <!--
+    <inherits name='xyz.jsinterop.JsInterop' />
+    -->
     <source path='client' >
         <exclude name='**/swing/**' />
         <exclude name='**/standalone/**' />
-            </source>
+    </source>
     <source path='inject'/>
+    <source path='logger'/>
     <source path='common'/>
     <source path='dagger'/>
     <servlet path='/rapla/*' class='org.rapla.server.GwtTestServlet'></servlet>

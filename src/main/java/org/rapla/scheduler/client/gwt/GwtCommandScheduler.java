@@ -94,7 +94,7 @@ public  class GwtCommandScheduler implements CommandScheduler
     public <T> Promise<T> supply(final Callable<T> supplier)
     {
         final UnsynchronizedPromise<T> promise = new UnsynchronizedPromise<T>();
-        Scheduler.get().scheduleFinally(() ->
+        Scheduler.get().scheduleDeferred(() ->
         {
             try
             {
@@ -113,7 +113,7 @@ public  class GwtCommandScheduler implements CommandScheduler
     public Promise<Void> run(final Command supplier)
     {
         final UnsynchronizedPromise<Void> promise = new UnsynchronizedPromise<Void>();
-        Scheduler.get().scheduleFinally(() ->
+        Scheduler.get().scheduleDeferred(() ->
         {
             try
             {
@@ -132,7 +132,8 @@ public  class GwtCommandScheduler implements CommandScheduler
     public <T> Promise<T> supplyProxy(final Callable<T> supplier)
     {
         final UnsynchronizedPromise<T> promise = new UnsynchronizedPromise<T>();
-        Scheduler.get().scheduleFinally(() ->
+        // We call the proxy directly so we don't mess with the callbacks
+        Scheduler.get().scheduleDeferred(() ->
         {
             GwtClientServerConnector.registerSingleThreadedCallback(new AsyncCallback<T>()
             {

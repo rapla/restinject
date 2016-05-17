@@ -83,6 +83,11 @@ public class GwtPromiseTest extends GWTTestCase
         genericTest.tearDown();
     }
 
+    @Test public void testCompose() throws Exception
+    {
+        genericTest.testCompose();
+    }
+
     @Test public void testCombine() throws Exception
     {
         genericTest.testCombine();
@@ -108,10 +113,6 @@ public class GwtPromiseTest extends GWTTestCase
         genericTest.testHandle2();
     }
 
-    @Test public void testCompose() throws Exception
-    {
-        genericTest.testCompose();
-    }
 
     @Test public void testExceptionally() throws Exception
     {

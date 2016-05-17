@@ -74,7 +74,7 @@ public class ServiceInfLoader
                 }
             }
         }
-        result.classes.add(JsonReader.class);
+        //result.classes.add(JsonReader.class);
         return result;
     }
 

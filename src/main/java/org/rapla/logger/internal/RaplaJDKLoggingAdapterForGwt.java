@@ -12,28 +12,20 @@
 *--------------------------------------------------------------------------*/
 package org.rapla.logger.internal;
 
-import org.rapla.inject.DefaultImplementation;
-import org.rapla.inject.InjectionContext;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-@Singleton
-@DefaultImplementation(of = org.rapla.logger.Logger.class,context = InjectionContext.gwt)
 public class RaplaJDKLoggingAdapterForGwt implements org.rapla.logger.Logger
 {
     Logger logger;
     String id;
 
-    @Inject
-    public RaplaJDKLoggingAdapterForGwt()
+    public RaplaJDKLoggingAdapterForGwt(String id)
     {
-        this(getLogger("rapla"), "rapla");
+        this(getLogger(id), id);
     }
 
-    private RaplaJDKLoggingAdapterForGwt( Logger logger, String id) {
+    public RaplaJDKLoggingAdapterForGwt( Logger logger, String id) {
         this.logger = logger;
         this.id = id;
     }

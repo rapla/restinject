@@ -225,7 +225,7 @@ public class DaggerModuleCreator
         componentSourceWriters.clear();
         // don't clear
         //existingWriters.clear();
-        String moduleName;
+        String moduleName = null;
         {
             final Filer filer = processingEnv.getFiler();
             FileObject resource;
@@ -239,30 +239,32 @@ public class DaggerModuleCreator
                 }
                 catch ( FileNotFoundException ex)
                 {
-                    JavaFileManager.Location loc = StandardLocation.CLASS_OUTPUT;
-                    try
+                    if (processingEnv.getElementUtils().getTypeElement("ModuleDescription") != null)
                     {
-                        resource = filer.getResource(loc, packageName, fileName);
+                        moduleName = "org.rapla.rapla";
+                        resource= null;
                     }
-                    catch ( FileNotFoundException ex2)
+                    else
                     {
                         processingEnv.getMessager()
-                                .printMessage(Diagnostic.Kind.ERROR, "Module find not found " + packageName + (packageName.length() > 0 ? "/" : "") + fileName + " " + ex2.getMessage());
+                                .printMessage(Diagnostic.Kind.ERROR, "Module find not found " + packageName + (packageName.length() > 0 ? "/" : "") + fileName + " " + ex.getMessage());
                         return;
                     }
                 }
             }
-            if (!new File(resource.toUri()).exists())
+            if ( moduleName == null)
             {
-                processingEnv.getMessager()
-                        .printMessage(Diagnostic.Kind.ERROR, "Module find not found " + resource.toUri());
-                return;
-                //   JavaFileManager.Location loc = StandardLocation.CLASS_PATH;
-                //            resource = processingEnv.getFiler().getResource(loc, packageName, fileName);
-            }
-            try (final BufferedReader reader = new BufferedReader(resource.openReader(true)))
-            {
-                moduleName = reader.readLine();
+                if (!new File(resource.toUri()).exists())
+                {
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Module find not found " + resource.toUri());
+                    return;
+                    //   JavaFileManager.Location loc = StandardLocation.CLASS_PATH;
+                    //            resource = processingEnv.getFiler().getResource(loc, packageName, fileName);
+                }
+                try (final BufferedReader reader = new BufferedReader(resource.openReader(true)))
+                {
+                    moduleName = reader.readLine();
+                }
             }
         }
 
@@ -298,7 +300,6 @@ public class DaggerModuleCreator
             final String packageName = (i >= 0 ? moduleName.substring(0, i) : "");
             String artifactName = firstCharUp(i >= 0 ? moduleName.substring(i + 1) : moduleName);
             generateModuleClass(packageName, artifactName, scopes);
-            //generateWebserviceComponents(packageName, artifactName, scopes);
             generateComponents(packageName, artifactName, scopes);
         }
         final long ms = System.currentTimeMillis() - start;

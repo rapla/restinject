@@ -1,10 +1,7 @@
 package org.rapla.rest.client.gwt.internal.impl;
 
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.http.client.Response;
-import com.google.gwt.http.client.URL;
-import com.google.gwt.xhr.client.XMLHttpRequest;
-
+import org.rapla.logger.Logger;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.ExceptionDeserializer;
 import org.rapla.rest.client.RemoteConnectException;
@@ -22,12 +19,7 @@ import java.util.Set;
 
 public class GwtClientServerConnector<T>
 {
-    protected static final JavaScriptObject jsonParser;
     private static AsyncCallback _callback;
-    static
-    {
-        jsonParser = getJsonParser();
-    }
 
     public static void registerSingleThreadedCallback(AsyncCallback callback)
     {
@@ -36,22 +28,18 @@ public class GwtClientServerConnector<T>
 
     private String httpMethod;
 
-    private static native JavaScriptObject getJsonParser()
-    /*-{
-		return $wnd.JSON.parse;
-    }-*/;
-
     protected final ExceptionDeserializer exceptionDeserializer;
     protected final String url;
     protected final String body;
     protected final ResultDeserializer<T> resultDeserializer;
 
+    Logger logger;
     private String token;
     private final Map<String, String> additionalHeaders;
     private final String resultType;
 
-    public GwtClientServerConnector(String httpMethod, final ExceptionDeserializer exceptionDeserializer, final String url, Map<String, String> additionalHeaders,
-            final String body, final ResultDeserializer<T> resultDeserializer, String resultType)
+    public GwtClientServerConnector(String httpMethod, final ExceptionDeserializer exceptionDeserializer, final String url,
+            Map<String, String> additionalHeaders, final String body, final ResultDeserializer<T> resultDeserializer, String resultType, Logger logger)
     {
         this.httpMethod = httpMethod;
         this.exceptionDeserializer = exceptionDeserializer;
@@ -60,11 +48,14 @@ public class GwtClientServerConnector<T>
         this.body = body;
         this.resultDeserializer = resultDeserializer;
         this.resultType = resultType;
+        this.logger = logger;
     }
 
-    public static <T> T doInvoke(final String requestMethodType, final String url, final Map<String, String> additionalHeaders, final String body, final ResultDeserializer<T> ser, String resultType, CustomConnector connector) throws Exception
+    public static <T> T doInvoke(final String requestMethodType, final String url, final Map<String, String> additionalHeaders, final String body,
+            final ResultDeserializer<T> ser, String resultType, CustomConnector connector) throws Exception
     {
-        GwtClientServerConnector gwtConnector = new GwtClientServerConnector<>(requestMethodType, connector, url, additionalHeaders, body, ser, resultType);
+        GwtClientServerConnector gwtConnector = new GwtClientServerConnector<>(requestMethodType, connector, url, additionalHeaders, body, ser, resultType,
+                connector.getLogger());
         final String accessToken = connector.getAccessToken();
         if (accessToken != null)
         {
@@ -84,9 +75,13 @@ public class GwtClientServerConnector<T>
         }
         else
         {
-            return (T)gwtConnector.send(null);
+            return (T) gwtConnector.send(null);
         }
     }
+
+    public static native <T> T createObject()/*-{
+    return new $wnd.XMLHttpRequest();
+    }-*/;
 
     protected Map<String, String> getAdditionalHeaders()
     {
@@ -103,7 +98,8 @@ public class GwtClientServerConnector<T>
         this.token = token;
     }
 
-    public static class SynchronousXHR extends XMLHttpRequest
+/*
+    public static class SynchronousXHR extends com.google.gwt.xhr.client.XMLHttpRequest
     {
 
         protected SynchronousXHR()
@@ -111,33 +107,32 @@ public class GwtClientServerConnector<T>
         }
 
         public native final void synchronousOpen(String method, String uri)
-        /*-{
+        */
+/*-{
             this.open(method, uri, false);
-        }-*/;
+        }-*//*
+;
 
         public native final void setTimeout(int timeoutP)
-        /*-{
+        */
+/*-{
             this.timeout = timeoutP;
-        }-*/;
+        }-*//*
+;
     }
+*/
 
     public T send(AsyncCallback callback) throws Exception
     {
-        XMLHttpRequest request = callback != null ? XMLHttpRequest.create():SynchronousXHR.create();
-        if (callback != null)
-        {
-            request.open(httpMethod, url);
-        }
-        else
-        {
-            ((SynchronousXHR) request).synchronousOpen(httpMethod, url);
-        }
+        XMLHttpRequest request = createObject();//callback != null ? XMLHttpRequest.create():SynchronousXHR.create();
+        final boolean asynchronous = callback != null;
+        request.open(httpMethod, url, asynchronous);
+
+        //    ((SynchronousXHR) request).synchronousOpen(httpMethod, url);
         // request.open(httpMethod, url);
         // open(request, "post", url);
         request.setRequestHeader("Content-Type", MediaType.APPLICATION_JSON);
         request.setRequestHeader("Accept", MediaType.APPLICATION_JSON);
-
-
 
         if (token != null)
         {
@@ -152,25 +147,35 @@ public class GwtClientServerConnector<T>
             log("Writing header " + key + ":" + value);
         }
         String requestData = body != null ? body : "";
-        if (callback != null)
+        if (asynchronous)
         {
-            request.setOnReadyStateChange((XMLHttpRequest xhr) -> {
-                final int readyState = xhr.getReadyState();
-                if (readyState == XMLHttpRequest.DONE)
+            //            request.setOnReadyStateChange((XMLHttpRequest xhr) -> {
+            //                final int readyState = xhr.getReadyState();
+            //                if (readyState == 4)
+            //                {
+            //                    xhr.clearOnReadyStateChange();
+            //                    onResponseReceived(xhr, callback);
+            //                }
+            //            });
+            request.setOnreadystatechange(() -> {
+                final int readyState = request.getReadyState();
+                if (readyState == 4)
                 {
-                    xhr.clearOnReadyStateChange();
-                    onResponseReceived(xhr, callback);
+                    request.setOnreadystatechange(()->{return;});
+                    onResponseReceived(request, callback);
                 }
             });
-            log("sending request asynchronous to " +url+  " with post data "+ requestData);
+
+            log("sending request asynchronous to " + url + " with post data " + requestData);
             request.send(requestData);
             return null;
         }
         else
         {
+            log("sending request synchronous to " + url + " with post data " + requestData);
             request.send(requestData);
             CallbackContainer callbackContainer = new CallbackContainer();
-            onResponseReceived(request, callbackContainer );
+            onResponseReceived(request, callbackContainer);
             if (callbackContainer.caught == null)
                 return callbackContainer.result;
             if (callbackContainer.caught instanceof Exception)
@@ -197,7 +202,7 @@ public class GwtClientServerConnector<T>
         }
     }
 
-    public void onResponseReceived(XMLHttpRequest rsp,AsyncCallback callback)
+    public void onResponseReceived(XMLHttpRequest rsp, AsyncCallback callback)
     {
         final int sc = rsp.getStatus();
         final String responseText = rsp.getResponseText();
@@ -207,6 +212,7 @@ public class GwtClientServerConnector<T>
     }
 
     private Set<String> notAllowedNulls = new HashSet<>();
+
     {
         notAllowedNulls.add("double");
         notAllowedNulls.add("int");
@@ -216,10 +222,11 @@ public class GwtClientServerConnector<T>
         notAllowedNulls.add("short");
         notAllowedNulls.add("boolean");
     }
-    protected void processResponse(final int sc, final String responseText, final String statusText, String contentType,    AsyncCallback callback)
+
+    protected void processResponse(final int sc, final String responseText, final String statusText, String contentType, AsyncCallback callback)
     {
         log("Response " + responseText + " for " + contentType + " Status " + statusText + " [" + sc + "]");
-        if (sc == Response.SC_NO_CONTENT)
+        if (sc == 204)
         {
             if (notAllowedNulls.contains(resultType))
             {
@@ -267,7 +274,7 @@ public class GwtClientServerConnector<T>
                 }
                 else
                 {
-                    parsedResult = parse(jsonParser, responseText);
+                    parsedResult = parse(responseText);
                 }
                 log("Response parsed " + parsedResult);
             }
@@ -277,7 +284,7 @@ public class GwtClientServerConnector<T>
                 return;
             }
             log("Checking error.");
-            if (sc != Response.SC_OK)
+            if (sc != 200)
             {
                 Exception e = null;
                 JsonErrorResult errorResult = (JsonErrorResult) parsedResult;
@@ -294,7 +301,7 @@ public class GwtClientServerConnector<T>
                 }
                 final String exceptionClass = errorResult.exceptionClass();
                 SerializableExceptionInformation exceptionInformation = new SerializableExceptionInformation(message, exceptionClass, messages, stacktrace);
-                e = exceptionDeserializer.deserializeException(exceptionInformation,sc);
+                e = exceptionDeserializer.deserializeException(exceptionInformation, sc);
                 if (e == null)
                 {
                     final String errmsg = message;
@@ -303,7 +310,7 @@ public class GwtClientServerConnector<T>
                 callback.onFailure(e);
                 return;
             }
-            if (sc == Response.SC_OK)
+            if (sc == 200)
             {
                 log("Successfull call. Mapping to response.");
                 final T deserialzedResult;
@@ -340,7 +347,7 @@ public class GwtClientServerConnector<T>
 
     protected void log(String message)
     {
-        System.out.println(message);
+        logger.info(message);
     }
 
     protected static boolean isJsonBody(String type)
@@ -357,19 +364,9 @@ public class GwtClientServerConnector<T>
         return type.contains(MediaType.APPLICATION_JSON);
     }
 
-    /**
-     * Call a JSON parser javascript function to parse an encoded JSON string.
-     *
-     * @param parserFunction
-     *            a javascript function
-     * @param json
-     *            encoded JSON text
-     * @return the parsed data
-     * @see #jsonParser
-     */
-    private static final native Object parse(JavaScriptObject parserFunction, String json)
+    private static final native Object parse(String json)
     /*-{
-    var o = parserFunction(json);
+    var o =  $wnd.JSON.parse(json);
     return o;
   }-*/;
 
@@ -404,9 +401,9 @@ public class GwtClientServerConnector<T>
         final native String fileName()/*-{return this.fileName}-*/;
     }
 
-    public static String encodeBase64(String data)
-    {
-        return URL.encodeQueryString(data);
-    }
+    public static native String encodeBase64(String decodedURLComponent) /*-{
+      var regexp = /%20/g;
+       return encodeURIComponent(decodedURLComponent).replace(regexp, "+");
+  }-*/;
 
 }

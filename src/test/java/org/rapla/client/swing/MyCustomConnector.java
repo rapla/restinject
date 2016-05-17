@@ -1,5 +1,7 @@
 package org.rapla.client.swing;
 
+import org.rapla.logger.ConsoleLogger;
+import org.rapla.logger.Logger;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.SerializableExceptionInformation;
 
@@ -10,6 +12,7 @@ public class MyCustomConnector implements CustomConnector
 {
 
     String accessToken;
+    Logger logger = new ConsoleLogger();
 
     @Override public String reauth(Class proxy) throws Exception
     {
@@ -52,6 +55,11 @@ public class MyCustomConnector implements CustomConnector
         // throw new Au
     }
 
+
+    public Logger getLogger()
+    {
+        return logger;
+    }
 
 
     @Override public String getFullQualifiedUrl(String relativePath)

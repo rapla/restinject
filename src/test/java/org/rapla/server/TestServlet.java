@@ -1,5 +1,6 @@
 package org.rapla.server;
 
+import com.google.gwt.dev.util.collect.HashSet;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 import org.rapla.inject.InjectionContext;
 import org.rapla.inject.raplainject.SimpleRaplaInjector;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class TestServlet extends HttpServlet
 {
@@ -70,16 +72,24 @@ public class TestServlet extends HttpServlet
         System.out.println("Init done ");
         StartupParams params  = new StartupParams();
 
+        // We could either use dagger for depenedency injection
         final DaggerRaplaServerStartupModule startupModule = new DaggerRaplaServerStartupModule(params);
         final RaplaServerComponent mod = org.rapla.server.dagger.DaggerRaplaServerComponent.builder().daggerRaplaServerStartupModule(startupModule).build();
         //membersInjector = new ReflectionMembersInjector( RaplaServerComponent.class, mod);
 
         Logger logger = new ConsoleLogger();
+        // or the simple Rapla injector
         SimpleRaplaInjector container = new SimpleRaplaInjector(logger);
         container.addComponentInstance( StartupParams.class,params);
         try
         {
+            // we can use the MetaInfService Loader
             container.initFromMetaInfService(InjectionContext.server);
+            // or the re
+//            Set<Class> classes = new HashSet<>();
+//            classes.add( RemoteSessionImpl.class);
+//            classes.add(TestSingletonImpl.class);
+//            container.initFromClasses( InjectionContext.server, classes);
         }
         catch (Exception e)
         {
@@ -101,6 +111,14 @@ public class TestServlet extends HttpServlet
             headers.put(headerName, request.getHeader( headerName));
         }
         System.out.println("service request full " + request.toString() + " uri: " + request.getRequestURI() + " context: " + request.getContextPath() + " \npathInfo " + request.getPathInfo() + " \nservlet path " + request.getServletPath() + " \nHeaders: " + headers.toString()) ;
+        //response.addHeader("Access-Control-Allow-Origin","*");
+//        if ( request.getMethod().toLowerCase().equals("options"))
+//        {
+////            response.addHeader("Access-Control-Allow-Origin","*");
+//            response.setStatus(200);
+//            return;
+//        }
+
         try
         {
             dispatcher.service(request, response);
