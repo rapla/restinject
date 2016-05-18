@@ -19,7 +19,9 @@ import java.util.logging.Logger;
 
 public class RaplaJDKLoggingAdapter implements Provider<org.rapla.logger.Logger>
 {
-    private static String WRAPPER_NAME = RaplaJDKLoggingAdapter.class.getName();
+    private static final String WRAPPER_NAME = RaplaJDKLoggingAdapter.class.getName();
+    private static final String ABSTRACTLOGGER_NAME = AbstractJDKLogger.class.getName();
+    private static final String JDKLOGGER_NAME = JDKLogger.class.getName();
 
     AbstractJDKLogger abstractJDKLogger;
 
@@ -44,7 +46,7 @@ public class RaplaJDKLoggingAdapter implements Provider<org.rapla.logger.Logger>
         for (StackTraceElement element:stackTrace)
         {
             String classname = element.getClassName();
-            if ( !classname.startsWith(WRAPPER_NAME) && !classname.startsWith(AbstractJDKLogger.class.getSimpleName()))
+            if ( !classname.startsWith(WRAPPER_NAME) && !classname.startsWith(ABSTRACTLOGGER_NAME)  && !classname.startsWith(JDKLOGGER_NAME))
             {
                 sourceClass=classname;
                 sourceMethod =element.getMethodName();
