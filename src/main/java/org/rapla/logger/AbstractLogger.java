@@ -8,6 +8,7 @@ public abstract class AbstractLogger implements Logger{
     public static final int LEVEL_WARN = 2;
     public static final int LEVEL_INFO = 1;
     public static final int LEVEL_DEBUG = 0;
+    public static final int LEVEL_TRACE = -1;
     
     public AbstractLogger(int logLevel) {
         this.logLevel = logLevel;
@@ -32,6 +33,10 @@ public abstract class AbstractLogger implements Logger{
 
     protected abstract void write(int logLevel, String message, Throwable cause);
 
+    public void trace(String message) {
+        log( LEVEL_TRACE,message);
+    }
+
     public void debug(String message) {
         log( LEVEL_DEBUG,message);  
     }
@@ -51,8 +56,8 @@ public abstract class AbstractLogger implements Logger{
     public void error(String message) {
         log( LEVEL_ERROR,message); 
     }
-  
-    
+
+
     public void fatalError(String message) {
         log( LEVEL_FATAL,message); 
     }
@@ -64,6 +69,10 @@ public abstract class AbstractLogger implements Logger{
    
     public boolean isDebugEnabled() {
         return logLevel<= LEVEL_DEBUG;
+    }
+
+    public boolean isTraceEnabled() {
+        return logLevel<= LEVEL_TRACE;
     }
 
     

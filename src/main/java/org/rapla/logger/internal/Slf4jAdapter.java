@@ -26,7 +26,6 @@ public class Slf4jAdapter implements Provider<Logger> {
     static final public int DEBUG_INT = 10;
     static final public int INFO_INT = 20;
     static final public int WARN_INT = 30;
-    
     static final public int ERROR_INT = 40;
     static ILoggerFactory iLoggerFactory;
     
@@ -74,6 +73,14 @@ public class Slf4jAdapter implements Provider<Logger> {
 
         public boolean isDebugEnabled() {
             return logger.isDebugEnabled();
+        }
+
+        public boolean isTraceEnabled() {
+            return logger.isTraceEnabled();
+        }
+
+        public void trace(String message) {
+            log(TRACE_INT, message);
         }
 
         public void debug(String message) {

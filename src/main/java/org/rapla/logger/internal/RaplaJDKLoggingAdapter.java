@@ -13,30 +13,64 @@
 package org.rapla.logger.internal;
 
 
+import javax.inject.Provider;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class RaplaJDKLoggingAdapter extends RaplaJDKLoggingAdapterWithoutClassnameSupport
+public class RaplaJDKLoggingAdapter implements Provider<org.rapla.logger.Logger>
 {
     private static String WRAPPER_NAME = RaplaJDKLoggingAdapter.class.getName();
 
-    @Override
-    protected void log_(Logger logger, Level level, String message, Throwable cause) {
-        StackTraceElement[] stackTrace = new Throwable().getStackTrace();
-        String sourceClass = null;
-        String sourceMethod =null;
-        for (StackTraceElement element:stackTrace)
+    AbstractJDKLogger abstractJDKLogger;
+
+    public org.rapla.logger.Logger get() {
+        if ( abstractJDKLogger == null)
         {
-            String classname = element.getClassName();
-            if ( !classname.startsWith(WRAPPER_NAME))
-            {
-                sourceClass=classname;
-                sourceMethod =element.getMethodName();
-                break;
+            synchronized ( this) {
+                if ( abstractJDKLogger == null)
+                {
+                    Logger logger = Logger.getLogger(  "rapla");
+                    abstractJDKLogger = new JDKLogger(logger, "rapla");
+                }
             }
         }
-        logger.logp(level,sourceClass, sourceMethod,message, cause);
+        return abstractJDKLogger;
     }
+
+    static protected class JDKLogger extends AbstractJDKLogger
+    {
+        public JDKLogger(Logger logger, String rapla)
+        {
+            super(logger, rapla);
+        }
+
+        @Override
+        protected void log_(Logger logger, Level level, String message, Throwable cause) {
+            StackTraceElement[] stackTrace = new Throwable().getStackTrace();
+            String sourceClass = null;
+            String sourceMethod =null;
+            for (StackTraceElement element:stackTrace)
+            {
+                String classname = element.getClassName();
+                if ( !classname.startsWith(WRAPPER_NAME))
+                {
+                    sourceClass=classname;
+                    sourceMethod =element.getMethodName();
+                    break;
+                }
+            }
+            logger.logp(level,sourceClass, sourceMethod,message, cause);
+        }
+
+        @Override protected org.rapla.logger.Logger createChildLogger(String childId)
+        {
+            Logger childLogger = Logger.getLogger(childId);
+            return new JDKLogger( childLogger, childId);
+        }
+
+
+    }
+
 
 
 }

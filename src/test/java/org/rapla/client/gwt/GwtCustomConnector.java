@@ -4,7 +4,7 @@ import com.google.gwt.core.client.GWT;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
 import org.rapla.logger.Logger;
-import org.rapla.logger.internal.RaplaJDKLoggingAdapterForGwt;
+import org.rapla.logger.internal.JDKLoggerForGwt;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.SerializableExceptionInformation;
 
@@ -17,7 +17,7 @@ public class GwtCustomConnector implements CustomConnector
 {
 
     String accessToken;
-    Logger logger = new RaplaJDKLoggingAdapterForGwt("rapla");
+    Logger logger = new JDKLoggerForGwt("rapla");
 
     @Inject
     public GwtCustomConnector()

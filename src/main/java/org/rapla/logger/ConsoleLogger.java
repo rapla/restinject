@@ -33,6 +33,7 @@ public class ConsoleLogger extends AbstractLogger {
     {
         switch (logLevel)
         {
+            case LEVEL_TRACE: return "TRACE";
             case LEVEL_DEBUG: return "DEBUG";
             case LEVEL_INFO: return "INFO";
             case LEVEL_WARN: return "WARN";
