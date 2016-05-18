@@ -64,10 +64,8 @@ abstract class AbstractJDKLogger implements org.rapla.logger.Logger
         log(level, message, null);
     }
 
-    private void log(Level level, String message, Throwable cause)
-    {
-        log_(logger, level, message, cause);
-    }
+    abstract protected void log(Level level, String message, Throwable cause);
+
 
     public org.rapla.logger.Logger getChildLogger(String childLoggerName)
     {
@@ -77,5 +75,5 @@ abstract class AbstractJDKLogger implements org.rapla.logger.Logger
 
     abstract protected org.rapla.logger.Logger createChildLogger(String childId);
 
-    abstract protected void log_(Logger logger, Level level, String message, Throwable cause);
+
 }

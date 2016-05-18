@@ -34,7 +34,8 @@ public class JDKLoggerForGwt extends AbstractJDKLogger
     }
 
 
-    protected void log_(Logger logger, Level level, String message, Throwable cause) {
+    @Override protected void log(Level level, String message, Throwable cause)
+    {
         logger.log(level,message, cause);
     }
 

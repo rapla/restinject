@@ -37,6 +37,23 @@ public class RaplaJDKLoggingAdapter implements Provider<org.rapla.logger.Logger>
         return abstractJDKLogger;
     }
 
+    private static void log_(Logger logger, Level level, String message, Throwable cause) {
+        StackTraceElement[] stackTrace = new Throwable().getStackTrace();
+        String sourceClass = null;
+        String sourceMethod =null;
+        for (StackTraceElement element:stackTrace)
+        {
+            String classname = element.getClassName();
+            if ( !classname.startsWith(WRAPPER_NAME) && !classname.startsWith(AbstractJDKLogger.class.getSimpleName()))
+            {
+                sourceClass=classname;
+                sourceMethod =element.getMethodName();
+                break;
+            }
+        }
+        logger.logp(level,sourceClass, sourceMethod,message, cause);
+    }
+
     static protected class JDKLogger extends AbstractJDKLogger
     {
         public JDKLogger(Logger logger, String rapla)
@@ -45,21 +62,8 @@ public class RaplaJDKLoggingAdapter implements Provider<org.rapla.logger.Logger>
         }
 
         @Override
-        protected void log_(Logger logger, Level level, String message, Throwable cause) {
-            StackTraceElement[] stackTrace = new Throwable().getStackTrace();
-            String sourceClass = null;
-            String sourceMethod =null;
-            for (StackTraceElement element:stackTrace)
-            {
-                String classname = element.getClassName();
-                if ( !classname.startsWith(WRAPPER_NAME))
-                {
-                    sourceClass=classname;
-                    sourceMethod =element.getMethodName();
-                    break;
-                }
-            }
-            logger.logp(level,sourceClass, sourceMethod,message, cause);
+        protected void log(Level level, String message, Throwable cause) {
+            RaplaJDKLoggingAdapter.log_(logger,level,message,cause);
         }
 
         @Override protected org.rapla.logger.Logger createChildLogger(String childId)
