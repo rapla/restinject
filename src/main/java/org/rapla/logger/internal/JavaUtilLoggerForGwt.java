@@ -15,22 +15,22 @@ package org.rapla.logger.internal;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class JDKLoggerForGwt extends AbstractJDKLogger
+public class JavaUtilLoggerForGwt extends AbstractJavaUtilLogger
 {
 
-    public JDKLoggerForGwt(String id)
+    public JavaUtilLoggerForGwt(String id)
     {
         this(Logger.getLogger(id), id);
     }
 
-    public JDKLoggerForGwt( Logger logger, String id) {
+    public JavaUtilLoggerForGwt( Logger logger, String id) {
         super(logger,id);
     }
 
     @Override protected org.rapla.logger.Logger createChildLogger(String childId)
     {
         Logger logger = Logger.getLogger(childId);
-        return new JDKLoggerForGwt(logger, childId);
+        return new JavaUtilLoggerForGwt(logger, childId);
     }
 
 

@@ -17,26 +17,26 @@ import javax.inject.Provider;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class RaplaJDKLoggingAdapter implements Provider<org.rapla.logger.Logger>
+public class JavaUtilLoggingAdapter implements Provider<org.rapla.logger.Logger>
 {
-    private static final String WRAPPER_NAME = RaplaJDKLoggingAdapter.class.getName();
-    private static final String ABSTRACTLOGGER_NAME = AbstractJDKLogger.class.getName();
+    private static final String WRAPPER_NAME = JavaUtilLoggingAdapter.class.getName();
+    private static final String ABSTRACTLOGGER_NAME = AbstractJavaUtilLogger.class.getName();
     private static final String JDKLOGGER_NAME = JDKLogger.class.getName();
 
-    AbstractJDKLogger abstractJDKLogger;
+    AbstractJavaUtilLogger abstractJavaUtilLogger;
 
     public org.rapla.logger.Logger get() {
-        if ( abstractJDKLogger == null)
+        if ( abstractJavaUtilLogger == null)
         {
             synchronized ( this) {
-                if ( abstractJDKLogger == null)
+                if ( abstractJavaUtilLogger == null)
                 {
                     Logger logger = Logger.getLogger(  "rapla");
-                    abstractJDKLogger = new JDKLogger(logger, "rapla");
+                    abstractJavaUtilLogger = new JDKLogger(logger, "rapla");
                 }
             }
         }
-        return abstractJDKLogger;
+        return abstractJavaUtilLogger;
     }
 
     private static void log_(Logger logger, Level level, String message, Throwable cause) {
@@ -46,7 +46,7 @@ public class RaplaJDKLoggingAdapter implements Provider<org.rapla.logger.Logger>
         for (StackTraceElement element:stackTrace)
         {
             String classname = element.getClassName();
-            if ( !classname.startsWith(WRAPPER_NAME) && !classname.startsWith(ABSTRACTLOGGER_NAME)  && !classname.startsWith(JDKLOGGER_NAME))
+            if ( !classname.contains(WRAPPER_NAME) && !classname.contains(ABSTRACTLOGGER_NAME)  && !classname.contains(JDKLOGGER_NAME))
             {
                 sourceClass=classname;
                 sourceMethod =element.getMethodName();
@@ -56,7 +56,7 @@ public class RaplaJDKLoggingAdapter implements Provider<org.rapla.logger.Logger>
         logger.logp(level,sourceClass, sourceMethod,message, cause);
     }
 
-    static protected class JDKLogger extends AbstractJDKLogger
+    static protected class JDKLogger extends AbstractJavaUtilLogger
     {
         public JDKLogger(Logger logger, String rapla)
         {
@@ -65,7 +65,7 @@ public class RaplaJDKLoggingAdapter implements Provider<org.rapla.logger.Logger>
 
         @Override
         protected void log(Level level, String message, Throwable cause) {
-            RaplaJDKLoggingAdapter.log_(logger,level,message,cause);
+            JavaUtilLoggingAdapter.log_(logger,level,message,cause);
         }
 
         @Override protected org.rapla.logger.Logger createChildLogger(String childId)

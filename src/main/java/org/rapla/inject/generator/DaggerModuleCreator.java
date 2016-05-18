@@ -127,8 +127,6 @@ public class DaggerModuleCreator
         Client("client.dagger"),
         JavaClient("client.swing.dagger"),
         Gwt("client.gwt.dagger");
-        //        Webservice("Webservice", "server.dagger"),
-        //        WebserviceModule("WebserviceComponent", "server.dagger");
 
         final String packageNameSuffix;
 

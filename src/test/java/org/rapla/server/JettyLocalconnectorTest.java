@@ -80,6 +80,7 @@ import java.util.Collection;
     @After public void tearDown() throws Exception
     {
         server.stop();
+        Thread.sleep(1000);
     }
 
     JsonRemoteConnector createConnector(LocalConnector connector)

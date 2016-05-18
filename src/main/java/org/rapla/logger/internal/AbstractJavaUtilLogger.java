@@ -3,12 +3,12 @@ package org.rapla.logger.internal;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-abstract class AbstractJDKLogger implements org.rapla.logger.Logger
+abstract class AbstractJavaUtilLogger implements org.rapla.logger.Logger
 {
     Logger logger;
     String id;
 
-    public AbstractJDKLogger(Logger logger, String id)
+    public AbstractJavaUtilLogger(Logger logger, String id)
     {
         this.logger = logger;
         this.id = id;

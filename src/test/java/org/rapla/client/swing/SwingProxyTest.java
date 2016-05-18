@@ -40,6 +40,7 @@ public class SwingProxyTest extends AbstractProxyTest
     public void tearDown() throws Exception
     {
         server.stop();
+        Thread.sleep(500);
     }
 
     protected ExampleService_JavaJsonProxy createExampleServiceProxy()
