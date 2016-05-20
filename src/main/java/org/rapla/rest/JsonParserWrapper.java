@@ -8,7 +8,6 @@ import com.google.gson.InstanceCreator;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
@@ -153,13 +152,6 @@ public class JsonParserWrapper
         <T> T fromJson(String json, Class<T> clazz);
     }
 
-    /**
-     * Marker interface for serialization to use the generic object serialzer instead of a special one like MapSerializer or ListSerialzer
-     * E.g. this is to overcome a behaviour of gson, that always use a MapSerializer when the class extends java.util.Map
-     */
-    public interface GenericObjectSerializable
-    {
-    }
 }
 
 

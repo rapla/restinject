@@ -10,7 +10,7 @@ public class NullLogger extends AbstractLogger
     }
 
     public Logger getChildLogger(String childLoggerName) {
-        return this;
+        return new NullLogger();
     }
 
     protected void write(int logLevel, String message, Throwable cause) {
