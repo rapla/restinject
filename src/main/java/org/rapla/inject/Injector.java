@@ -1,4 +1,4 @@
-package org.rapla.rest.server;
+package org.rapla.inject;
 
 public interface Injector<T>
 {

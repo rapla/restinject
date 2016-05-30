@@ -37,6 +37,7 @@ import org.rapla.inject.DefaultImplementationRepeatable;
 import org.rapla.inject.Extension;
 import org.rapla.inject.ExtensionPoint;
 import org.rapla.inject.ExtensionRepeatable;
+import org.rapla.inject.InjectionContext;
 import org.rapla.rest.generator.internal.GwtProxyCreator;
 import org.rapla.rest.generator.internal.JavaClientProxyCreator;
 import org.rapla.rest.generator.internal.TreeLogger;
@@ -53,7 +54,6 @@ import org.rapla.rest.generator.internal.UnableToCompleteException;
  */
 public class AnnotationInjectionProcessor extends AbstractProcessor
 {
-    public static final String MODULE_LIST = "META-INF/org.rapla.servicelist";
 
     final DaggerModuleCreator daggerModuleProcessor = new DaggerModuleCreator();
 
@@ -372,12 +372,12 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         File f;
         try
         {
-            FileObject resource = filer.getResource(location, pkg, MODULE_LIST);
+            FileObject resource = filer.getResource(location, pkg, InjectionContext.MODULE_LIST);
             f = new File(resource.toUri());
         }
         catch (IOException ex)
         {
-            FileObject resource = filer.createResource(location, pkg, MODULE_LIST);
+            FileObject resource = filer.createResource(location, pkg, InjectionContext.MODULE_LIST);
             f = new File(resource.toUri());
         }
         f.getParentFile().mkdirs();

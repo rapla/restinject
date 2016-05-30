@@ -20,7 +20,6 @@ import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.swing.AbstractLocalJsonConnector;
 import org.rapla.rest.client.swing.JavaClientServerConnector;
 import org.rapla.rest.client.swing.JsonRemoteConnector;
-import org.rapla.rest.server.ServiceInfLoader;
 import org.rapla.server.rest.RestTestApplication;
 
 import java.io.File;

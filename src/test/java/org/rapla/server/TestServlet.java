@@ -1,16 +1,17 @@
 package org.rapla.server;
 
-import com.google.gwt.dev.util.collect.HashSet;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 import org.rapla.inject.InjectionContext;
+import org.rapla.inject.Injector;
 import org.rapla.inject.raplainject.SimpleRaplaInjector;
+import org.rapla.inject.scanning.ScanningClassLoader;
+import org.rapla.inject.scanning.ServiceInfLoader;
 import org.rapla.logger.ConsoleLogger;
 import org.rapla.logger.Logger;
-import org.rapla.rest.server.Injector;
+import org.rapla.rest.server.provider.resteasy.ResteasyMembersInjector;
 import org.rapla.server.dagger.DaggerRaplaServerStartupModule;
 import org.rapla.server.dagger.RaplaServerComponent;
 import org.rapla.server.rest.RestTestApplication;
-import org.rapla.rest.server.provider.resteasy.ResteasyMembersInjector;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -22,7 +23,6 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 public class TestServlet extends HttpServlet
 {
@@ -84,7 +84,9 @@ public class TestServlet extends HttpServlet
         try
         {
             // we can use the MetaInfService Loader
-            container.initFromMetaInfService(InjectionContext.server);
+            String servicelist = InjectionContext.MODULE_LIST;
+            final ScanningClassLoader.LoadingResult loadingResult = new ServiceInfLoader().loadClassesFrom(servicelist);
+            container.initFromClasses(InjectionContext.server,loadingResult.getClasses());
             // or the re
 //            Set<Class> classes = new HashSet<>();
 //            classes.add( RemoteSessionImpl.class);

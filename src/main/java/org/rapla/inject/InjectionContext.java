@@ -23,6 +23,7 @@ public enum InjectionContext
     ios,
     all;
 
+    public static final String MODULE_LIST = "META-INF/org.rapla.servicelist";
 
     public static boolean inList(InjectionContext context,InjectionContext... contexts)
     {

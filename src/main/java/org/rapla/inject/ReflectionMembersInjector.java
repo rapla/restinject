@@ -1,4 +1,6 @@
-package org.rapla.rest.server;
+package org.rapla.inject;
+
+import org.rapla.inject.Injector;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

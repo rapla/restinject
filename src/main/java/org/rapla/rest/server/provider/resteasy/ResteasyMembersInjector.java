@@ -2,7 +2,7 @@ package org.rapla.rest.server.provider.resteasy;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.validation.GeneralValidator;
-import org.rapla.rest.server.Injector;
+import org.rapla.inject.Injector;
 
 import javax.validation.ValidationException;
 import javax.ws.rs.ext.ContextResolver;
