@@ -3,7 +3,6 @@ package org.rapla.inject.generator;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
-import dagger.Subcomponent;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.DefaultImplementationRepeatable;
 import org.rapla.inject.Extension;
@@ -44,6 +43,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -542,26 +542,11 @@ public class DaggerModuleCreator
     private Set<String> loadLinesFromMetaInfo(String file) throws IOException
     {
         Set<String> foundLines = new LinkedHashSet<>();
-        final ClassLoader classLoader = DaggerModuleCreator.class.getClassLoader();
-        final FileObject resource = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", file);
-        if (resource != null && new File(resource.toUri()).exists())
         {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.openInputStream(), "UTF-8"));)
+            final FileObject resource = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", file);
+            if (resource != null && new File(resource.toUri()).exists())
             {
-                String line = null;
-                while ((line = reader.readLine()) != null)
-                {
-                    foundLines.add(line);
-                }
-            }
-        }
-        final Enumeration<URL> resources = classLoader.getResources(file);
-        if (resource != null)
-        {
-            while (resources.hasMoreElements())
-            {
-                final URL nextElement = resources.nextElement();
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(nextElement.openStream(), "UTF-8")))
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.openInputStream(), "UTF-8"));)
                 {
                     String line = null;
                     while ((line = reader.readLine()) != null)
@@ -571,6 +556,53 @@ public class DaggerModuleCreator
                 }
             }
         }
+        {
+            final ClassLoader classLoader = DaggerModuleCreator.class.getClassLoader();
+//            final Collection<URL> scanningUrlsFromClasspath = getScanningUrlsFromClasspath(classLoader);
+//            for (URL url:scanningUrlsFromClasspath)
+//            {
+//                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Scanning Classpath " +  url.toExternalForm());
+//            }
+            Enumeration<URL> resources = classLoader.getResources(file);
+//            if ((resources == null || !resources.hasMoreElements()) && !file.startsWith("/"))
+//            {
+//                resources = classLoader.getResources("/" + file);
+//            }
+            if (resources != null)
+            {
+                while (resources.hasMoreElements())
+                {
+                    final URL nextElement = resources.nextElement();
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(nextElement.openStream(), "UTF-8")))
+                    {
+                        String line = null;
+                        while ((line = reader.readLine()) != null)
+                        {
+                            foundLines.add(line);
+                        }
+                    }
+                }
+            }
+        }
+//        {
+//            JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+//            DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
+//            StandardJavaFileManager fm = compiler.getStandardFileManager(diagnostics, null, null);
+//            final Iterable<? extends File> locations = fm.getLocation(StandardLocation.CLASS_OUTPUT);
+//            for (File test : locations)
+//            {
+//            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Reading Modules from " + test.toString());
+//            final URL nextElement = test.toURI().toURL();
+//            try (BufferedReader reader = new BufferedReader(new InputStreamReader(nextElement.openStream(), "UTF-8")))
+//            {
+//                String line = null;
+//                while ((line = reader.readLine()) != null)
+//                {
+//                    foundLines.add(line);
+//                }
+//            }
+//        }
+//        }
         return foundLines;
     }
 
@@ -578,6 +610,18 @@ public class DaggerModuleCreator
     {
         final File folder = getMetaInfFolder();
         AnnotationInjectionProcessor.appendToFile(filename, folder, line);
+    }
+
+    static public Collection<URL> getScanningUrlsFromClasspath(ClassLoader cl) {
+        Collection<URL> result = new ArrayList<> ();
+        while (cl != null) {
+            if (cl instanceof URLClassLoader) {
+                URL[] urls = ((URLClassLoader) cl).getURLs();
+                result.addAll (Arrays.asList (urls));
+            }
+            cl = cl.getParent();
+        }
+        return result;
     }
 
     private void createSourceWriter(String originalPackageName, String artifactId, Scopes scope) throws IOException
