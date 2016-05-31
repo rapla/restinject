@@ -85,7 +85,8 @@ public class TestServlet extends HttpServlet
         {
             // we can use the MetaInfService Loader
             String servicelist = InjectionContext.MODULE_LIST;
-            final ScanningClassLoader.LoadingResult loadingResult = new ServiceInfLoader().loadClassesFrom(servicelist);
+            ScanningClassLoader.LoadingFilter filter = null;
+            final ScanningClassLoader.LoadingResult loadingResult = new ServiceInfLoader().loadClassesFromServiceInfFile(filter,servicelist);
             container.initFromClasses(InjectionContext.server,loadingResult.getClasses());
             // or the re
 //            Set<Class> classes = new HashSet<>();

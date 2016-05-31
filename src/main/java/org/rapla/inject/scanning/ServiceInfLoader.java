@@ -30,7 +30,7 @@ public class ServiceInfLoader extends ScanningClassLoader
         return loadClassesFromMetaInfo( filter,array);
     }
 
-    public LoadingResult loadClassesFrom(String serviceListFile)
+    public LoadingResult loadClassesFromServiceInfFile(LoadingFilter filter,String serviceListFile)
     {
         final Set<String> strings;
         try
@@ -41,7 +41,7 @@ public class ServiceInfLoader extends ScanningClassLoader
         {
             return new LoadingResult(e);
         }
-        return loadClassesFromMetaInfo( null, strings.toArray(new String[] {}));
+        return loadClassesFromMetaInfo( filter, strings.toArray(new String[] {}));
     }
 
     public LoadingResult loadClassesFromMetaInfo(LoadingFilter filter, String... serviceNames)

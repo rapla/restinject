@@ -14,7 +14,7 @@ abstract public class ScanningClassLoader
         LoadingResult result = new LoadingResult();
         for ( String classname:classes)
         {
-            if ( filter != null && !filter.classNameShouldBeIgnored( classname))
+            if ( filter != null && filter.classNameShouldBeIgnored( classname))
             {
                 continue;
             }

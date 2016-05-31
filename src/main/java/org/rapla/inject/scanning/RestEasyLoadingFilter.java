@@ -1,7 +1,5 @@
 package org.rapla.inject.scanning;
 
-import org.rapla.inject.scanning.ServiceInfLoader;
-
 public class RestEasyLoadingFilter implements ServiceInfLoader.LoadingFilter
 {
     String[] ignoredPackages = { "org.jboss.resteasy.plugins", "org.jboss.resteasy.annotations", "org.jboss.resteasy.client", "org.jboss.resteasy.specimpl",
@@ -9,7 +7,7 @@ public class RestEasyLoadingFilter implements ServiceInfLoader.LoadingFilter
 
     @Override public boolean classNameShouldBeIgnored(String classname)
     {
-        return !(classname.endsWith("JavaJsonProxy") || classname.endsWith("GwtJsonProxy"));
+        return (classname.endsWith("JavaJsonProxy") || classname.endsWith("GwtJsonProxy"));
     }
 
     @Override public String[] getIgnoredPackages()
