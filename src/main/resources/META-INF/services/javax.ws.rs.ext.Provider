@@ -1,3 +1,4 @@
+org.rapla.rest.server.provider.resteasy.ResteasyMembersInjector
 org.rapla.rest.server.provider.exception.RestExceptionMapper
 org.rapla.rest.server.provider.json.JsonReader
 org.rapla.rest.server.provider.json.JsonStringReader

@@ -84,7 +84,10 @@ public class ScannotationLoader extends ScanningClassLoader
         for (Class<? extends Annotation> clazz: annotationClasses)
         {
             final Set<String> strings = annotationIndex.get(clazz.getName());
-            classnames.addAll(strings);
+            if ( strings != null)
+            {
+                classnames.addAll(strings);
+            }
         }
         return classnames;
     }
