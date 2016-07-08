@@ -28,8 +28,10 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -121,24 +123,37 @@ public class SimpleRaplaInjector
         throw new RaplaContainerContextException(key);
     }
 
-    public <T> void injectMembers(T instance, Class<T> injectorClass, Object... params) throws Exception
+    public <T> void injectMembers(T instance, Class<T> componentClass, Object... params) throws Exception
     {
         Set<Field> fields = new HashSet<>();
+        Set<Method> methods = new HashSet<>();
         {
-            Class aClass = injectorClass;
+            Class aClass = componentClass;
             while (aClass != null)
             {
-                fields.addAll(Arrays.asList(aClass.getDeclaredFields()));
+                for ( Field field:aClass.getDeclaredFields())
+                {
+                    if (field.getAnnotation(Inject.class) == null)
+                    {
+                        continue;
+                    }
+                    fields.add( field);
+                }
+                for ( Method method:aClass.getDeclaredMethods())
+                {
+                    if (method.getAnnotation(Inject.class) == null)
+                    {
+                        continue;
+                    }
+                    methods.add(method);
+                }
+
                 aClass = aClass.getSuperclass();
             }
         }
         List<Object> additionalParams = Arrays.asList(params);
         for (Field field : fields)
         {
-            if (field.getAnnotation(Inject.class) == null)
-            {
-                continue;
-            }
             int depth = 0;
             final Class<?> type = field.getType();
 
@@ -150,6 +165,15 @@ public class SimpleRaplaInjector
             field.setAccessible(true);
             field.set(instance, p);
         }
+        final boolean isSingleton = componentClass.getAnnotation(Singleton.class) != null;
+        for (Method method : methods)
+        {
+            int depth = 0;
+            Object[] methodParams = resolveParams(depth, additionalParams, method, isSingleton);
+            method.setAccessible( true);
+            method.invoke(instance,methodParams);
+        }
+
 
     }
 
@@ -649,7 +673,7 @@ public class SimpleRaplaInjector
         }
     }
 
-    private Object[] resolveParams(int depth, List<Object> additionalParams, Constructor c, boolean throwSingletonExceptionOnMatchingParam) throws Exception
+    private Object[] resolveParams(int depth, List<Object> additionalParams, Executable c, boolean throwSingletonExceptionOnMatchingParam) throws Exception
     {
         Object[] params = null;
         Class[] types = c.getParameterTypes();

@@ -17,12 +17,20 @@ public class ExampleSimpleServiceImpl implements ExampleSimpleService
 {
     @Inject
     RemoteSession session;
+
+    RemoteSession session2;
     private final HttpServletRequest request;
 
     @Inject
     public ExampleSimpleServiceImpl(@Context HttpServletRequest request)
     {
         this.request = request;
+    }
+
+    @Inject
+    void setSession(RemoteSession session)
+    {
+        this.session2 = session;
     }
 
     @Override
@@ -34,7 +42,7 @@ public class ExampleSimpleServiceImpl implements ExampleSimpleService
     @Override
     public String postHello(String param)
     {
-        return param + session.toString(request);
+        return param + session.toString(request) + session2.toString( request);
     }
 
     @Override
