@@ -634,6 +634,7 @@ public class SimpleRaplaInjector
             }
             Object[] params = resolveParams(depth, additionalParams, c, isSingleton);
             final Object component = c.newInstance(params);
+            injectMembers( componentClass.cast(component), componentClass,additionalParamObject);
             if (isSingleton)
             {
                 singletonMap.put(componentClassName, component);
