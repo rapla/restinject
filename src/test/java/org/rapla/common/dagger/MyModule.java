@@ -2,7 +2,9 @@ package org.rapla.common.dagger;
 
 import dagger.Module;
 import dagger.Provides;
-import org.rapla.inject.internal.DaggerMapKey;
+import dagger.multibindings.IntoMap;
+import dagger.multibindings.IntoSet;
+import dagger.multibindings.StringKey;
 
 import javax.inject.Singleton;
 import java.util.Collections;
@@ -17,7 +19,7 @@ import java.util.Set;
         return impl;
     }
 
-    @Provides(type = Provides.Type.SET_VALUES) @Singleton Set<String> get1()
+    @Provides @IntoSet @Singleton Set<String> get1()
     {
         return Collections.singleton("Hello");
     }
@@ -28,11 +30,11 @@ import java.util.Set;
     }
     */
 
-    @Provides(type = Provides.Type.MAP)  @Singleton @DaggerMapKey("1") String getMap1()
+    @Provides @IntoMap @StringKey("1") @Singleton String getMap1()
     {
         return "Hello";
     }
-    @Provides(type = Provides.Type.MAP) @Singleton @DaggerMapKey("2") String getMap2()
+    @Provides @IntoMap @StringKey("2") @Singleton String getMap2()
     {
         return "World";
     }

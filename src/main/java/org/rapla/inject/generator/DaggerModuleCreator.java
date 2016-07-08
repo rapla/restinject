@@ -3,6 +3,9 @@ package org.rapla.inject.generator;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
+import dagger.multibindings.IntoMap;
+import dagger.multibindings.IntoSet;
+import dagger.multibindings.StringKey;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.DefaultImplementationRepeatable;
 import org.rapla.inject.Extension;
@@ -10,7 +13,6 @@ import org.rapla.inject.ExtensionPoint;
 import org.rapla.inject.ExtensionRepeatable;
 import org.rapla.inject.InjectionContext;
 import org.rapla.inject.generator.internal.SourceWriter;
-import org.rapla.inject.internal.DaggerMapKey;
 import org.rapla.rest.generator.internal.GwtProxyCreator;
 import org.rapla.rest.generator.internal.JavaClientProxyCreator;
 
@@ -646,9 +648,10 @@ public class DaggerModuleCreator
         writer.println("package " + packageName + ";");
         writer.println();
         writer.println("import " + Provides.class.getCanonicalName() + ";");
-        writer.println("import " + Provides.Type.class.getCanonicalName() + ";");
         writer.println("import " + Module.class.getCanonicalName() + ";");
-        writer.println("import " + DaggerMapKey.class.getCanonicalName() + ";");
+        writer.println("import " + IntoMap.class.getCanonicalName() + ";");
+        writer.println("import " + IntoSet.class.getCanonicalName() + ";");
+        writer.println("import " + StringKey.class.getCanonicalName() + ";");
         writer.println();
         writer.println(getGeneratorString());
         writer.print("@Module(includes={");
@@ -912,7 +915,7 @@ public class DaggerModuleCreator
         writer.println();
         final String collectionTypeString;
         writer.println();
-        writer.println("@javax.inject.Singleton @Provides(type=Type.SET_VALUES)");
+        writer.println("@javax.inject.Singleton @Provides @IntoSet");
         collectionTypeString = "Set";
         final String methodName = createMethodName(writer, interfaceName) + "_empty";
         writer.println("public java.util.Set<" + interfaceName.getQualifiedName().toString() + "> " + methodName + "_" + collectionTypeString + "() {");
@@ -1145,15 +1148,17 @@ public class DaggerModuleCreator
         final String methodSuffix;
         if (isMap)
         {
-            writer.println("@Provides(type=Type.MAP)");// @javax.inject.Singleton");
-            writer.println("@" + DaggerMapKey.class.getSimpleName() + "(\"" + extension.id() + "\")");
+            writer.println("@Provides");// @javax.inject.Singleton");
+            writer.println("@IntoMap");
+            writer.println("@StringKey(\"" + extension.id() + "\")");
             //final String id = extension.id().replaceAll("\\.", "_");
             methodSuffix = "_Map";
         }
         else
         {
             writer.println();
-            writer.println("@Provides(type=Type.SET)");//@javax.inject.Singleton");
+            writer.println("@Provides");//@javax.inject.Singleton");
+            writer.println("@IntoSet");
             //final String id = extension.id().replaceAll("\\.", "_");
             methodSuffix = "_Set";
         }
