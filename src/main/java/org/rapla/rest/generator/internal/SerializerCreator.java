@@ -22,7 +22,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,30 +39,33 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.tools.JavaFileObject;
+import javax.tools.Diagnostic;
 
 import org.rapla.inject.generator.internal.SourceWriter;
 
-class SerializerCreator implements SerializerClasses
+public class SerializerCreator implements SerializerClasses
 {
 
     private final ProcessingEnvironment processingEnvironment;
     private static final String SER_SUFFIX = "_JsonSerializer";
     private static final Comparator<Element> FIELD_COMP = new Comparator<Element>()
     {
-        @Override public int compare(final Element o1, final Element o2)
+        @Override
+        public int compare(final Element o1, final Element o2)
         {
             return o1.getSimpleName().toString().compareTo(o2.getSimpleName().toString());
         }
     };
 
-    private static final HashMap<String, String> defaultSerializers;
-    private static final HashMap<String, String> parameterizedSerializers;
-    private static final HashMap<String, String> generatedSerializers;
+    private final HashMap<String, String> defaultSerializers;
+    private final HashMap<String, String> parameterizedSerializers;
+    private final HashMap<String, String> generatedSerializers;
     private final String generatorName;
 
-    static
+    public SerializerCreator(ProcessingEnvironment processingEnvironment, String generatorName)
     {
+        this.processingEnvironment = processingEnvironment;
+        this.generatorName = generatorName;
         defaultSerializers = new HashMap<String, String>();
         parameterizedSerializers = new HashMap<String, String>();
 
@@ -76,12 +78,6 @@ class SerializerCreator implements SerializerClasses
         parameterizedSerializers.put(SortedSet.class.getCanonicalName(), SetSerializer);
         parameterizedSerializers.put(Collection.class.getCanonicalName(), CollectionSerializer);
         generatedSerializers = new HashMap<String, String>();
-    }
-
-    SerializerCreator(ProcessingEnvironment processingEnvironment, String generatorName)
-    {
-        this.processingEnvironment = processingEnvironment;
-        this.generatorName = generatorName;
     }
 
     String create(final TypeMirror type, final TreeLogger logger) throws UnableToCompleteException
@@ -113,7 +109,8 @@ class SerializerCreator implements SerializerClasses
             {
                 return sn;
             }
-            final SourceWriter srcWriter = getSourceWriter(logger, targetType);
+            processingEnvironment.getMessager().printMessage(Diagnostic.Kind.NOTE, "SerializerCreator: Creating Serializer for " + qname);
+            final SourceWriter srcWriter = getSourceWriter( targetType);
 
             if (!isAbstract(type))
             {
@@ -170,7 +167,8 @@ class SerializerCreator implements SerializerClasses
             return;
         }
 
-        final String qsn = getErasedType(type, processingEnvironment).toString();
+        final TypeMirror erasedType = getErasedType(type, processingEnvironment);
+        final String qsn = erasedTypeString(erasedType, processingEnvironment);
         if (defaultSerializers.containsKey(qsn) || parameterizedSerializers.containsKey(qsn))
         {
             return;
@@ -267,11 +265,14 @@ class SerializerCreator implements SerializerClasses
         if (isParameterized(type))
         {
             List<? extends TypeMirror> typeArgs = ((DeclaredType) type).getTypeArguments();
+            // check if parameter types can be serialized
             for (final TypeMirror t : typeArgs)
             {
                 checkCanSerialize(logger, t);
             }
-            String erasedClassName = getErasedType(type, processingEnvironment).toString();
+            // check if erased type can be serialized
+            final TypeMirror erasedType = getErasedType(type, processingEnvironment);
+            String erasedClassName = erasedTypeString(erasedType, processingEnvironment);
             if (parameterizedSerializers.containsKey(erasedClassName))
             {
                 return;
@@ -286,7 +287,8 @@ class SerializerCreator implements SerializerClasses
         if (qsn.startsWith("java.") || qsn.startsWith("javax."))
         {
             logger.error("Standard type " + qsn + " not supported in JSON encoding");
-            throw new UnableToCompleteException("Standard type " + qsn + " not supported in JSON encoding");
+            throw new UnableToCompleteException(
+                    "Standard type " + qsn + " not supported in JSON encoding: supported are: " + parameterizedSerializers + ", " + defaultSerializers);
         }
 
         if (isInterface(type))
@@ -333,7 +335,7 @@ class SerializerCreator implements SerializerClasses
             return StringMapSerializer;
         }
 
-        final String qsn = getErasedType(t, processingEnvironment).toString();
+        final String qsn = erasedTypeString(getErasedType(t, processingEnvironment), processingEnvironment);
         if (defaultSerializers.containsKey(qsn))
         {
             return defaultSerializers.get(qsn);
@@ -993,13 +995,11 @@ class SerializerCreator implements SerializerClasses
         return t.toString().equals(String.class.getCanonicalName());
     }
 
-    private SourceWriter getSourceWriter(final TreeLogger logger, TypeElement targetType) throws IOException
+    private SourceWriter getSourceWriter(TypeElement targetType) 
     {
         String serializerSimpleName = getSerializerSimpleName(targetType);
         final String pkgName = getPackage(targetType).getQualifiedName().toString();
-        final String sourcefile = pkgName + "." + serializerSimpleName;
-        JavaFileObject sourceFile = processingEnvironment.getFiler().createSourceFile(sourcefile);
-        final SourceWriter pw = new SourceWriter(sourceFile.openWriter());
+        final SourceWriter pw = new SourceWriter(pkgName,serializerSimpleName, processingEnvironment);
 
         pw.println("package " + pkgName + ";");
         pw.println();
@@ -1030,6 +1030,7 @@ class SerializerCreator implements SerializerClasses
         return pw;
     }
 
+   
     private String getGeneratorString()
     {
         return "@javax.annotation.Generated(\"" + generatorName + "\")";
@@ -1043,7 +1044,7 @@ class SerializerCreator implements SerializerClasses
     private boolean needsSuperSerializer(TypeElement type)
     {
         type = getSuperclass(type);
-        while (!Object.class.getName().equals(type.getQualifiedName().toString()))
+        while (type != null && !Object.class.getName().equals(type.getQualifiedName().toString()))
         {
             if (sortFields(type).size() > 0)
             {
@@ -1067,10 +1068,10 @@ class SerializerCreator implements SerializerClasses
         return GwtProxyCreator.synthesizeTopLevelClassName(targetType, SER_SUFFIX, processingEnvironment)[1];
     }
 
-    static boolean needsTypeParameter(final TypeMirror ft, ProcessingEnvironment processingEnvironment)
+    boolean needsTypeParameter(final TypeMirror ft, ProcessingEnvironment processingEnvironment)
     {
         final TypeMirror erasedType = getErasedType(ft, processingEnvironment);
-        final String key = erasedType.toString();
+        final String key = erasedTypeString(erasedType, processingEnvironment);
         return isArray(ft) || (isParameterized(ft) && parameterizedSerializers.containsKey(key));
     }
 
@@ -1093,6 +1094,33 @@ class SerializerCreator implements SerializerClasses
         }
         Collections.sort(r, FIELD_COMP);
         return r;
+    }
+
+    public static String erasedTypeString(final TypeMirror type, ProcessingEnvironment env)
+    {
+        Element element = env.getTypeUtils().asElement(type);
+        if (element instanceof TypeElement)
+        {
+            return erasedTypeString((TypeElement) element);
+        }
+        else
+        {
+            final int indexOf = type.toString().indexOf("<");
+            if (type instanceof DeclaredType && indexOf > 0)
+            {
+                return type.toString().substring(0, indexOf);
+            }
+            else
+            {
+                return type.toString();
+            }
+        }
+    }
+
+    public static String erasedTypeString(final TypeElement erasedType)
+    {
+        final String string = erasedType.getQualifiedName().toString();
+        return string;
     }
 
 }

@@ -40,7 +40,7 @@ import org.rapla.inject.generator.internal.SourceWriter;
  * this package as well. Else it will be placed with the serializer in the
  * package the object lives.
  */
-class ResultDeserializerCreator
+public class ResultDeserializerCreator
 {
     private static final String DSER_SUFFIX = "_ResultDeserializer";
 
@@ -53,14 +53,14 @@ class ResultDeserializerCreator
     private TypeMirror componentType;
     private final String generatorName;
 
-    ResultDeserializerCreator(SerializerCreator sc, ProcessingEnvironment processingEnvironment, String generatorName)
+    public ResultDeserializerCreator(SerializerCreator sc, ProcessingEnvironment processingEnvironment, String generatorName)
     {
         this.processingEnvironment = processingEnvironment;
         serializerCreator = sc;
         this.generatorName = generatorName;
     }
 
-    void create(TreeLogger logger, TypeMirror targetType)
+    void create(TreeLogger logger, TypeMirror targetType) throws IOException
     {
         this.targetType = targetType;
         final ArrayType arrayType = (ArrayType)targetType;//processingEnvironment.getTypeUtils().getArrayType(targetType);
@@ -167,16 +167,7 @@ class ResultDeserializerCreator
     {
         String pkgName = getDeserializerPackageName(targetType);
         final String simpleName = getDeserializerSimpleName(targetType, processingEnvironment);
-        SourceWriter pw;
-        try
-        {
-            final JavaFileObject writer = processingEnvironment.getFiler().createSourceFile(pkgName + "." + simpleName);
-            pw = new SourceWriter(writer.openWriter());
-        }
-        catch (IOException e)
-        {
-            return null;
-        }
+        SourceWriter pw = new SourceWriter(pkgName, simpleName, processingEnvironment);
         pw.println("package " + pkgName + ";");
         pw.println("import " + SerializerClasses.JavaScriptObject + ";");
         pw.println("import " + SerializerClasses.ResultDeserializer + ";");
