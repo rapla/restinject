@@ -1,5 +1,37 @@
 package org.rapla.inject.generator;
 
+import dagger.Component;
+import dagger.Module;
+import dagger.Provides;
+import dagger.multibindings.ElementsIntoSet;
+import dagger.multibindings.IntoMap;
+import dagger.multibindings.IntoSet;
+import dagger.multibindings.StringKey;
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.DefaultImplementationRepeatable;
+import org.rapla.inject.Extension;
+import org.rapla.inject.ExtensionPoint;
+import org.rapla.inject.ExtensionRepeatable;
+import org.rapla.inject.InjectionContext;
+import org.rapla.inject.generator.internal.SourceWriter;
+import org.rapla.rest.generator.internal.GwtProxyCreator;
+import org.rapla.rest.generator.internal.JavaClientProxyCreator;
+
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.annotation.processing.RoundEnvironment;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Name;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.MirroredTypeException;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
+import javax.ws.rs.Path;
+import javax.ws.rs.ext.Provider;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -19,39 +51,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.RoundEnvironment;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Name;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.MirroredTypeException;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Types;
-import javax.tools.Diagnostic;
-import javax.tools.FileObject;
-import javax.tools.StandardLocation;
-import javax.ws.rs.Path;
-import javax.ws.rs.ext.Provider;
-
-import org.rapla.inject.DefaultImplementation;
-import org.rapla.inject.DefaultImplementationRepeatable;
-import org.rapla.inject.Extension;
-import org.rapla.inject.ExtensionPoint;
-import org.rapla.inject.ExtensionRepeatable;
-import org.rapla.inject.InjectionContext;
-import org.rapla.inject.generator.internal.SourceWriter;
-import org.rapla.rest.generator.internal.GwtProxyCreator;
-import org.rapla.rest.generator.internal.JavaClientProxyCreator;
-
-import dagger.Component;
-import dagger.Module;
-import dagger.Provides;
-import dagger.multibindings.IntoMap;
-import dagger.multibindings.IntoSet;
-import dagger.multibindings.StringKey;
 
 public class DaggerModuleCreator
 {
@@ -592,6 +591,7 @@ public class DaggerModuleCreator
         writer.println("import " + Module.class.getCanonicalName() + ";");
         writer.println("import " + IntoMap.class.getCanonicalName() + ";");
         writer.println("import " + IntoSet.class.getCanonicalName() + ";");
+        writer.println("import " + ElementsIntoSet.class.getCanonicalName() + ";");
         writer.println("import " + StringKey.class.getCanonicalName() + ";");
         writer.println();
         writer.println(getGeneratorString());
@@ -861,7 +861,7 @@ public class DaggerModuleCreator
         writer.println();
         final String collectionTypeString;
         writer.println();
-        writer.println("@javax.inject.Singleton @Provides @IntoSet");
+        writer.println("@javax.inject.Singleton @Provides @ElementsIntoSet");
         collectionTypeString = "Set";
         final String methodName = createMethodName(writer, interfaceName) + "_empty";
         writer.println("public java.util.Set<" + interfaceName.getQualifiedName().toString() + "> " + methodName + "_" + collectionTypeString + "() {");

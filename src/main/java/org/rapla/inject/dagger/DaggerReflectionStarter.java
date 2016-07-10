@@ -106,7 +106,7 @@ public class DaggerReflectionStarter
         final InputStream resourceAsStream = classLoader.getResourceAsStream(file);
         if (resourceAsStream == null)
         {
-            final String message = "Can't load module descritption file " + file;
+            final String message = "Can't load module description file " + file;
             throw new ModuleDescriptionNotFoundException(message);
         }
         else
