@@ -263,16 +263,10 @@ public class DaggerModuleCreator
     {
         String moduleName = null;
         {
-            moduleName = processingEnv.getOptions().get("moduleName");
+            moduleName = processingEnv.getOptions().get(AnnotationInjectionProcessor.MODULE_NAME_OPTION);
             if ( moduleName != null)
             {
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Found param moduleName: " + moduleName );
-                return moduleName;
-            }
-            moduleName = processingEnv.getOptions().get("AmoduleName");
-            if ( moduleName != null)
-            {
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Found param AmoduleName: " + moduleName );
                 return moduleName;
             }
             String fileName = "moduleDescription";

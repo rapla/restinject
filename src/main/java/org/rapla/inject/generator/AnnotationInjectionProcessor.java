@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -61,11 +62,17 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     final DaggerModuleCreator daggerModuleProcessor = new DaggerModuleCreator();
     private SerializerCreator serializerCreator;
     private ResultDeserializerCreator deserializerCreator;
+    public final static String MODULE_NAME_OPTION = "moduleName";
 
     @Override
     public SourceVersion getSupportedSourceVersion()
     {
         return SourceVersion.latestSupported();
+    }
+
+    @Override public Set<String> getSupportedOptions()
+    {
+        return Collections.singleton(MODULE_NAME_OPTION);
     }
 
     private final Class<?>[] supportedAnnotations = new Class[] { Extension.class, ExtensionRepeatable.class, ExtensionPoint.class, DefaultImplementation.class,

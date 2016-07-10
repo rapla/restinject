@@ -120,12 +120,11 @@ public class SourceWriter
             }
             catch (IOException ex)
             {
-                generate = true;
             }
             if (bytesFromInputStream != null)
             {
                 generate = !Arrays.equals(bytes, bytesFromInputStream);
-                if (!resource.delete())
+                if (generate && !resource.delete())
                 {
                     processingEnv.getMessager().printMessage(Kind.ERROR, "Could not delete file " + packageName + "." + componentName + ".java", null);
                 }
