@@ -30,9 +30,9 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
 {
     public static final String PROXY_SUFFIX = "_GwtJsonProxy";
 
-    public GwtProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName)
+    public GwtProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, SerializerCreator serializerCreator, ResultDeserializerCreator deserializerCreator, String generatorName)
     {
-        super(remoteService, processingEnvironment, generatorName, InjectionContext.gwt);
+        super(remoteService, processingEnvironment, serializerCreator, deserializerCreator, generatorName, InjectionContext.gwt);
     }
 
     @Override protected String encode(String encodedParam)
@@ -58,7 +58,7 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
     protected void serializeArg2(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType, boolean encode)
     {
         w.println("final StringBuilder innerParamSb = new StringBuilder();");
-        if (SerializerCreator.needsTypeParameter(paramType, processingEnvironment))
+        if (serializerCreator.needsTypeParameter(paramType, processingEnvironment))
         {
             w.print(serializerField);
         }
@@ -101,7 +101,7 @@ public class GwtProxyCreator extends AbstractClientProxyCreator
                 // Take inner type
                 pType = ((DeclaredType) pType).getTypeArguments().get(0);
             }
-            if (SerializerCreator.needsTypeParameter(pType, processingEnvironment))
+            if (serializerCreator.needsTypeParameter(pType, processingEnvironment))
             {
                 serializerFields[i] = "serializer_" + instanceField++;
                 w.print("private static final ");

@@ -1,10 +1,23 @@
 package org.rapla.inject.generator.internal;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.Writer;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
+import javax.annotation.processing.Filer;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.tools.Diagnostic;
+import javax.tools.Diagnostic.Kind;
+import javax.tools.FileObject;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
 
 public class SourceWriter
 {
@@ -13,17 +26,15 @@ public class SourceWriter
     private boolean newLine = true;
 
     final Set<String> methodNames = new HashSet<String>();
-    public SourceWriter(Writer writer)
-    {
-        printWriter = new PrintWriter(writer);
-    }
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
     String packageName;
     String componentName;
+    ProcessingEnvironment processingEnv;
 
-    public SourceWriter(String packageName,String componentName)
+    public SourceWriter(String packageName, String componentName, ProcessingEnvironment env)
     {
+        this.processingEnv = env;
         this.packageName = packageName;
         this.componentName = componentName;
         printWriter = new PrintWriter(stream);
@@ -42,6 +53,11 @@ public class SourceWriter
     public String getPackageName()
     {
         return packageName;
+    }
+    
+    public String getQualifiedName()
+    {
+        return packageName + "." + componentName;
     }
 
     public void indent()
@@ -84,19 +100,80 @@ public class SourceWriter
         newLine = false;
     }
 
-    public void close()
+    public void close() throws IOException
     {
         printWriter.close();
+        boolean generate;
+        String componentName = getComponentName();
+        String packageName = getPackageName();
+        final byte[] bytes = toBytes();
+        final Filer filer = processingEnv.getFiler();
+        JavaFileManager.Location loc = StandardLocation.SOURCE_OUTPUT;
+        final String key = packageName + "." + componentName;
+        final FileObject resource = filer.getResource(loc, packageName, componentName + ".java");
+        if (resource != null)
+        {
+            byte[] bytesFromInputStream = null;
+            try (InputStream in = resource.openInputStream())
+            {
+                bytesFromInputStream = getBytesFromInputStream(in);
+            }
+            catch (IOException ex)
+            {
+                generate = true;
+            }
+            if (bytesFromInputStream != null)
+            {
+                generate = !Arrays.equals(bytes, bytesFromInputStream);
+                if (!resource.delete())
+                {
+                    processingEnv.getMessager().printMessage(Kind.ERROR, "Could not delete file " + packageName + "." + componentName + ".java", null);
+                }
+            }
+            else
+            {
+                generate = true;
+            }
+        }
+        else
+        {
+            generate = true;
+        }
+        if (generate)
+        {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating  " + key);
+            final JavaFileObject sourceFile = filer.createSourceFile(key);
+            try (OutputStream outputStream = sourceFile.openOutputStream())
+            {
+                outputStream.write(bytes);
+            }
+        }
+
         newLine = true;
     }
 
     public boolean containsMethod(String methodName)
     {
-        return methodNames.contains( methodName);
+        return methodNames.contains(methodName);
     }
 
     public void addMethod(String methodName)
     {
-        methodNames.add( methodName);
+        methodNames.add(methodName);
+    }
+
+    public static byte[] getBytesFromInputStream(InputStream is) throws IOException
+    {
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream();)
+        {
+            byte[] buffer = new byte[0xFFFF];
+
+            for (int len; (len = is.read(buffer)) != -1;)
+                os.write(buffer, 0, len);
+
+            os.flush();
+
+            return os.toByteArray();
+        }
     }
 }

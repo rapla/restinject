@@ -142,6 +142,7 @@
 								<processor>org.rapla.inject.generator.AnnotationInjectionProcessor</processor>
 								<processor>dagger.internal.codegen.ComponentProcessor</processor>
 							</processors>
+							<compilerArguments>-AmoduleName=org.rapla.rapla</compilerArguments>
 							<failOnError>true</failOnError>
 							<outputDiagnostics>true</outputDiagnostics>
 						</configuration>

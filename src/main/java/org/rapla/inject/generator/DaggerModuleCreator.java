@@ -1,47 +1,9 @@
 package org.rapla.inject.generator;
 
-import dagger.Component;
-import dagger.Module;
-import dagger.Provides;
-import dagger.multibindings.IntoMap;
-import dagger.multibindings.IntoSet;
-import dagger.multibindings.StringKey;
-import org.rapla.inject.DefaultImplementation;
-import org.rapla.inject.DefaultImplementationRepeatable;
-import org.rapla.inject.Extension;
-import org.rapla.inject.ExtensionPoint;
-import org.rapla.inject.ExtensionRepeatable;
-import org.rapla.inject.InjectionContext;
-import org.rapla.inject.generator.internal.SourceWriter;
-import org.rapla.rest.generator.internal.GwtProxyCreator;
-import org.rapla.rest.generator.internal.JavaClientProxyCreator;
-
-import javax.annotation.processing.Filer;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.RoundEnvironment;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Name;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.MirroredTypeException;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Types;
-import javax.tools.Diagnostic;
-import javax.tools.FileObject;
-import javax.tools.JavaFileManager;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardLocation;
-import javax.ws.rs.Path;
-import javax.ws.rs.ext.Provider;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
@@ -57,6 +19,39 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.annotation.processing.RoundEnvironment;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Name;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.MirroredTypeException;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
+import javax.ws.rs.Path;
+import javax.ws.rs.ext.Provider;
+
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.DefaultImplementationRepeatable;
+import org.rapla.inject.Extension;
+import org.rapla.inject.ExtensionPoint;
+import org.rapla.inject.ExtensionRepeatable;
+import org.rapla.inject.InjectionContext;
+import org.rapla.inject.generator.internal.SourceWriter;
+import org.rapla.rest.generator.internal.GwtProxyCreator;
+import org.rapla.rest.generator.internal.JavaClientProxyCreator;
+
+import dagger.Component;
+import dagger.Module;
+import dagger.Provides;
+import dagger.multibindings.IntoMap;
+import dagger.multibindings.IntoSet;
+import dagger.multibindings.StringKey;
 
 public class DaggerModuleCreator
 {
@@ -76,7 +71,8 @@ public class DaggerModuleCreator
             this.id = id;
         }
 
-        @Override public int hashCode()
+        @Override
+        public int hashCode()
         {
             final int prime = 31;
             int result = 1;
@@ -86,7 +82,8 @@ public class DaggerModuleCreator
             return result;
         }
 
-        @Override public boolean equals(Object obj)
+        @Override
+        public boolean equals(Object obj)
         {
             if (this == obj)
                 return true;
@@ -123,12 +120,8 @@ public class DaggerModuleCreator
 
     enum Scopes
     {
-        Common("common.dagger"),
-        Server("server.dagger"),
-        Webservice("server.dagger"),
-        Client("client.dagger"),
-        JavaClient("client.swing.dagger"),
-        Gwt("client.gwt.dagger");
+        Common("common.dagger"), Server("server.dagger"), Webservice("server.dagger"), Client("client.dagger"), JavaClient("client.swing.dagger"), Gwt(
+                "client.gwt.dagger");
 
         final String packageNameSuffix;
 
@@ -142,7 +135,8 @@ public class DaggerModuleCreator
             this.packageNameSuffix = packageNameSuffix;
         }
 
-        @Override public String toString()
+        @Override
+        public String toString()
         {
             return name();
         }
@@ -214,8 +208,8 @@ public class DaggerModuleCreator
     private final Map<Scopes, Set<Generated>> alreadyGenerated = new LinkedHashMap<>();
     private final Map<Scopes, SourceWriter> moduleSourceWriters = new LinkedHashMap<>();
     private final Map<Scopes, SourceWriter> componentSourceWriters = new LinkedHashMap<>();
+    private final Map<Scopes, Set<String>> exportedInterfaces = new LinkedHashMap<>();
     //private final Map<String, byte[]> existingWriters = new LinkedHashMap<>();
-    private final Set<String> existingWriters = new LinkedHashSet<>();
     private final String generatorName = AnnotationInjectionProcessor.class.getCanonicalName();
 
     synchronized private void process() throws Exception
@@ -225,48 +219,7 @@ public class DaggerModuleCreator
         componentSourceWriters.clear();
         // don't clear
         //existingWriters.clear();
-        String moduleName = null;
-        {
-            final Filer filer = processingEnv.getFiler();
-            FileObject resource;
-            String packageName = "";
-            String fileName = "moduleDescription";
-            {
-                try
-                {
-                    JavaFileManager.Location loc = StandardLocation.CLASS_PATH;
-                    resource = filer.getResource(loc, packageName, fileName);
-                }
-                catch ( FileNotFoundException ex)
-                {
-                    if (processingEnv.getElementUtils().getTypeElement("ModuleDescription") != null)
-                    {
-                        moduleName = "org.rapla.rapla";
-                        resource= null;
-                    }
-                    else
-                    {
-                        processingEnv.getMessager()
-                                .printMessage(Diagnostic.Kind.ERROR, "Module find not found " + packageName + (packageName.length() > 0 ? "/" : "") + fileName + " " + ex.getMessage());
-                        return;
-                    }
-                }
-            }
-            if ( moduleName == null)
-            {
-                if (!new File(resource.toUri()).exists())
-                {
-                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Module find not found " + resource.toUri());
-                    return;
-                    //   JavaFileManager.Location loc = StandardLocation.CLASS_PATH;
-                    //            resource = processingEnv.getFiler().getResource(loc, packageName, fileName);
-                }
-                try (final BufferedReader reader = new BufferedReader(resource.openReader(true)))
-                {
-                    moduleName = reader.readLine();
-                }
-            }
-        }
+        String moduleName = getModuleName();
 
         final long start = System.currentTimeMillis();
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Module " + moduleName);
@@ -303,72 +256,38 @@ public class DaggerModuleCreator
             generateComponents(packageName, artifactName, scopes);
         }
         final long ms = System.currentTimeMillis() - start;
-        Collection<SourceWriter> writers = new ArrayList<>();
-        writers.addAll(moduleSourceWriters.values());
-        writers.addAll(componentSourceWriters.values());
-        writeToFiler(writers);
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Finished generating artifact " + moduleName + " took " + ms + " ms");
     }
 
-    private void writeToFiler(Collection<SourceWriter> writers) throws IOException
+    private String getModuleName() throws IOException
     {
-        final Filer filer = processingEnv.getFiler();
-        for (SourceWriter writer : writers)
+        String moduleName = null;
         {
-            String componentName = writer.getComponentName();
-            String packageName = writer.getPackageName();
-            final byte[] bytes = writer.toBytes();
-            JavaFileManager.Location loc = StandardLocation.SOURCE_OUTPUT;
-            final String key = packageName + "." + componentName;
-            if (!existingWriters.contains(key))
+            moduleName = processingEnv.getOptions().get("moduleName");
+            if ( moduleName != null)
             {
-                boolean generate;
-                final FileObject resource = filer.getResource(loc, packageName, componentName + ".java");
-                if (resource != null)
-                {
-                    final byte[] bytesFromInputStream;
-                    try (InputStream in = resource.openInputStream())
-                    {
-                        bytesFromInputStream = getBytesFromInputStream(in);
-                        generate = !Arrays.equals(bytes, bytesFromInputStream);
-                    }
-                    catch (FileNotFoundException ex)
-                    {
-                        generate = true;
-                    }
-
-                }
-                else
-                {
-                    generate = true;
-                }
-                if (generate)
-                {
-                    processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating for Dagger " + key);
-                    final JavaFileObject sourceFile = filer.createSourceFile(key);
-                    try (OutputStream outputStream = sourceFile.openOutputStream())
-                    {
-                        outputStream.write(bytes);
-                    }
-                }
-                existingWriters.add(key);
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Found param moduleName: " + moduleName );
+                return moduleName;
+            }
+            moduleName = processingEnv.getOptions().get("AmoduleName");
+            if ( moduleName != null)
+            {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Found param AmoduleName: " + moduleName );
+                return moduleName;
+            }
+            String fileName = "moduleDescription";
+            Collection<String> lines = loadLinesFromFile(fileName);
+            if (lines.isEmpty())
+            {
+                moduleName = "org.rapla.rapla";
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, fileName + " not found using " + moduleName);
+            }
+            else
+            {
+                moduleName = lines.iterator().next();
             }
         }
-    }
-
-    public static byte[] getBytesFromInputStream(InputStream is) throws IOException
-    {
-        try (ByteArrayOutputStream os = new ByteArrayOutputStream();)
-        {
-            byte[] buffer = new byte[0xFFFF];
-
-            for (int len; (len = is.read(buffer)) != -1; )
-                os.write(buffer, 0, len);
-
-            os.flush();
-
-            return os.toByteArray();
-        }
+        return moduleName;
     }
 
     /**
@@ -429,7 +348,15 @@ public class DaggerModuleCreator
                 continue;
             }
             String fileName = "META-INF/" + getExportListFilename(scope);
-            final Set<String> exportInterfaces = loadLinesFromMetaInfo(fileName);
+            final Set<String> exportInterfaces = new LinkedHashSet<>();
+            {
+                exportInterfaces.addAll(loadLinesFromFile(fileName));
+                final Set<String> set = this.exportedInterfaces.get(scope);
+                if ( set != null)
+                {
+                    exportInterfaces.addAll( set );
+                }
+            }
             SourceWriter writer = createComponentSourceWriter(packageName, artifactName, scope);
             for (String interfaceName : exportInterfaces)
             {
@@ -443,14 +370,13 @@ public class DaggerModuleCreator
             if (scope == Scopes.Server)
             {
                 final String webserviceLocation = "META-INF/services/javax.ws.rs.Path";
-                final Set<String> paths = loadLinesFromMetaInfo(webserviceLocation);
-                for (String path:paths)
+                final Set<String> paths = loadLinesFromFile(webserviceLocation);
+                for (String path : paths)
                 {
                     String implementingClass = path;
                     final TypeElement implementingClassTypeElement = processingEnv.getElementUtils().getTypeElement(implementingClass);
                     final String methodName = toJavaName(implementingClassTypeElement);
-                    writer.println("void " + "inject_" +
-                            methodName + "(" + implementingClassTypeElement.getQualifiedName().toString() + " injector);");
+                    writer.println("void " + "inject_" + methodName + "(" + implementingClassTypeElement.getQualifiedName().toString() + " injector);");
                 }
             }
             writer.outdent();
@@ -460,7 +386,6 @@ public class DaggerModuleCreator
 
         }
     }
-
 
     private SourceWriter createComponentSourceWriter(String originalPackageName, String artifactId, Scopes scope) throws Exception
     {
@@ -506,14 +431,16 @@ public class DaggerModuleCreator
         StringBuilder buf = new StringBuilder();
         buf.append("modules = {");
         final Set<String> modules = new HashSet<>();
+        final String file = "META-INF/" + getModuleListFileName(scope);
+        final SourceWriter sourceWriter = moduleSourceWriters.get(scope);
+        if (sourceWriter != null)
         {
-            final String file = "META-INF/" + getModuleListFileName(scope);
-            modules.addAll(loadLinesFromMetaInfo(file));
+            modules.add(sourceWriter.getQualifiedName());
         }
-
+        modules.addAll(loadLinesFromFile(file));
         if (modules.size() == 0)
         {
-            final String msg = "No Module found for " + originalPackageName + artifactId + scope.toString();
+            final String msg = "No Modules found for " + originalPackageName + "." + artifactId + scope.toString() + " File " + file;
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
         }
         boolean first = true;
@@ -535,15 +462,31 @@ public class DaggerModuleCreator
         return buf.toString();
     }
 
-    private SourceWriter createSourceWriter(String packageName, String componentName) throws IOException
+    private SourceWriter createSourceWriter(String packageName, String componentName)
     {
-        //final JavaFileObject sourceFile = processingEnv.getFiler().createSourceFile(componentName);
-        return new SourceWriter(packageName, componentName);
+        return new SourceWriter(packageName, componentName, processingEnv);
     }
 
-    private Set<String> loadLinesFromMetaInfo(String file) throws IOException
+    private Set<String> loadLinesFromFile(String file) throws IOException
     {
         Set<String> foundLines = new LinkedHashSet<>();
+        {
+            final FileObject resource = processingEnv.getFiler().getResource(StandardLocation.SOURCE_OUTPUT, "", file);
+            if (resource != null && new File(resource.toUri()).exists())
+            {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.openInputStream(), "UTF-8"));)
+                {
+                    String line = null;
+                    while ((line = reader.readLine()) != null)
+                    {
+                        foundLines.add(line);
+                    }
+                }
+                catch (IOException ex)
+                {
+                }
+            }
+        }
         {
             final FileObject resource = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", file);
             if (resource != null && new File(resource.toUri()).exists())
@@ -556,20 +499,23 @@ public class DaggerModuleCreator
                         foundLines.add(line);
                     }
                 }
+                catch (IOException ex)
+                {
+                }
             }
         }
         {
             final ClassLoader classLoader = DaggerModuleCreator.class.getClassLoader();
-//            final Collection<URL> scanningUrlsFromClasspath = getScanningUrlsFromClasspath(classLoader);
-//            for (URL url:scanningUrlsFromClasspath)
-//            {
-//                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Scanning Classpath " +  url.toExternalForm());
-//            }
+            //            final Collection<URL> scanningUrlsFromClasspath = getScanningUrlsFromClasspath(classLoader);
+            //            for (URL url:scanningUrlsFromClasspath)
+            //            {
+            //                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Scanning Classpath " +  url.toExternalForm());
+            //            }
             Enumeration<URL> resources = classLoader.getResources(file);
-//            if ((resources == null || !resources.hasMoreElements()) && !file.startsWith("/"))
-//            {
-//                resources = classLoader.getResources("/" + file);
-//            }
+            //            if ((resources == null || !resources.hasMoreElements()) && !file.startsWith("/"))
+            //            {
+            //                resources = classLoader.getResources("/" + file);
+            //            }
             if (resources != null)
             {
                 while (resources.hasMoreElements())
@@ -586,25 +532,25 @@ public class DaggerModuleCreator
                 }
             }
         }
-//        {
-//            JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-//            DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
-//            StandardJavaFileManager fm = compiler.getStandardFileManager(diagnostics, null, null);
-//            final Iterable<? extends File> locations = fm.getLocation(StandardLocation.CLASS_OUTPUT);
-//            for (File test : locations)
-//            {
-//            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Reading Modules from " + test.toString());
-//            final URL nextElement = test.toURI().toURL();
-//            try (BufferedReader reader = new BufferedReader(new InputStreamReader(nextElement.openStream(), "UTF-8")))
-//            {
-//                String line = null;
-//                while ((line = reader.readLine()) != null)
-//                {
-//                    foundLines.add(line);
-//                }
-//            }
-//        }
-//        }
+        //        {
+        //            JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        //            DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
+        //            StandardJavaFileManager fm = compiler.getStandardFileManager(diagnostics, null, null);
+        //            final Iterable<? extends File> locations = fm.getLocation(StandardLocation.CLASS_OUTPUT);
+        //            for (File test : locations)
+        //            {
+        //            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Reading Modules from " + test.toString());
+        //            final URL nextElement = test.toURI().toURL();
+        //            try (BufferedReader reader = new BufferedReader(new InputStreamReader(nextElement.openStream(), "UTF-8")))
+        //            {
+        //                String line = null;
+        //                while ((line = reader.readLine()) != null)
+        //                {
+        //                    foundLines.add(line);
+        //                }
+        //            }
+        //        }
+        //        }
         return foundLines;
     }
 
@@ -614,12 +560,15 @@ public class DaggerModuleCreator
         AnnotationInjectionProcessor.appendToFile(filename, folder, line);
     }
 
-    static public Collection<URL> getScanningUrlsFromClasspath(ClassLoader cl) {
-        Collection<URL> result = new ArrayList<> ();
-        while (cl != null) {
-            if (cl instanceof URLClassLoader) {
+    static public Collection<URL> getScanningUrlsFromClasspath(ClassLoader cl)
+    {
+        Collection<URL> result = new ArrayList<>();
+        while (cl != null)
+        {
+            if (cl instanceof URLClassLoader)
+            {
                 URL[] urls = ((URLClassLoader) cl).getURLs();
-                result.addAll (Arrays.asList (urls));
+                result.addAll(Arrays.asList(urls));
             }
             cl = cl.getParent();
         }
@@ -629,9 +578,7 @@ public class DaggerModuleCreator
     private void createSourceWriter(String originalPackageName, String artifactId, Scopes scope) throws IOException
     {
         String packageName = scope.getPackageName(originalPackageName);
-        final Filer filer = processingEnv.getFiler();
         final String moduleListFile = getModuleListFileName(scope);
-        //if (type != null && !type.isEmpty())
         {
             final String fullModuleName = getFullModuleName(originalPackageName, artifactId, scope) + "Module";
             appendLineToMetaInf(moduleListFile, fullModuleName);
@@ -756,12 +703,17 @@ public class DaggerModuleCreator
             if (exportedInterface.get(scope.ordinal()))
             {
                 final String filename = getExportListFilename(scope);
+                Set<String> set = exportedInterfaces.get(scope);
+                if ( set == null)
+                {
+                    set = new LinkedHashSet<>();
+                    exportedInterfaces.put(scope, set);
+                }
+                set.add( interfaceName);
                 appendLineToMetaInf(filename, interfaceName);
             }
         }
     }
-
-
 
     private Collection<DefaultImplementation> getDefaultImplementations(TypeElement typeElement)
     {
@@ -946,8 +898,8 @@ public class DaggerModuleCreator
         boolean assignable = typeUtils.isAssignable(asTypeImpl, asTypeOf);
         if (!assignable)
         {
-            processingEnv.getMessager()
-                    .printMessage(Diagnostic.Kind.WARNING, asTypeImpl.toString() + " can't be assigned to " + asTypeOf, implementingClassTypeElement);
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, asTypeImpl.toString() + " can't be assigned to " + asTypeOf,
+                    implementingClassTypeElement);
             return new BitSet();
         }
         if (InjectionContext.isInjectableEverywhere(context))
@@ -1028,23 +980,6 @@ public class DaggerModuleCreator
         moduleWriter.println("return result;");
         moduleWriter.outdent();
         moduleWriter.println("}");
-    }
-
-    private String generateWebserviceComponent(TypeElement implementingClassTypeElement, String id)
-    {
-        final TypeElement implClass = implementingClassTypeElement;
-        final Generated generated = new Generated(implementingClassTypeElement.getQualifiedName().toString(), implClass.getQualifiedName().toString(), id);
-        if (notGenerated(Scopes.Webservice, generated))
-        {
-            SourceWriter sourceWriter = getWriter(componentSourceWriters, Scopes.Webservice, generated);
-            sourceWriter.println();
-            //final String methodName = createMethodName(sourceWriter, implementingClassTypeElement);
-            final String methodName = toJavaName(implementingClassTypeElement);
-            sourceWriter.println("public void " + "inject_" +
-                    methodName + "(" + implementingClassTypeElement.getQualifiedName().toString() + " injector);");
-            return methodName;
-        }
-        return null;
     }
 
     private String createMethodName(SourceWriter moduleWriter, final TypeElement typeElement)

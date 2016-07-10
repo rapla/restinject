@@ -40,6 +40,8 @@ import org.rapla.inject.ExtensionRepeatable;
 import org.rapla.inject.InjectionContext;
 import org.rapla.rest.generator.internal.GwtProxyCreator;
 import org.rapla.rest.generator.internal.JavaClientProxyCreator;
+import org.rapla.rest.generator.internal.ResultDeserializerCreator;
+import org.rapla.rest.generator.internal.SerializerCreator;
 import org.rapla.rest.generator.internal.TreeLogger;
 import org.rapla.rest.generator.internal.UnableToCompleteException;
 
@@ -55,7 +57,10 @@ import org.rapla.rest.generator.internal.UnableToCompleteException;
 public class AnnotationInjectionProcessor extends AbstractProcessor
 {
 
+    public final static JavaFileManager.Location META_INF_LOCATION = StandardLocation.CLASS_OUTPUT;
     final DaggerModuleCreator daggerModuleProcessor = new DaggerModuleCreator();
+    private SerializerCreator serializerCreator;
+    private ResultDeserializerCreator deserializerCreator;
 
     @Override
     public SourceVersion getSupportedSourceVersion()
@@ -71,6 +76,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     {
         super.init(processingEnv);
         daggerModuleProcessor.init( processingEnv);
+        serializerCreator = new SerializerCreator(processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
+        deserializerCreator = new ResultDeserializerCreator(serializerCreator, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
     }
 
     @Override
@@ -85,6 +92,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return supported;
     }
 
+    public static int counter = 1;
     @Override
     synchronized public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
     {
@@ -92,8 +100,15 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         {
             return false;
         }
+        int i = counter;
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Restinject Annotationprocessing starting for task " + i);
         try
         {
+            for (TypeElement annotation : annotations)
+            {
+                final Set<? extends Element> element = roundEnv.getElementsAnnotatedWith(annotation);
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Got "+element.toString());
+            }
             boolean daggerModuleRebuildNeeded = process(roundEnv);
             // only generate the modules if we processed a class
             if (daggerModuleRebuildNeeded)
@@ -110,6 +125,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, stringWriter.toString());
             return false;
         }
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Restinject Annotationprocessing finished for task " + i);
         return true;
     }
 
@@ -226,11 +242,11 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         // Check if we need to generate proxies for java or gwt 
         if (interfaceElement.getAnnotation(Path.class) != null && interfaceElement.getKind() == ElementKind.INTERFACE)
         {
-            final GwtProxyCreator proxyCreator = new GwtProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
+            final GwtProxyCreator proxyCreator = new GwtProxyCreator(interfaceElement, processingEnv, serializerCreator, deserializerCreator, AnnotationInjectionProcessor.class.getCanonicalName());
             final String proxyClassName = proxyCreator.create(proxyLogger);
 
-            final JavaClientProxyCreator swingProxyCreator = new JavaClientProxyCreator(interfaceElement, processingEnv,
-                    AnnotationInjectionProcessor.class.getCanonicalName());
+            final JavaClientProxyCreator swingProxyCreator = new JavaClientProxyCreator(interfaceElement, processingEnv,serializerCreator, deserializerCreator, AnnotationInjectionProcessor.class.getCanonicalName()
+                    );
             final String swingproxyClassName = swingProxyCreator.create(proxyLogger);
             {
                 final String qualifiedName = interfaceElement.getQualifiedName().toString();
@@ -367,7 +383,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     public static File getInterfaceList(Filer filer) throws IOException
     {
         CharSequence pkg = "";
-        JavaFileManager.Location location = StandardLocation.CLASS_OUTPUT;
+        JavaFileManager.Location location = META_INF_LOCATION;
 
         File f;
         try

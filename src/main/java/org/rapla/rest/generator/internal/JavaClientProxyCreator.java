@@ -30,9 +30,9 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
 {
     public static final String PROXY_SUFFIX = "_JavaJsonProxy";
 
-    public JavaClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName)
+    public JavaClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, SerializerCreator serializerCreator, ResultDeserializerCreator deserializerCreator, String generatorName)
     {
-        super(remoteService, processingEnvironment, generatorName, InjectionContext.swing);
+        super(remoteService, processingEnvironment, serializerCreator, deserializerCreator, generatorName, InjectionContext.swing);
     }
 
     @Override
@@ -45,29 +45,31 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
         pw.println("import " + JsonRemoteConnector.CallResult.class.getCanonicalName() + ";");
     }
 
-    @Override protected String encode(String encodingParam)
+    @Override
+    protected String encode(String encodingParam)
     {
         return "URLEncoder.encode(" + encodingParam + ",\"UTF-8\")";
     }
 
-    @Override protected String[] writeSerializers(SourceWriter w, List<? extends VariableElement> params, TypeMirror resultType)
+    @Override
+    protected String[] writeSerializers(SourceWriter w, List<? extends VariableElement> params, TypeMirror resultType)
     {
         String containerClass = "null";
         final String resultClassname;
         {
-            if ((resultType instanceof DeclaredType) && ((DeclaredType) resultType).getTypeArguments() != null && !((DeclaredType) resultType)
-                    .getTypeArguments().isEmpty())
+            if ((resultType instanceof DeclaredType) && ((DeclaredType) resultType).getTypeArguments() != null
+                    && !((DeclaredType) resultType).getTypeArguments().isEmpty())
             {
                 TypeMirror typeMirror = resultType;
                 {
                     TypeMirror erasedType = SerializerCreator.getErasedType(typeMirror, processingEnvironment);
-                    containerClass = erasedType.toString() + ".class";
+                    containerClass = SerializerCreator.erasedTypeString(erasedType, processingEnvironment) + ".class";
                 }
                 {
                     final List<? extends TypeMirror> typeArguments1 = ((DeclaredType) typeMirror).getTypeArguments();
                     final TypeMirror innerType = typeArguments1.get(typeArguments1.size() - 1);
                     final TypeMirror erasedType = SerializerCreator.getErasedType(innerType, processingEnvironment);
-                    resultClassname = erasedType.toString();
+                    resultClassname = SerializerCreator.erasedTypeString(erasedType, processingEnvironment);
                 }
             }
             else
@@ -87,7 +89,8 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
         return strings;
     }
 
-    @Override public String getProxySuffix()
+    @Override
+    public String getProxySuffix()
     {
         return PROXY_SUFFIX;
     }
@@ -98,15 +101,13 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
         return JavaClientServerConnector.class.getSimpleName();
     }
 
-
-
-    protected void serializeArg2(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType,boolean encode)
+    protected void serializeArg2(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType, boolean encode)
     {
-        final String methodName = isDate( paramType)? "serializeDate" : "serializeArgument" ;
+        final String methodName = isDate(paramType) ? "serializeDate" : "serializeArgument";
         if (encode)
-            w.println(targetName + ".append(" + encode(serializerField + "." + methodName +"("+ pName+")") + ");");
+            w.println(targetName + ".append(" + encode(serializerField + "." + methodName + "(" + pName + ")") + ");");
         else
-            w.println(targetName + ".append(" + serializerField + "." + methodName +"("+pName + "));");
+            w.println(targetName + ".append(" + serializerField + "." + methodName + "(" + pName + "));");
     }
 
 }

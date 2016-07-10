@@ -21,7 +21,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import javax.tools.JavaFileObject;
+import javax.tools.Diagnostic;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -46,11 +46,12 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
     protected int instanceField;
     private final InjectionContext context;
 
-    protected AbstractClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName, InjectionContext context)
+    protected AbstractClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, SerializerCreator serializerCreator,
+            ResultDeserializerCreator deserializerCreator, String generatorName, InjectionContext context)
     {
         this.context = context;
-        serializerCreator = new SerializerCreator(processingEnvironment, generatorName);
-        deserializerCreator = new ResultDeserializerCreator(serializerCreator, processingEnvironment, generatorName);
+        this.serializerCreator = serializerCreator;
+        this.deserializerCreator = deserializerCreator;
         this.processingEnvironment = processingEnvironment;
         this.generatorName = generatorName;
         svcInf = remoteService;
@@ -78,9 +79,8 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
     {
         if (annotationKey != null && isSetOrListOrArray(paramType))
         {
-            final TypeMirror typeMirror = isArray(paramType) ?
-                    ((ArrayType) paramType).getComponentType() :
-                    ((DeclaredType) paramType).getTypeArguments().get(0);
+            final TypeMirror typeMirror = isArray(paramType) ? ((ArrayType) paramType).getComponentType()
+                    : ((DeclaredType) paramType).getTypeArguments().get(0);
             w.println("if (" + pName + " != null) {");
             w.indent();
             w.println("for(" + typeMirror.toString() + " innerParam : " + pName + ") {");
@@ -111,7 +111,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
                 w.println("if (" + pName + " != null) {");
                 w.indent();
             }
-            serializeArg(w, targetName, serializerField, pName, paramType, false,annotationKey == null );
+            serializeArg(w, targetName, serializerField, pName, paramType, false, annotationKey == null);
             if (!primitive)
             {
                 w.outdent();
@@ -123,7 +123,8 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
     private void serializeArg(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType, boolean encode, boolean forceJson)
     {
-        if (((SerializerCreator.isJsonPrimitive(paramType) || SerializerCreator.isBoxedPrimitive(paramType))) && !(forceJson && SerializerCreator.isJsonString( paramType)))
+        if (((SerializerCreator.isJsonPrimitive(paramType) || SerializerCreator.isBoxedPrimitive(paramType)))
+                && !(forceJson && SerializerCreator.isJsonString(paramType)))
         {
             if (SerializerCreator.isJsonString(paramType) && encode)
             {
@@ -162,10 +163,10 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         return "@javax.annotation.Generated(value=\"" + generatorName + "\", comments=\"" + comments + "\")";
     }
 
-    public String create(final TreeLogger logger) throws UnableToCompleteException
+    public String create(final TreeLogger logger) throws UnableToCompleteException, IOException
     {
         TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
-        String interfaceName = erasedType.getQualifiedName().toString();
+        String interfaceName = SerializerCreator.erasedTypeString(erasedType);
         checkMethods(logger, interfaceName, processingEnvironment);
 
         final SourceWriter srcWriter = getSourceWriter(interfaceName);
@@ -185,6 +186,9 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
     private void checkMethods(final TreeLogger logger, String interfaceName, final ProcessingEnvironment processingEnvironment) throws UnableToCompleteException
     {
+        processingEnvironment.getMessager().printMessage(Diagnostic.Kind.NOTE,
+                "AbstractClientProxyCreator: Checking for methods from " + svcInf.getQualifiedName().toString());
+
         final List<ExecutableElement> methods = getMethods(processingEnvironment);
         for (final ExecutableElement m : methods)
         {
@@ -223,7 +227,7 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
                 }
                 // (Boxed)Primitives are left, they are handled specially
             }
-            catch (UnableToCompleteException ex)
+            catch (IOException|UnableToCompleteException ex)
             {
                 throw new UnableToCompleteException("Can't generate method " + interfaceName + "." + m.getSimpleName().toString() + " cause " + ex.getMessage(),
                         ex);
@@ -253,32 +257,23 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         return modifiers.contains(Modifier.FINAL) || modifiers.contains(Modifier.PRIVATE) || methodClass.equals("java.lang.Object");
     }
 
-    protected SourceWriter getSourceWriter(String interfaceName) throws UnableToCompleteException
+    protected SourceWriter getSourceWriter(String interfaceName) 
     {
         final String pkgName = processingEnvironment.getElementUtils().getPackageOf(svcInf).getQualifiedName().toString();
-        SourceWriter pw;
         final String className = svcInf.getSimpleName().toString() + getProxySuffix();
-        try
-        {
-            String name = svcInf.getQualifiedName() + getProxySuffix();
-            JavaFileObject sourceFile = processingEnvironment.getFiler().createSourceFile(name, svcInf);
-            pw = new SourceWriter(sourceFile.openWriter());
-        }
-        catch (IOException e)
-        {
-            throw new UnableToCompleteException(e.getMessage());
-        }
+        SourceWriter pw = new SourceWriter(pkgName, className, processingEnvironment);
         pw.println("package " + pkgName + ";");
         pw.println("import " + Map.class.getCanonicalName() + ";");
         pw.println("import " + HashMap.class.getCanonicalName() + ";");
         pw.println("import " + CustomConnector.class.getCanonicalName() + ";");
         pw.println("import " + DefaultImplementation.class.getCanonicalName() + ";");
         pw.println("import " + InjectionContext.class.getCanonicalName() + ";");
-        pw.println("import " + AbstractJsonProxy + ";");        
+        pw.println("import " + AbstractJsonProxy + ";");
         writeImports(pw);
         pw.println();
         pw.println(getGeneratorString(interfaceName));
-        pw.println("@"+DefaultImplementation.class.getSimpleName()+"(of = "+interfaceName+".class, context="+InjectionContext.class.getSimpleName()+"."+context+")");
+        pw.println("@" + DefaultImplementation.class.getSimpleName() + "(of = " + interfaceName + ".class, context=" + InjectionContext.class.getSimpleName()
+                + "." + context + ")");
         pw.println("public class " + className + " extends " + AbstractJsonProxy + " implements " + interfaceName);
         pw.println("{");
         pw.indent();
