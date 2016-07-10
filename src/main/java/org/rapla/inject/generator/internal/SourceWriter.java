@@ -133,6 +133,7 @@ public class SourceWriter
             {
                 generate = true;
             }
+            generate = true;
         }
         else
         {
