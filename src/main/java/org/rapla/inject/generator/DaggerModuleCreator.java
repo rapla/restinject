@@ -431,14 +431,21 @@ public class DaggerModuleCreator
             modules.add(sourceWriter.getQualifiedName());
         }
         modules.addAll(loadLinesFromFile(file));
+        
         if (modules.size() == 0)
         {
             final String msg = "No Modules found for " + originalPackageName + "." + artifactId + scope.toString() + " File " + file;
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
         }
+        final String fullModuleStarterName = getFullModuleName(originalPackageName, artifactId, scope) + "StartupModule";
+        if (processingEnv.getElementUtils().getTypeElement(fullModuleStarterName) != null)
+        {
+            modules.add( fullModuleStarterName );
+        }
         boolean first = true;
         for (String module : modules)
         {
+            
             if (first)
             {
                 first = false;

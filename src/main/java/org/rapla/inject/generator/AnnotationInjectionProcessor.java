@@ -100,7 +100,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return supported;
     }
 
-    public static int counter = 1;
+    public static int counter = 0;
     @Override
     synchronized public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
     {
@@ -108,6 +108,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         {
             return false;
         }
+        counter++;
         int i = counter;
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Restinject Annotationprocessing starting for task " + i);
         try
