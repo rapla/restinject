@@ -23,6 +23,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
@@ -230,10 +231,62 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     {
         final TypeElement typeElement = (TypeElement) elem;
         final TypeElement extensionPoint = getProvides(annotation);
+        checkImplements(typeElement, extensionPoint, Extension.class.getCanonicalName());
         final String interfaceQualifiedName = extensionPoint.getQualifiedName().toString();
         appendToServiceList(interfaceListFile, interfaceQualifiedName);
         addServiceFile(extensionPoint, typeElement, interfaceListFileFolder);
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding extension " + typeElement);
+    }
+
+    private void checkImplements(TypeElement typeElement, TypeElement extensionPoint, String annotationName) throws UnableToCompleteException
+    {
+        // TODO also check super classes
+        if (!isImplementing(typeElement, extensionPoint))
+        {
+            throw new UnableToCompleteException(typeElement.toString() + " has a declared " + annotationName + " but does not directly implement " + extensionPoint.toString() +". You need to add implements " + extensionPoint.toString() + ". Super implementations are not checked.");
+        }
+    }
+
+    private boolean isImplementing(TypeElement implementingElement, TypeElement interfaceToImplement)
+    {
+        final DeclaredType providedInterface = processingEnv.getTypeUtils().getDeclaredType(interfaceToImplement);
+        String providedTypeString = SerializerCreator.erasedTypeString( providedInterface, processingEnv);
+        final List<? extends TypeMirror> implementedInterfaces = implementingElement.getInterfaces();
+        for ( TypeMirror implementedInterface:implementedInterfaces)
+        {
+            String typeString = SerializerCreator.erasedTypeString( implementedInterface, processingEnv);
+            if (providedTypeString.equals( typeString))
+            {
+                return true;
+            }
+            final Element implementedInterfaceElement = processingEnv.getTypeUtils().asElement(implementedInterface);
+            if ( implementedInterfaceElement instanceof  TypeElement)
+            {
+                if ( isImplementing( (TypeElement) implementedInterfaceElement, interfaceToImplement))
+                {
+                    return true;
+                }
+            }
+        }
+
+        final TypeMirror superclass = implementingElement.getSuperclass();
+        if ( superclass != null)
+        {
+            String typeString = SerializerCreator.erasedTypeString( superclass, processingEnv);
+            if (providedTypeString.equals( typeString))
+            {
+                return true;
+            }
+            final Element superClassElement = processingEnv.getTypeUtils().asElement(superclass);
+            if ( superClassElement instanceof  TypeElement)
+            {
+                if (isImplementing((TypeElement)superClassElement,interfaceToImplement))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private boolean handleDefaultImplemenatationForType(File interfaceListFile, File interfaceListFileFolder, TreeLogger proxyLogger,
@@ -245,6 +298,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         }
         final TypeElement implementationElement = (TypeElement) defaultImplementationElement;
         final TypeElement interfaceElement = getDefaultImplementationOf(defaultImplementationAnnotation);
+        checkImplements( implementationElement, interfaceElement, DefaultImplementation.class.getCanonicalName());
         boolean pathAnnotationFound = false;
         // Check if we need to generate proxies for java or gwt 
         if (interfaceElement.getAnnotation(Path.class) != null && interfaceElement.getKind() == ElementKind.INTERFACE)
