@@ -327,7 +327,7 @@ public class DaggerModuleCreator
         {
             createMethods(interfaceName);
         }
-        for (SourceWriter moduleWriter : moduleSourceWriters.values())
+        for (SourceWriter moduleWriter : moduleSourceWriters.va*lues())
         {
             moduleWriter.outdent();
             moduleWriter.println("}");
