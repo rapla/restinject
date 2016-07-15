@@ -40,6 +40,9 @@ import org.rapla.inject.Extension;
 import org.rapla.inject.ExtensionPoint;
 import org.rapla.inject.ExtensionRepeatable;
 import org.rapla.inject.InjectionContext;
+import org.rapla.inject.generator.DaggerModuleCreator.ModuleInfo;
+import org.rapla.inject.generator.DaggerModuleCreator.ProcessedAnnotations;
+import org.rapla.inject.generator.DaggerModuleCreator.Scopes;
 import org.rapla.rest.generator.internal.GwtProxyCreator;
 import org.rapla.rest.generator.internal.JavaClientProxyCreator;
 import org.rapla.rest.generator.internal.ResultDeserializerCreator;
@@ -118,13 +121,15 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 final Set<? extends Element> element = roundEnv.getElementsAnnotatedWith(annotation);
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Got "+element.toString());
             }
-            boolean daggerModuleRebuildNeeded = process(roundEnv);
-            // only generate the modules if we processed a class
-            if (daggerModuleRebuildNeeded)
-            {
+            ProcessedAnnotations processedAnnotations = process(roundEnv);
+            boolean daggerModuleRebuildNeeded = processedAnnotations.daggerModuleRebuildNeeded;
+            DaggerModuleCreator.Scopes scope = Scopes.Common;
+            ModuleInfo moduleInfo = new ModuleInfo(processingEnv); 
+            final String fullModuleStarterName = daggerModuleProcessor.getFullModuleName(moduleInfo, scope) ;
+            if (processingEnv.getElementUtils().getTypeElement(fullModuleStarterName) == null && daggerModuleRebuildNeeded)
+            {    
                 // Dagger
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Dagger Modules");
-                daggerModuleProcessor.process(annotations,roundEnv);
+                daggerModuleProcessor.process(annotations,roundEnv,moduleInfo, processedAnnotations);
             }
         }
         catch (Exception ioe)
@@ -138,8 +143,9 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return true;
     }
 
-    private boolean process(RoundEnvironment roundEnv) throws Exception
+    private ProcessedAnnotations process(RoundEnvironment roundEnv) throws Exception
     {
+        ProcessedAnnotations processedAnnotations = new ProcessedAnnotations();
         File interfaceListFile = getInterfaceList(processingEnv.getFiler());
         File interfaceListFileFolder = interfaceListFile.getParentFile();
         boolean daggerModuleRebuildNeeded = false;
@@ -150,8 +156,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         for (final Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementation.class))
         {
             final DefaultImplementation defaultImplementationAnnotation = elem.getAnnotation(DefaultImplementation.class);
-            boolean pathAnnotationFoundInHandle = handleDefaultImplemenatationForType(interfaceListFile, interfaceListFileFolder, proxyLogger, elem,
-                    defaultImplementationAnnotation);
+            boolean pathAnnotationFoundInHandle = handleDefaultImplementationForType(interfaceListFile, interfaceListFileFolder, proxyLogger, elem,
+                    defaultImplementationAnnotation, processedAnnotations);
             pathAnnotationFound |= pathAnnotationFoundInHandle;
             // we also created proxies for gwt and java, so rebuild is needed
             if(!isGeneratedByAnnotationInjectionProcessor(elem))
@@ -163,8 +169,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             final DefaultImplementationRepeatable annotation = elem.getAnnotation(DefaultImplementationRepeatable.class);
             for (final DefaultImplementation defaultImplementation : annotation.value())
             {
-                boolean pathAnnotationFoundInHandle = handleDefaultImplemenatationForType(interfaceListFile, interfaceListFileFolder, proxyLogger, elem,
-                        defaultImplementation);
+                boolean pathAnnotationFoundInHandle = handleDefaultImplementationForType(interfaceListFile, interfaceListFileFolder, proxyLogger, elem,
+                        defaultImplementation,processedAnnotations);
                 pathAnnotationFound |= pathAnnotationFoundInHandle;
                 // we also created proxies for gwt and java, so rebuild is needed
                 if(!isGeneratedByAnnotationInjectionProcessor(elem))
@@ -209,6 +215,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 {
                     addServiceFile(Path.class.getCanonicalName(), typeElement, interfaceListFileFolder);
                     pathAnnotationFound = true;
+                    final String string = typeElement.getQualifiedName().toString();
+                    processedAnnotations.paths.add(string);
                 }
             }
         }
@@ -224,7 +232,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 addServiceFile(Provider.class.getCanonicalName(), (TypeElement) elem, interfaceListFileFolder);
             }
         }
-        return daggerModuleRebuildNeeded;
+        processedAnnotations.daggerModuleRebuildNeeded = daggerModuleRebuildNeeded;
+        return processedAnnotations;
     }
 
     private void handleExtension(File interfaceListFile, File interfaceListFileFolder, final Element elem, final Extension annotation)
@@ -290,8 +299,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return false;
     }
 
-    private boolean handleDefaultImplemenatationForType(File interfaceListFile, File interfaceListFileFolder, TreeLogger proxyLogger,
-            final Element defaultImplementationElement, DefaultImplementation defaultImplementationAnnotation) throws UnableToCompleteException, IOException
+    private boolean handleDefaultImplementationForType(File interfaceListFile, File interfaceListFileFolder, TreeLogger proxyLogger,
+            final Element defaultImplementationElement, DefaultImplementation defaultImplementationAnnotation, ProcessedAnnotations processedAnnotations) throws UnableToCompleteException, IOException
     {
         if(isGeneratedByAnnotationInjectionProcessor(defaultImplementationElement))
         {
@@ -316,7 +325,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 final File serviceFile = getFile(interfaceListFile.getParentFile(), "services/" + qualifiedName);
                 appendToFile(serviceFile, proxyClassName);
                 appendToFile(serviceFile, swingproxyClassName);
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Proxies " + proxyClassName + ", " + swingproxyClassName);
+                processedAnnotations.paths.add(qualifiedName);
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Proxies " + proxyClassName + ", " + swingproxyClassName,interfaceElement);
             }
             {
                 final File serviceFile = getFile(interfaceListFile.getParentFile(), "services/" + Path.class.getCanonicalName());
