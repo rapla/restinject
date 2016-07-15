@@ -165,8 +165,6 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
 
     public String create(final TreeLogger logger) throws UnableToCompleteException, IOException
     {
-        processingEnvironment.getMessager().printMessage(Diagnostic.Kind.NOTE,
-                getClass().getSimpleName() +" creating proxy methods for " + svcInf.getQualifiedName().toString(), svcInf);
         TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
         String interfaceName = SerializerCreator.erasedTypeString(erasedType);
         checkMethods(logger, interfaceName, processingEnvironment);

@@ -141,12 +141,14 @@ public class SourceWriter
         }
         if (generate)
         {
+
             processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating  " + key);
             final JavaFileObject sourceFile = filer.createSourceFile(key);
             try (OutputStream outputStream = sourceFile.openOutputStream())
             {
                 outputStream.write(bytes);
             }
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Created " + toString());
         }
 
         newLine = true;
@@ -175,5 +177,11 @@ public class SourceWriter
 
             return os.toByteArray();
         }
+    }
+    
+    @Override
+    public String toString()
+    {
+        return getQualifiedName();
     }
 }

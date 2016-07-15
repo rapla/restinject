@@ -1,37 +1,5 @@
 package org.rapla.inject.generator;
 
-import dagger.Component;
-import dagger.Module;
-import dagger.Provides;
-import dagger.multibindings.ElementsIntoSet;
-import dagger.multibindings.IntoMap;
-import dagger.multibindings.IntoSet;
-import dagger.multibindings.StringKey;
-import org.rapla.inject.DefaultImplementation;
-import org.rapla.inject.DefaultImplementationRepeatable;
-import org.rapla.inject.Extension;
-import org.rapla.inject.ExtensionPoint;
-import org.rapla.inject.ExtensionRepeatable;
-import org.rapla.inject.InjectionContext;
-import org.rapla.inject.generator.internal.SourceWriter;
-import org.rapla.rest.generator.internal.GwtProxyCreator;
-import org.rapla.rest.generator.internal.JavaClientProxyCreator;
-
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.RoundEnvironment;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Name;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.MirroredTypeException;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Types;
-import javax.tools.Diagnostic;
-import javax.tools.FileObject;
-import javax.tools.StandardLocation;
-import javax.ws.rs.Path;
-import javax.ws.rs.ext.Provider;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -51,6 +19,40 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.annotation.processing.RoundEnvironment;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Name;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.MirroredTypeException;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
+import javax.ws.rs.Path;
+import javax.ws.rs.ext.Provider;
+
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.DefaultImplementationRepeatable;
+import org.rapla.inject.Extension;
+import org.rapla.inject.ExtensionPoint;
+import org.rapla.inject.ExtensionRepeatable;
+import org.rapla.inject.InjectionContext;
+import org.rapla.inject.generator.internal.SourceWriter;
+import org.rapla.rest.generator.internal.GwtProxyCreator;
+import org.rapla.rest.generator.internal.JavaClientProxyCreator;
+
+import dagger.Component;
+import dagger.Module;
+import dagger.Provides;
+import dagger.multibindings.ElementsIntoSet;
+import dagger.multibindings.IntoMap;
+import dagger.multibindings.IntoSet;
+import dagger.multibindings.StringKey;
 
 public class DaggerModuleCreator
 {
@@ -172,7 +174,7 @@ public class DaggerModuleCreator
         return supported;
     }
 
-    synchronized public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
+    synchronized public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv, ModuleInfo moduleInfo,ProcessedAnnotations processedAnnotations)
     {
         if (roundEnv.processingOver() || annotations.isEmpty())
         {
@@ -180,7 +182,7 @@ public class DaggerModuleCreator
         }
         try
         {
-            process();
+            process(moduleInfo,processedAnnotations);
         }
         catch (Exception ioe)
         {
@@ -211,17 +213,15 @@ public class DaggerModuleCreator
     //private final Map<String, byte[]> existingWriters = new LinkedHashMap<>();
     private final String generatorName = AnnotationInjectionProcessor.class.getCanonicalName();
 
-    synchronized private void process() throws Exception
+    synchronized private void process(ModuleInfo moduleInfo, ProcessedAnnotations processedAnnotations) throws Exception
     {
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Starting Dagger creation.");
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Starting Dagger creation for module " + moduleInfo );
         moduleSourceWriters.clear();
         componentSourceWriters.clear();
         // don't clear
         //existingWriters.clear();
-        String moduleName = getModuleName();
 
         final long start = System.currentTimeMillis();
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Module " + moduleName);
         Set<Scopes> scopes = new HashSet<>();
         scopes.addAll(Arrays.asList(Scopes.values()));
         scopes.remove(Scopes.Webservice);
@@ -247,40 +247,66 @@ public class DaggerModuleCreator
         //        {
         //            scopes.add(Scopes.JavaClient);
         //        }
-        final int i = moduleName.lastIndexOf(".");
+    
         {
-            final String packageName = (i >= 0 ? moduleName.substring(0, i) : "");
-            String artifactName = firstCharUp(i >= 0 ? moduleName.substring(i + 1) : moduleName);
-            generateModuleClass(packageName, artifactName, scopes);
-            generateComponents(packageName, artifactName, scopes);
+            generateModuleClass(moduleInfo, scopes);
+            generateComponents(moduleInfo, scopes,processedAnnotations);
         }
         final long ms = System.currentTimeMillis() - start;
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Finished generating artifact " + moduleName + " took " + ms + " ms");
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Finished Dagger creation for module  " + moduleInfo + " took " + ms + " ms");
     }
-
-    private String getModuleName() throws IOException
+    
+    public static class ModuleInfo
     {
-        String moduleName = null;
+        final public String groupId;
+        final public String artifactId;
+        
+        public ModuleInfo(ProcessingEnvironment processingEnv) throws IOException
         {
-            moduleName = processingEnv.getOptions().get(AnnotationInjectionProcessor.MODULE_NAME_OPTION);
-            if ( moduleName != null)
-            {
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Found param moduleName: " + moduleName );
-                return moduleName;
-            }
-            String fileName = "moduleDescription";
-            Collection<String> lines = loadLinesFromFile(fileName);
-            if (lines.isEmpty())
-            {
-                moduleName = "org.rapla.rapla";
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, fileName + " not found using " + moduleName);
-            }
-            else
-            {
-                moduleName = lines.iterator().next();
-            }
+            String moduleName = getModuleName(processingEnv);
+            final int i = moduleName.lastIndexOf(".");
+            groupId = (i >= 0 ? moduleName.substring(0, i) : "");
+            artifactId = firstCharUp(i >= 0 ? moduleName.substring(i + 1) : moduleName);
         }
-        return moduleName;
+        public String getModuleName(ProcessingEnvironment processingEnv) throws IOException
+        {
+            String moduleName = null;
+            {
+                moduleName = processingEnv.getOptions().get(AnnotationInjectionProcessor.MODULE_NAME_OPTION);
+                if ( moduleName != null)
+                {
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Found param moduleName: " + moduleName );
+                    return moduleName;
+                }
+                String fileName = "moduleDescription";
+                Collection<String> lines = loadLinesFromFile(fileName,processingEnv);
+                if (lines.isEmpty())
+                {
+                    moduleName = "org.rapla.rapla";
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, fileName + " not found using " + moduleName);
+                }
+                else
+                {
+                    moduleName = lines.iterator().next();
+                }
+            }
+            return moduleName;
+        }
+        public String getGroupId()
+        {
+            return groupId;
+        }
+        public String getArtifactId()
+        {
+            return artifactId;
+        }
+        
+        @Override
+        public String toString()
+        {
+            return groupId + "." + artifactId;
+        }
+
     }
 
     /**
@@ -288,24 +314,35 @@ public class DaggerModuleCreator
      * and returns the File.
      */
 
-    private void generateModuleClass(String packageName, String artifactName, Collection<Scopes> scopes) throws Exception
+    private void generateModuleClass(ModuleInfo moduleInfo, Collection<Scopes> scopes) throws Exception
     {
         for (Scopes scope : scopes)
         {
-            createSourceWriter(packageName, artifactName, scope);
+            createSourceWriter(moduleInfo, scope);
         }
 
         File f = AnnotationInjectionProcessor.getInterfaceList(processingEnv.getFiler());
         List<String> interfaces = AnnotationInjectionProcessor.readLines(f);
         for (String interfaceName : interfaces)
         {
-            createMethods(interfaceName, artifactName);
+            createMethods(interfaceName);
         }
-        for (SourceWriter moduleWriter : moduleSourceWriters.values())
+        for (SourceWriter moduleWriter : moduleSourceWriters.va*lues())
         {
             moduleWriter.outdent();
             moduleWriter.println("}");
             moduleWriter.close();
+        }
+    }
+    
+    public static class ProcessedAnnotations
+    {
+        public Set<String> paths = new LinkedHashSet<>();
+        public boolean daggerModuleRebuildNeeded;
+
+        public Collection<String> getPaths()
+        {
+            return paths;
         }
     }
 
@@ -331,7 +368,7 @@ public class DaggerModuleCreator
      * @param packageName
      * @param artifactName
      */
-    private void generateComponents(String packageName, String artifactName, Collection<Scopes> scopes) throws Exception
+    private void generateComponents(ModuleInfo moduleInfo, Collection<Scopes> scopes,ProcessedAnnotations processedAnnotations) throws Exception
     {
         //Map<String, BitSet> exportedInterfaces = new LinkedHashMap<>();
         for (Scopes scope : Scopes.components())
@@ -343,14 +380,14 @@ public class DaggerModuleCreator
             String fileName = "META-INF/" + getExportListFilename(scope);
             final Set<String> exportInterfaces = new LinkedHashSet<>();
             {
-                exportInterfaces.addAll(loadLinesFromFile(fileName));
+                exportInterfaces.addAll(loadLinesFromFile(fileName,processingEnv));
                 final Set<String> set = this.exportedInterfaces.get(scope);
                 if ( set != null)
                 {
                     exportInterfaces.addAll( set );
                 }
             }
-            SourceWriter writer = createComponentSourceWriter(packageName, artifactName, scope);
+            SourceWriter writer = createComponentSourceWriter(moduleInfo, scope);
             for (String interfaceName : exportInterfaces)
             {
                 String key = interfaceName;
@@ -363,7 +400,8 @@ public class DaggerModuleCreator
             if (scope == Scopes.Server)
             {
                 final String webserviceLocation = "META-INF/services/javax.ws.rs.Path";
-                final Set<String> paths = loadLinesFromFile(webserviceLocation);
+                final Set<String> paths = new LinkedHashSet<>(loadLinesFromFile(webserviceLocation,processingEnv));
+                paths.addAll( processedAnnotations.getPaths() );
                 for (String path : paths)
                 {
                     String implementingClass = path;
@@ -376,12 +414,14 @@ public class DaggerModuleCreator
             writer.println("}");
             writer.close();
             componentSourceWriters.put(scope, writer);
-
         }
     }
 
-    private SourceWriter createComponentSourceWriter(String originalPackageName, String artifactId, Scopes scope) throws Exception
+    private SourceWriter createComponentSourceWriter(ModuleInfo moduleInfo, Scopes scope) throws Exception
     {
+        String originalPackageName = moduleInfo.getGroupId();
+        String artifactId = moduleInfo.getArtifactId();
+
         String packageName = scope.getPackageName(originalPackageName);
         //        {
         //            final String file = "META-INF/" + getModuleListFileName(Scopes.Common);
@@ -412,14 +452,14 @@ public class DaggerModuleCreator
         writer.println("import " + Component.class.getCanonicalName() + ";");
         writer.println();
         writer.println(getGeneratorString());
-        final String modules = getModules(originalPackageName, artifactId, scope);
+        final String modules = getModules(moduleInfo, scope);
         writer.println("@Singleton @Component(" + modules + ")");
         writer.println("public interface " + simpleComponentName + " {");
         writer.indent();
         return writer;
     }
 
-    private String getModules(String originalPackageName, String artifactId, Scopes scope) throws IOException
+    private String getModules(ModuleInfo moduleInfo, Scopes scope) throws IOException
     {
         StringBuilder buf = new StringBuilder();
         buf.append("modules = {");
@@ -430,14 +470,13 @@ public class DaggerModuleCreator
         {
             modules.add(sourceWriter.getQualifiedName());
         }
-        modules.addAll(loadLinesFromFile(file));
-        
+        modules.addAll(loadLinesFromFile(file, processingEnv));
         if (modules.size() == 0)
         {
-            final String msg = "No Modules found for " + originalPackageName + "." + artifactId + scope.toString() + " File " + file;
+            final String msg = "No Modules found for " + moduleInfo + scope.toString() + " File " + file;
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
         }
-        final String fullModuleStarterName = getFullModuleName(originalPackageName, artifactId, scope) + "StartupModule";
+        final String fullModuleStarterName = getFullModuleName(moduleInfo, scope) + "StartupModule";
         if (processingEnv.getElementUtils().getTypeElement(fullModuleStarterName) != null)
         {
             modules.add( fullModuleStarterName );
@@ -467,7 +506,7 @@ public class DaggerModuleCreator
         return new SourceWriter(packageName, componentName, processingEnv);
     }
 
-    private Set<String> loadLinesFromFile(String file) throws IOException
+    static private Set<String> loadLinesFromFile(String file,ProcessingEnvironment processingEnv) throws IOException
     {
         Set<String> foundLines = new LinkedHashSet<>();
         {
@@ -575,16 +614,18 @@ public class DaggerModuleCreator
         return result;
     }
 
-    private void createSourceWriter(String originalPackageName, String artifactId, Scopes scope) throws IOException
+    private void createSourceWriter(ModuleInfo moduleInfo, Scopes scope) throws IOException
     {
+        String originalPackageName = moduleInfo.getGroupId();
+        String artifactId = moduleInfo.getArtifactId();
         String packageName = scope.getPackageName(originalPackageName);
         final String moduleListFile = getModuleListFileName(scope);
         {
-            final String fullModuleName = getFullModuleName(originalPackageName, artifactId, scope) + "Module";
+            final String fullModuleName = getFullModuleName(moduleInfo, scope) + "Module";
             appendLineToMetaInf(moduleListFile, fullModuleName);
             // look for a Files ending with StarterModule and beginning with the daggermodule name
             // This files allow custom DaggerModuleCustomization
-            final String fullModuleStarterName = getFullModuleName(originalPackageName, artifactId, scope) + "StartupModule";
+            final String fullModuleStarterName = getFullModuleName(moduleInfo, scope) + "StartupModule";
             if (processingEnv.getElementUtils().getTypeElement(fullModuleStarterName) != null)
             {
                 appendLineToMetaInf(moduleListFile, fullModuleStarterName);
@@ -603,8 +644,8 @@ public class DaggerModuleCreator
         writer.println();
         writer.println(getGeneratorString());
         writer.print("@Module(includes={");
-        final String commonModuleName = getFullModuleName(originalPackageName, artifactId, Scopes.Common) + "Module.class";
-        final String clientModuleName = getFullModuleName(originalPackageName, artifactId, Scopes.Client) + "Module.class";
+        final String commonModuleName = getFullModuleName(moduleInfo, Scopes.Common) + "Module.class";
+        final String clientModuleName = getFullModuleName(moduleInfo, Scopes.Client) + "Module.class";
         if (scope == Scopes.Server || scope == Scopes.Client)
         {
             writer.print(commonModuleName);
@@ -619,12 +660,14 @@ public class DaggerModuleCreator
         moduleSourceWriters.put(scope, writer);
     }
 
-    private String getFullModuleName(String originalPackageName, String artifactId, Scopes scope)
+    public String getFullModuleName(ModuleInfo moduleInfo, Scopes scope)
     {
+        String originalPackageName = moduleInfo.getGroupId();
+        String artifactId= moduleInfo.getArtifactId();
         return scope.getPackageName(originalPackageName) + "." + getSimpleModuleName(artifactId, scope);
     }
 
-    private String getSimpleModuleName(String artifactId, Scopes scope)
+    private static String getSimpleModuleName(String artifactId, Scopes scope)
     {
         return "Dagger" + artifactId + scope;
     }
@@ -645,7 +688,7 @@ public class DaggerModuleCreator
         return AnnotationInjectionProcessor.getInterfaceList(processingEnv.getFiler()).getParentFile();
     }
 
-    void createMethods(String interfaceName, String artifactName) throws Exception
+    void createMethods(String interfaceName) throws Exception
     {
         BitSet exportedInterface = new BitSet();
         File folder = getMetaInfFolder();
@@ -784,7 +827,7 @@ public class DaggerModuleCreator
         return s;
     }
 
-    private String firstCharUp(String s)
+    static private String firstCharUp(String s)
     {
         if (s == null)
         {
