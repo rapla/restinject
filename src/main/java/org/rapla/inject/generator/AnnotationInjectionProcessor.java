@@ -190,7 +190,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         for (final Element elem : roundEnv.getElementsAnnotatedWith(Extension.class))
         {
             final Extension annotation = elem.getAnnotation(Extension.class);
-            handleExtension(interfaceListFile, interfaceListFileFolder, elem, annotation);
+            handleExtension(interfaceListFile, interfaceListFileFolder, elem, annotation, processedAnnotations);
             daggerModuleRebuildNeeded = true;
         }
 
@@ -200,7 +200,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             final Extension[] value = annotation.value();
             for (final Extension extension : value)
             {
-                handleExtension(interfaceListFile, interfaceListFileFolder, elem, extension);
+                handleExtension(interfaceListFile, interfaceListFileFolder, elem, extension,processedAnnotations);
             }
         }
 
@@ -216,7 +216,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                     addServiceFile(Path.class.getCanonicalName(), typeElement, interfaceListFileFolder);
                     pathAnnotationFound = true;
                     final String string = typeElement.getQualifiedName().toString();
-                    processedAnnotations.paths.add(string);
+                    processedAnnotations.addPath(string);
                 }
             }
         }
@@ -236,7 +236,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return processedAnnotations;
     }
 
-    private void handleExtension(File interfaceListFile, File interfaceListFileFolder, final Element elem, final Extension annotation)
+    private void handleExtension(File interfaceListFile, File interfaceListFileFolder, final Element elem, final Extension annotation, ProcessedAnnotations processedAnnotations)
             throws IOException, UnableToCompleteException
     {
         final TypeElement typeElement = (TypeElement) elem;
@@ -244,16 +244,17 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         checkImplements(typeElement, extensionPoint, Extension.class.getCanonicalName());
         final String interfaceQualifiedName = extensionPoint.getQualifiedName().toString();
         appendToServiceList(interfaceListFile, interfaceQualifiedName);
-        addServiceFile(extensionPoint, typeElement, interfaceListFileFolder);
+        addServiceFile(extensionPoint, typeElement, interfaceListFileFolder);     
+        processedAnnotations.addImplementation(interfaceQualifiedName, typeElement.getQualifiedName().toString());
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding extension " + typeElement);
     }
 
     private void checkImplements(TypeElement typeElement, TypeElement extensionPoint, String annotationName) throws UnableToCompleteException
     {
-        // TODO also check super classes
         if (!isImplementing(typeElement, extensionPoint))
         {
-            throw new UnableToCompleteException(typeElement.toString() + " has a declared " + annotationName + " but does not directly implement " + extensionPoint.toString() +". You need to add implements " + extensionPoint.toString() + ". Super implementations are not checked.");
+            boolean isInterface = typeElement.getKind() == ElementKind.INTERFACE;
+            throw new UnableToCompleteException(typeElement.toString() + " has a declared " + annotationName + " but does not " + (isInterface ? "extend" :"implement")+ " " + extensionPoint.toString() +". You need to add " + (isInterface ? "extends" :"implements") + " " + extensionPoint.toString() );
         }
     }
 
@@ -314,6 +315,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         if (interfaceElement.getAnnotation(Path.class) != null && interfaceElement.getKind() == ElementKind.INTERFACE)
         {
             final GwtProxyCreator proxyCreator = new GwtProxyCreator(interfaceElement, processingEnv, serializerCreator, deserializerCreator, AnnotationInjectionProcessor.class.getCanonicalName());
+            processedAnnotations.addPath(implementationElement.getQualifiedName().toString());
             final String proxyClassName = proxyCreator.create(proxyLogger);
 
             final JavaClientProxyCreator swingProxyCreator = new JavaClientProxyCreator(interfaceElement, processingEnv,serializerCreator, deserializerCreator, AnnotationInjectionProcessor.class.getCanonicalName()
@@ -325,7 +327,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 final File serviceFile = getFile(interfaceListFile.getParentFile(), "services/" + qualifiedName);
                 appendToFile(serviceFile, proxyClassName);
                 appendToFile(serviceFile, swingproxyClassName);
-                processedAnnotations.paths.add(qualifiedName);
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Proxies " + proxyClassName + ", " + swingproxyClassName,interfaceElement);
             }
             {
@@ -337,6 +338,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         final String qualifiedName = interfaceElement.getQualifiedName().toString();
         appendToServiceList(interfaceListFile, qualifiedName);
         addServiceFile(interfaceElement, implementationElement, interfaceListFileFolder);
+        processedAnnotations.addImplementation(qualifiedName, implementationElement.getQualifiedName().toString());
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding DefaultImplemenation " + implementationElement);
         return pathAnnotationFound;
     }

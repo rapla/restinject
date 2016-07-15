@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -249,7 +250,7 @@ public class DaggerModuleCreator
         //        }
     
         {
-            generateModuleClass(moduleInfo, scopes);
+            generateModuleClass(moduleInfo, scopes, processedAnnotations);
             generateComponents(moduleInfo, scopes,processedAnnotations);
         }
         final long ms = System.currentTimeMillis() - start;
@@ -312,9 +313,10 @@ public class DaggerModuleCreator
     /**
      * Reads the interfaces defined in META-INF/org.rapla.servicelist into the provided set
      * and returns the File.
+     * @param processedAnnotations 
      */
 
-    private void generateModuleClass(ModuleInfo moduleInfo, Collection<Scopes> scopes) throws Exception
+    private void generateModuleClass(ModuleInfo moduleInfo, Collection<Scopes> scopes, ProcessedAnnotations processedAnnotations) throws Exception
     {
         for (Scopes scope : scopes)
         {
@@ -323,9 +325,11 @@ public class DaggerModuleCreator
 
         File f = AnnotationInjectionProcessor.getInterfaceList(processingEnv.getFiler());
         List<String> interfaces = AnnotationInjectionProcessor.readLines(f);
-        for (String interfaceName : interfaces)
+        Set<String> allInterfaces = new LinkedHashSet<>(interfaces);
+        allInterfaces.addAll( processedAnnotations.getExtensionPoints());
+        for (String interfaceName : allInterfaces)
         {
-            createMethods(interfaceName);
+            createMethods(interfaceName, processedAnnotations);
         }
         for (SourceWriter moduleWriter : moduleSourceWriters.values())
         {
@@ -337,13 +341,53 @@ public class DaggerModuleCreator
     
     public static class ProcessedAnnotations
     {
-        public Set<String> paths = new LinkedHashSet<>();
+        private Set<String> paths = new LinkedHashSet<>();
         public boolean daggerModuleRebuildNeeded;
+        private Map<String,Set<String>> implementingClasses = new LinkedHashMap<>();
+        private Collection<String> extensionPoints = new LinkedHashSet<>();
 
         public Collection<String> getPaths()
         {
             return paths;
         }
+
+        public Collection<String> getExtensionPoints()
+        {
+            return extensionPoints;
+        }
+
+        public Collection<String> getImplementations(String interfaceName)
+        {
+            final Set<String> set = implementingClasses.get(interfaceName);
+            if ( set == null)
+            {
+                return Collections.emptySet();
+            }
+            return set;
+        }
+        
+        public void addImplementation(String interfaceName, String implementingClass)
+        {
+            Set<String> set = implementingClasses.get(interfaceName);
+            if ( set == null)
+            {
+                set = new LinkedHashSet<>();
+                implementingClasses.put(interfaceName, set);
+            }
+            set.add(implementingClass);
+        }
+        
+        public void addExtensionPoint(String extensionPoint)
+        {
+            extensionPoints.add( extensionPoint);
+        }
+        
+        public void addPath(String path)
+        {
+            paths.add( path);
+        }
+
+        
     }
 
     /**
@@ -688,7 +732,7 @@ public class DaggerModuleCreator
         return AnnotationInjectionProcessor.getInterfaceList(processingEnv.getFiler()).getParentFile();
     }
 
-    void createMethods(String interfaceName) throws Exception
+    void createMethods(String interfaceName,ProcessedAnnotations processedAnnotations) throws Exception
     {
         BitSet exportedInterface = new BitSet();
         File folder = getMetaInfFolder();
@@ -697,7 +741,13 @@ public class DaggerModuleCreator
         interfaceName = interfaceName.replaceAll("\\$", ".");
         final TypeElement interfaceClassTypeElement = processingEnv.getElementUtils().getTypeElement(interfaceName);
 
-        for (String implementingClass : implementingClasses)
+        LinkedHashSet<String> allImplementingClasses = new LinkedHashSet<>(implementingClasses);
+        final Collection<String> processedImplementingClasses = processedAnnotations.getImplementations(interfaceName);
+        if (processedImplementingClasses != null)
+        {
+            allImplementingClasses.addAll(processedImplementingClasses);
+        }
+        for (String implementingClass : allImplementingClasses)
         {
             implementingClass = implementingClass.replaceAll("\\$", ".");
             final TypeElement implementingClassTypeElement = processingEnv.getElementUtils().getTypeElement(implementingClass);
