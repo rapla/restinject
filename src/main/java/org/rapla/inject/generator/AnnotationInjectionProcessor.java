@@ -83,7 +83,7 @@ import dagger.multibindings.StringKey;
 public class AnnotationInjectionProcessor extends AbstractProcessor
 {
 
-    public final static JavaFileManager.Location META_INF_LOCATION = StandardLocation.SOURCE_OUTPUT;
+    public final static JavaFileManager.Location META_INF_LOCATION = StandardLocation.CLASS_OUTPUT;
     private SerializerCreator serializerCreator;
     private ResultDeserializerCreator deserializerCreator;
     public final static String MODULE_NAME_OPTION = "moduleName";
@@ -742,6 +742,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Found param moduleName: " + moduleName);
                 return moduleName;
             }
+            moduleName = "org.rapla.rapla";
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "moduleName not found using " + moduleName);
             return moduleName;
         }
