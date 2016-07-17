@@ -74,11 +74,13 @@ import java.util.Set;
 public class AnnotationInjectionProcessor extends AbstractProcessor
 {
 
+
     public final static JavaFileManager.Location META_INF_LOCATION = StandardLocation.CLASS_OUTPUT;
     private SerializerCreator serializerCreator;
     private ResultDeserializerCreator deserializerCreator;
     public final static String MODULE_NAME_OPTION = "moduleName";
     public final static String PARENT_MODULES_OPTION = "parentModules";
+    public final static HashSet<String> OPTIONS = new HashSet<>(Arrays.asList(new String[] { MODULE_NAME_OPTION, PARENT_MODULES_OPTION }));
 
     enum Scopes
     {
@@ -117,7 +119,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 
     @Override public Set<String> getSupportedOptions()
     {
-        return Arrays.asList(new String[] {MODULE_NAME_OPTION,PARENT_MODULES_OPTION);
+        return OPTIONS;
     }
 
     private final Class<?>[] supportedAnnotations = new Class[] { Extension.class, ExtensionRepeatable.class, ExtensionPoint.class, DefaultImplementation.class,
