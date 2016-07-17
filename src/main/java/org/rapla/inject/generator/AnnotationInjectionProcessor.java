@@ -117,7 +117,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 
     @Override public Set<String> getSupportedOptions()
     {
-        return Collections.singleton(MODULE_NAME_OPTION);
+        return Arrays.asList(new String[] {MODULE_NAME_OPTION,PARENT_MODULES_OPTION);
     }
 
     private final Class<?>[] supportedAnnotations = new Class[] { Extension.class, ExtensionRepeatable.class, ExtensionPoint.class, DefaultImplementation.class,
