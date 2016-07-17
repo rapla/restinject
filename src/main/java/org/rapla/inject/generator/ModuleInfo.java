@@ -79,7 +79,7 @@ public class ModuleInfo
         StringBuilder builder = new StringBuilder();
         final String string = getModuleName();
         builder.append( string);
-        if ( parentModules.size() >= 0)
+        if ( parentModules.size() > 0)
         {
             builder.append("<--");
             boolean first = true;
