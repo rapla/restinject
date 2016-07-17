@@ -6,3 +6,4 @@ bin/
 war
 /gwt-unitCache
 .factorypath
+/.apt_generated/

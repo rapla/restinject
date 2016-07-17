@@ -83,11 +83,42 @@ import dagger.multibindings.StringKey;
 public class AnnotationInjectionProcessor extends AbstractProcessor
 {
 
-    public final static JavaFileManager.Location META_INF_LOCATION = StandardLocation.SOURCE_OUTPUT;
+    public final static JavaFileManager.Location META_INF_LOCATION = StandardLocation.CLASS_OUTPUT;
     private SerializerCreator serializerCreator;
     private ResultDeserializerCreator deserializerCreator;
     public final static String MODULE_NAME_OPTION = "moduleName";
     public final static String PARENT_MODULES_OPTION = "parentModules";
+    
+    enum Scopes
+    {
+        Common("common.dagger"), Server("server.dagger"), Webservice("server.dagger"), Client("client.dagger"), JavaClient("client.swing.dagger"), Gwt(
+                "client.gwt.dagger");
+
+        final String packageNameSuffix;
+
+        static Scopes[] components()
+        {
+            return new Scopes[] { Server, JavaClient, Gwt };
+        }
+
+        Scopes(String packageNameSuffix)
+        {
+            this.packageNameSuffix = packageNameSuffix;
+        }
+
+        @Override
+        public String toString()
+        {
+            return name();
+        }
+
+        public String getPackageName(String originalPackageName)
+        {
+            final String packageNameWithPoint = originalPackageName + (originalPackageName.length() == 0 ? "" : ".");
+            final String packageName = packageNameWithPoint + packageNameSuffix;
+            return packageName;
+        }
+    }
 
     @Override
     public SourceVersion getSupportedSourceVersion()
@@ -534,36 +565,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return (TypeElement) TypeUtils.asElement(typeMirror);
     }
 
-    enum Scopes
-    {
-        Common("common.dagger"), Server("server.dagger"), Webservice("server.dagger"), Client("client.dagger"), JavaClient("client.swing.dagger"), Gwt(
-                "client.gwt.dagger");
 
-        final String packageNameSuffix;
-
-        static Scopes[] components()
-        {
-            return new Scopes[] { Server, JavaClient, Gwt };
-        }
-
-        Scopes(String packageNameSuffix)
-        {
-            this.packageNameSuffix = packageNameSuffix;
-        }
-
-        @Override
-        public String toString()
-        {
-            return name();
-        }
-
-        public String getPackageName(String originalPackageName)
-        {
-            final String packageNameWithPoint = originalPackageName + (originalPackageName.length() == 0 ? "" : ".");
-            final String packageName = packageNameWithPoint + packageNameSuffix;
-            return packageName;
-        }
-    }
 
     synchronized public boolean processDagger(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv, ModuleInfo moduleInfo,
             ProcessedAnnotations processedAnnotations)
@@ -648,6 +650,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Finished Dagger creation for module  " + moduleInfo + " took " + ms + " ms");
     }
 
+
     /**
      * Reads the interfaces defined in META-INF/org.rapla.servicelist into the provided set
      * and returns the File.
@@ -676,6 +679,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             moduleWriter.close();
         }
     }
+
 
     /**
      * Generates the dagger component interfaces for Server, Swing and GWT.</br>
