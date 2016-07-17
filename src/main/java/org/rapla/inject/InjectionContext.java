@@ -1,5 +1,10 @@
 package org.rapla.inject;
 
+import org.rapla.inject.dagger.DaggerReflectionStarter;
+import org.rapla.inject.generator.AnnotationInjectionProcessor;
+
+import java.util.LinkedHashSet;
+
 /**
  * Specifies in which context the default implemention or the extension point is available.
  * If you specify more then one InjectionContext then the extension point will be available in all specified contexts.

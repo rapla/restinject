@@ -1,54 +1,12 @@
 package org.rapla.inject.generator;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.Filer;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.RoundEnvironment;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Name;
-import javax.lang.model.element.NestingKind;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.MirroredTypeException;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Types;
-import javax.tools.Diagnostic;
-import javax.tools.FileObject;
-import javax.tools.JavaFileManager;
-import javax.tools.StandardLocation;
-import javax.ws.rs.Path;
-import javax.ws.rs.ext.Provider;
-
+import dagger.Component;
+import dagger.Module;
+import dagger.Provides;
+import dagger.multibindings.ElementsIntoSet;
+import dagger.multibindings.IntoMap;
+import dagger.multibindings.IntoSet;
+import dagger.multibindings.StringKey;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.DefaultImplementationRepeatable;
 import org.rapla.inject.Extension;
@@ -63,13 +21,46 @@ import org.rapla.rest.generator.internal.SerializerCreator;
 import org.rapla.rest.generator.internal.TreeLogger;
 import org.rapla.rest.generator.internal.UnableToCompleteException;
 
-import dagger.Component;
-import dagger.Module;
-import dagger.Provides;
-import dagger.multibindings.ElementsIntoSet;
-import dagger.multibindings.IntoMap;
-import dagger.multibindings.IntoSet;
-import dagger.multibindings.StringKey;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Filer;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.annotation.processing.RoundEnvironment;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Name;
+import javax.lang.model.element.NestingKind;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.MirroredTypeException;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
+import javax.tools.FileObject;
+import javax.tools.JavaFileManager;
+import javax.tools.StandardLocation;
+import javax.ws.rs.Path;
+import javax.ws.rs.ext.Provider;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /*
  * Annotation Processor to create the org.rapla.servicelist file within the META-INF folder and one file 
@@ -88,11 +79,11 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     private ResultDeserializerCreator deserializerCreator;
     public final static String MODULE_NAME_OPTION = "moduleName";
     public final static String PARENT_MODULES_OPTION = "parentModules";
-    
+
     enum Scopes
     {
         Common("common.dagger"), Server("server.dagger"), Webservice("server.dagger"), Client("client.dagger"), JavaClient("client.swing.dagger"), Gwt(
-                "client.gwt.dagger");
+            "client.gwt.dagger");
 
         final String packageNameSuffix;
 
@@ -106,8 +97,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             this.packageNameSuffix = packageNameSuffix;
         }
 
-        @Override
-        public String toString()
+        @Override public String toString()
         {
             return name();
         }
@@ -120,14 +110,12 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         }
     }
 
-    @Override
-    public SourceVersion getSupportedSourceVersion()
+    @Override public SourceVersion getSupportedSourceVersion()
     {
         return SourceVersion.latestSupported();
     }
 
-    @Override
-    public Set<String> getSupportedOptions()
+    @Override public Set<String> getSupportedOptions()
     {
         return Collections.singleton(MODULE_NAME_OPTION);
     }
@@ -135,16 +123,14 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     private final Class<?>[] supportedAnnotations = new Class[] { Extension.class, ExtensionRepeatable.class, ExtensionPoint.class, DefaultImplementation.class,
             DefaultImplementationRepeatable.class, Path.class, Provider.class };
 
-    @Override
-    public synchronized void init(ProcessingEnvironment processingEnv)
+    @Override public synchronized void init(ProcessingEnvironment processingEnv)
     {
         super.init(processingEnv);
         serializerCreator = new SerializerCreator(processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
         deserializerCreator = new ResultDeserializerCreator(serializerCreator, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
     }
 
-    @Override
-    public Set<String> getSupportedAnnotationTypes()
+    @Override public Set<String> getSupportedAnnotationTypes()
     {
         Set<String> supported = new HashSet<String>();
         for (Class<?> annotationClass : supportedAnnotations)
@@ -157,8 +143,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 
     public static int counter = 0;
 
-    @Override
-    synchronized public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
+    @Override synchronized public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
     {
         if (roundEnv.processingOver() || annotations.isEmpty())
         {
@@ -178,11 +163,11 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             boolean daggerModuleRebuildNeeded = processedAnnotations.daggerModuleRebuildNeeded;
             Scopes scope = Scopes.Common;
             ModuleInfo moduleInfo = new ModuleInfo(processingEnv);
-            final String fullModuleStarterName = moduleInfo.getFullModuleName( scope);
+            final String fullModuleStarterName = moduleInfo.getFullModuleName(scope);
             if (processingEnv.getElementUtils().getTypeElement(fullModuleStarterName) == null && daggerModuleRebuildNeeded)
             {
                 // Dagger
-                processDagger(annotations, roundEnv, moduleInfo, processedAnnotations);
+                processDagger(moduleInfo, processedAnnotations);
             }
         }
         catch (Exception ioe)
@@ -190,7 +175,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             StringWriter stringWriter = new StringWriter();
             ioe.printStackTrace(new PrintWriter(stringWriter));
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, stringWriter.toString());
-            return false;
+            return true;
         }
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Restinject Annotationprocessing finished for task " + i);
         return true;
@@ -384,8 +369,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 final File serviceFile = getFile(interfaceListFile.getParentFile(), "services/" + qualifiedName);
                 appendToFile(serviceFile, proxyClassName);
                 appendToFile(serviceFile, swingproxyClassName);
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating Proxies " + proxyClassName + ", " + swingproxyClassName,
-                        interfaceElement);
+                processingEnv.getMessager()
+                        .printMessage(Diagnostic.Kind.NOTE, "Generating Proxies " + proxyClassName + ", " + swingproxyClassName, interfaceElement);
             }
             {
                 final File serviceFile = getFile(interfaceListFile.getParentFile(), "services/" + Path.class.getCanonicalName());
@@ -404,8 +389,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     private boolean isGeneratedByAnnotationInjectionProcessor(Element element)
     {
         final javax.annotation.Generated generatedAnnotation = element.getAnnotation(javax.annotation.Generated.class);
-        final boolean generatedByAnnotationInjectionProcessor = generatedAnnotation != null
-                && generatedAnnotation.value()[0].equals(AnnotationInjectionProcessor.class.getCanonicalName());
+        final boolean generatedByAnnotationInjectionProcessor =
+                generatedAnnotation != null && generatedAnnotation.value()[0].equals(AnnotationInjectionProcessor.class.getCanonicalName());
         return generatedByAnnotationInjectionProcessor;
     }
 
@@ -565,29 +550,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return (TypeElement) TypeUtils.asElement(typeMirror);
     }
 
-
-
-    synchronized public boolean processDagger(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv, ModuleInfo moduleInfo,
-            ProcessedAnnotations processedAnnotations)
-    {
-        if (roundEnv.processingOver() || annotations.isEmpty())
-        {
-            return false;
-        }
-        try
-        {
-            process(moduleInfo, processedAnnotations);
-        }
-        catch (Exception ioe)
-        {
-            StringWriter stringWriter = new StringWriter();
-            ioe.printStackTrace(new PrintWriter(stringWriter));
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, stringWriter.toString());
-            return false;
-        }
-        return true;
-    }
-
     private SourceWriter getWriter(Map<Scopes, SourceWriter> writerMap, Scopes scope, GeneratedSourceFile generated)
     {
         Set<GeneratedSourceFile> generatedSet = alreadyGenerated.get(scope);
@@ -604,10 +566,9 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     private final Map<Scopes, SourceWriter> moduleSourceWriters = new LinkedHashMap<>();
     private final Map<Scopes, SourceWriter> componentSourceWriters = new LinkedHashMap<>();
     private final Map<Scopes, Set<String>> exportedInterfaces = new LinkedHashMap<>();
-    //private final Map<String, byte[]> existingWriters = new LinkedHashMap<>();
     private final String generatorName = AnnotationInjectionProcessor.class.getCanonicalName();
 
-    synchronized private void process(ModuleInfo moduleInfo, ProcessedAnnotations processedAnnotations) throws Exception
+    synchronized private void processDagger(ModuleInfo moduleInfo, ProcessedAnnotations processedAnnotations) throws Exception
     {
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Starting Dagger creation for module " + moduleInfo);
         moduleSourceWriters.clear();
@@ -619,43 +580,11 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         Set<Scopes> scopes = new HashSet<>();
         scopes.addAll(Arrays.asList(Scopes.values()));
         scopes.remove(Scopes.Webservice);
-        //        if (injectionContexts.contains(InjectionContext.all))
-        //        {
-        //            scopes.addAll(Arrays.asList(Scopes.values()));
-        //        }
-        //        if (injectionContexts.contains(InjectionContext.server))
-        //        {
-        //            scopes.add(Scopes.Server);
-        //        }
-        //        if (injectionContexts.contains(InjectionContext.client))
-        //        {
-        //            scopes.add(Scopes.Client);
-        //            scopes.add(Scopes.Gwt);
-        //            scopes.add(Scopes.JavaClient);
-        //        }
-        //        if (injectionContexts.contains(InjectionContext.gwt))
-        //        {
-        //            scopes.add(Scopes.Gwt);
-        //        }
-        //        if (injectionContexts.contains(InjectionContext.swing))
-        //        {
-        //            scopes.add(Scopes.JavaClient);
-        //        }
-
-        {
-            generateModuleClass(moduleInfo, scopes, processedAnnotations);
-            generateComponents(moduleInfo, scopes, processedAnnotations);
-        }
+        generateModuleClass(moduleInfo, scopes, processedAnnotations);
+        generateComponents(moduleInfo, scopes, processedAnnotations);
         final long ms = System.currentTimeMillis() - start;
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Finished Dagger creation for module  " + moduleInfo + " took " + ms + " ms");
     }
-
-
-    /**
-     * Reads the interfaces defined in META-INF/org.rapla.servicelist into the provided set
-     * and returns the File.
-     * @param processedAnnotations 
-     */
 
     private void generateModuleClass(ModuleInfo moduleInfo, Collection<Scopes> scopes, ProcessedAnnotations processedAnnotations) throws Exception
     {
@@ -680,7 +609,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         }
     }
 
-
     /**
      * Generates the dagger component interfaces for Server, Swing and GWT.</br>
      * An example for a server component:</br>
@@ -700,8 +628,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
      *    Starter getStarter();</br>
      * }</br>
      * </code>
-     * @param packageName
-     * @param artifactName
      */
     private void generateComponents(ModuleInfo moduleInfo, Collection<Scopes> scopes, ProcessedAnnotations processedAnnotations) throws Exception
     {
@@ -712,15 +638,11 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             {
                 continue;
             }
-            String fileName = "META-INF/" + getExportListFilename(scope);
             final Set<String> exportInterfaces = new LinkedHashSet<>();
+            final Set<String> set = this.exportedInterfaces.get(scope);
+            if (set != null)
             {
-                exportInterfaces.addAll(loadLinesFromFile(fileName, processingEnv));
-                final Set<String> set = this.exportedInterfaces.get(scope);
-                if (set != null)
-                {
-                    exportInterfaces.addAll(set);
-                }
+                exportInterfaces.addAll(set);
             }
             SourceWriter writer = createComponentSourceWriter(moduleInfo, scope);
             for (String interfaceName : exportInterfaces)
@@ -734,8 +656,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 
             if (scope == Scopes.Server)
             {
-                final String webserviceLocation = "META-INF/services/javax.ws.rs.Path";
-                final Set<String> paths = new LinkedHashSet<>(loadLinesFromFile(webserviceLocation, processingEnv));
+                final Set<String> paths = new LinkedHashSet<>();
                 paths.addAll(processedAnnotations.getPaths());
                 for (String path : paths)
                 {
@@ -755,32 +676,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     private SourceWriter createComponentSourceWriter(ModuleInfo moduleInfo, Scopes scope) throws Exception
     {
         String originalPackageName = moduleInfo.getGroupId();
-        String artifactId = moduleInfo.getArtifactId();
-
-        String packageName = scope.getPackageName(originalPackageName);
-        //        {
-        //            final String file = "META-INF/" + getModuleListFileName(Scopes.Common);
-        //            modules.addAll(loadLinesFromMetaInfo(file));
-        //        }
-        //        if ( scope == Scopes.Gwt || scope == Scopes.JavaClient)
-        //        {
-        //            final String file = "META-INF/" + getModuleListFileName(Scopes.Client);
-        //            modules.addAll(loadLinesFromMetaInfo(file));
-        //        }
-
-        //        if (scope == Scopes.Server)
-        //        {
-        //            String moduleName = "Dagger" + firstCharUp(artifactId) + Scopes.WebserviceModule.toString() + "Module";
-        //            String webserviceComponentModule = Scopes.WebserviceModule.getPackageName(originalPackageName) + "." + moduleName;
-        //
-        //            modules.add(webserviceComponentModule);
-        //        }
-
-        final String simpleComponentName = artifactId + scope.toString() + "Component";
-        //final String componentName = packageName + "." + simpleComponentName;
-
-        final SourceWriter writer = createSourceWriter(packageName, simpleComponentName);
-        writer.println("package " + packageName + ";");
+        String scopedPackageName = scope.getPackageName(originalPackageName);
+        final String simpleComponentName = moduleInfo.getSimpleComponentName(scope);
+        final SourceWriter writer = createSourceWriter(scopedPackageName, simpleComponentName);
+        writer.println("package " + scopedPackageName + ";");
         writer.println();
         writer.println("import " + Inject.class.getCanonicalName() + ";");
         writer.println("import " + Singleton.class.getCanonicalName() + ";");
@@ -791,14 +690,13 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         writer.println("@Singleton @Component(" + modules + ")");
         writer.print("public interface " + simpleComponentName);
         final Set<ModuleInfo> parentModules = moduleInfo.getParentModules();
-        boolean eclipseCompatibleMode = false;
-        if (!eclipseCompatibleMode && !parentModules.isEmpty())
+        if (!parentModules.isEmpty())
         {
             boolean first = true;
             writer.print(" extends ");
-            for (ModuleInfo parent:parentModules)
+            for (ModuleInfo parent : parentModules)
             {
-                if ( first )
+                if (first)
                 {
                     first = false;
                 }
@@ -806,44 +704,13 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 {
                     writer.print(", ");
                 }
-                
-                final String parentComponentName = parent.getScopedComponentName( scope);
-                writer.print( parentComponentName);
+
+                final String parentComponentName = parent.getScopedComponentName(scope);
+                writer.print(parentComponentName);
             }
         }
         writer.println(" {");
         writer.indent();
-        if (eclipseCompatibleMode)
-        {
-            for(ModuleInfo module:parentModules)
-            {
-                final String parentComponentName = module.getScopedComponentName( scope);
-                final TypeElement typeElement = processingEnv.getElementUtils().getTypeElement(parentComponentName);
-                for (Element element: typeElement.getEnclosedElements())
-                {
-                    if (element.getKind() == ElementKind.METHOD)
-                    {
-                        ExecutableElement method = (ExecutableElement)element;
-                        final TypeMirror returnType = method.getReturnType();
-                        final List<? extends VariableElement> parameters = method.getParameters();
-                        String methodName = method.getSimpleName().toString();
-                        writer.print(returnType.toString());
-                        writer.print(" " + methodName + "(");
-                        for (VariableElement param:parameters)
-                        {
-                            String paramName = param.getSimpleName().toString();
-                            String paramType =  param.asType().toString();
-                            writer.print(paramType + " " + paramName);
-                                
-                        }
-                        writer.print(");");
-                        writer.println();    
-                        
-                        
-                    }
-                }
-            }
-        }
         return writer;
     }
 
@@ -852,20 +719,18 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         StringBuilder buf = new StringBuilder();
         buf.append("modules = {");
         final Set<String> modules = new HashSet<>();
-        final String file = "META-INF/" + getModuleListFileName(scope);
         final SourceWriter sourceWriter = moduleSourceWriters.get(scope);
         if (sourceWriter != null)
         {
             modules.add(sourceWriter.getQualifiedName());
         }
-        modules.addAll(loadLinesFromFile(file, processingEnv));
         if (modules.size() == 0)
         {
-            final String msg = "No Modules found for " + moduleInfo + scope.toString() + " File " + file;
+            final String msg = "No Modules found for " + moduleInfo + scope.toString();
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
         }
         Set<ModuleInfo> parentModules = moduleInfo.getParentModules();
-        for (ModuleInfo parent:parentModules)
+        for (ModuleInfo parent : parentModules)
         {
             modules.add(parent.getScopedModuleName(scope));
         }
@@ -893,93 +758,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return new SourceWriter(packageName, componentName, processingEnv);
     }
 
-    static private Set<String> loadLinesFromFile(String file, ProcessingEnvironment processingEnv) throws IOException
-    {
-        if ( true)
-        {
-            return Collections.emptySet();
-        }
-        Set<String> foundLines = new LinkedHashSet<>();
-        {
-            final FileObject resource = processingEnv.getFiler().getResource(StandardLocation.SOURCE_OUTPUT, "", file);
-            addFromFiler(resource, foundLines);
-        }
-        {
-            final FileObject resource = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", file);
-            addFromFiler(resource, foundLines);
-        }
-        {
-            final ClassLoader classLoader = AnnotationInjectionProcessor.class.getClassLoader();
-            addFromClassLoader(file, foundLines, classLoader);
-        }
-        {
-            final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            addFromClassLoader(file, foundLines, classLoader);
-        }
-        return foundLines;
-    }
-
-    private static void addFromClassLoader(String file, Set<String> foundLines, final ClassLoader classLoader) throws IOException, UnsupportedEncodingException
-    {
-        Enumeration<URL> resources = classLoader.getResources(file);
-        //            if ((resources == null || !resources.hasMoreElements()) && !file.startsWith("/"))
-        //            {
-        //                resources = classLoader.getResources("/" + file);
-        //            }
-        if (resources != null)
-        {
-            while (resources.hasMoreElements())
-            {
-                final URL nextElement = resources.nextElement();
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(nextElement.openStream(), "UTF-8")))
-                {
-                    String line = null;
-                    while ((line = reader.readLine()) != null)
-                    {
-                        foundLines.add(line);
-                    }
-                }
-            }
-        }
-    }
-
-    private static void addFromFiler(final FileObject resource, Set<String> foundLines)
-    {
-        if (resource != null && new File(resource.toUri()).exists())
-        {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.openInputStream(), "UTF-8"));)
-            {
-                String line = null;
-                while ((line = reader.readLine()) != null)
-                {
-                    foundLines.add(line);
-                }
-            }
-            catch (IOException ex)
-            {
-            }
-        }
-    }
-
     void appendLineToMetaInf(String filename, String line) throws IOException
     {
         final File folder = getMetaInfFolder();
         AnnotationInjectionProcessor.appendToFile(filename, folder, line);
-    }
-
-    static public Collection<URL> getScanningUrlsFromClasspath(ClassLoader cl)
-    {
-        Collection<URL> result = new ArrayList<>();
-        while (cl != null)
-        {
-            if (cl instanceof URLClassLoader)
-            {
-                URL[] urls = ((URLClassLoader) cl).getURLs();
-                result.addAll(Arrays.asList(urls));
-            }
-            cl = cl.getParent();
-        }
-        return result;
     }
 
     private void createSourceWriter(ModuleInfo moduleInfo, Scopes scope) throws IOException
@@ -987,12 +769,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         String originalPackageName = moduleInfo.getGroupId();
         String artifactId = moduleInfo.getArtifactId();
         String packageName = scope.getPackageName(originalPackageName);
-        final String moduleListFile = getModuleListFileName(scope);
-        {
-            final String fullModuleName = moduleInfo.getFullModuleName( scope) ;
-            appendLineToMetaInf(moduleListFile, fullModuleName);
-        }
-        final String simpleModuleName = moduleInfo.getSimpleModuleName( scope) ;
+        final String simpleModuleName = moduleInfo.getSimpleModuleName(scope);
         final SourceWriter writer = createSourceWriter(packageName, simpleModuleName);
         writer.println("package " + packageName + ";");
         writer.println();
@@ -1005,8 +782,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         writer.println();
         writer.println(getGeneratorString());
         writer.print("@Module(includes={");
-        final String commonModuleName = moduleInfo.getFullModuleName( Scopes.Common) + ".class";
-        final String clientModuleName = moduleInfo.getFullModuleName( Scopes.Client) + ".class";
+        final String commonModuleName = moduleInfo.getFullModuleName(Scopes.Common) + ".class";
+        final String clientModuleName = moduleInfo.getFullModuleName(Scopes.Client) + ".class";
         if (scope == Scopes.Server || scope == Scopes.Client)
         {
             writer.print(commonModuleName);
@@ -1031,14 +808,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         writer.println("public class Dagger" + artifactId + scope + "Module {");
         writer.indent();
         moduleSourceWriters.put(scope, writer);
-    }
-
-  
-
-    private String getModuleListFileName(Scopes scope)
-    {
-        String suffix = (scope == Scopes.Webservice) ? "Components" : "Modules";
-        return "org.rapla.Dagger" + scope + suffix;
     }
 
     private String getExportListFilename(Scopes scope)
@@ -1115,7 +884,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         {
             if (exportedInterface.get(scope.ordinal()))
             {
-                final String filename = getExportListFilename(scope);
                 Set<String> set = exportedInterfaces.get(scope);
                 if (set == null)
                 {
@@ -1123,7 +891,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                     exportedInterfaces.put(scope, set);
                 }
                 set.add(interfaceName);
-                appendLineToMetaInf(filename, interfaceName);
             }
         }
     }
@@ -1299,8 +1066,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             return new BitSet();
         }
         BitSet exportedInterface = new BitSet();
-
-        //final Set<InjectionContext> context = new HashSet<>(Arrays.asList(defaultImplementation.context());
         final InjectionContext[] context = defaultImplementation.context();
         final Types typeUtils = processingEnv.getTypeUtils();
         final GeneratedSourceFile generated = new GeneratedSourceFile(interfaceTypeElement.getQualifiedName().toString(),
@@ -1311,8 +1076,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         boolean assignable = typeUtils.isAssignable(asTypeImpl, asTypeOf);
         if (!assignable)
         {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, asTypeImpl.toString() + " can't be assigned to " + asTypeOf,
-                    implementingClassTypeElement);
+            processingEnv.getMessager()
+                    .printMessage(Diagnostic.Kind.WARNING, asTypeImpl.toString() + " can't be assigned to " + asTypeOf, implementingClassTypeElement);
             return new BitSet();
         }
         if (InjectionContext.isInjectableEverywhere(context))
@@ -1335,51 +1100,48 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 generateDefaultImplementation(implementingClassTypeElement, interfaceTypeElement, moduleWriter);
                 if (defaultImplementation.export())
                 {
-                    exportedInterface.set(Scopes.Server.ordinal());
+                    exportedInterface.set(Scopes.Gwt.ordinal());
+                    exportedInterface.set(Scopes.JavaClient.ordinal());
                 }
             }
         }
         else
         {
-            if (InjectionContext.isInjectableOnServer(context))
+            Set<Scopes> scopes = getInjectableScopes(context);
+            for (Scopes scope:scopes)
             {
-                if (notGenerated(Scopes.Server, generated))
+                if (notGenerated(scope, generated))
                 {
-                    SourceWriter moduleWriter = getWriter(moduleSourceWriters, Scopes.Server, generated);
+                    SourceWriter moduleWriter = getWriter(moduleSourceWriters, scope, generated);
                     generateDefaultImplementation(implementingClassTypeElement, interfaceTypeElement, moduleWriter);
                     if (defaultImplementation.export())
                     {
-                        exportedInterface.set(Scopes.Server.ordinal());
-                    }
-                }
-            }
-            if (InjectionContext.isInjectableOnGwt(context))
-            {
-                if (notGenerated(Scopes.Gwt, generated))
-                {
-                    SourceWriter moduleWriter = getWriter(moduleSourceWriters, Scopes.Gwt, generated);
-                    generateDefaultImplementation(implementingClassTypeElement, interfaceTypeElement, moduleWriter);
-                }
-                if (defaultImplementation.export())
-                {
-                    exportedInterface.set(Scopes.Gwt.ordinal());
-                }
-            }
-            else if (InjectionContext.isInjectableOnSwing(context))
-            {
-                if (notGenerated(Scopes.JavaClient, generated))
-                {
-                    SourceWriter moduleWriter = getWriter(moduleSourceWriters, Scopes.JavaClient, generated);
-                    generateDefaultImplementation(implementingClassTypeElement, interfaceTypeElement, moduleWriter);
-                    if (defaultImplementation.export())
-                    {
-                        exportedInterface.set(Scopes.JavaClient.ordinal());
+                        exportedInterface.set(scope.ordinal());
                     }
                 }
             }
         }
         return exportedInterface;
     }
+
+    public static Set<Scopes> getInjectableScopes( InjectionContext[] contexts)
+    {
+        Set<Scopes>  scopes = new LinkedHashSet<>();
+        if (InjectionContext.isInjectableOnServer(contexts))
+        {
+            scopes.add(AnnotationInjectionProcessor.Scopes.Server);
+        }
+        if (InjectionContext.isInjectableOnGwt(contexts))
+        {
+            scopes.add(AnnotationInjectionProcessor.Scopes.Gwt);
+        }
+        if (InjectionContext.isInjectableOnSwing(contexts))
+        {
+            scopes.add(AnnotationInjectionProcessor.Scopes.JavaClient);
+        }
+        return scopes;
+    }
+
 
     private void generateDefaultImplementation(TypeElement implementingClassTypeElement, TypeElement interfaceName, SourceWriter moduleWriter)
     {
@@ -1499,7 +1261,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             writer.println("@Provides");// @javax.inject.Singleton");
             writer.println("@IntoMap");
             writer.println("@StringKey(\"" + extension.id() + "\")");
-            //final String id = extension.id().replaceAll("\\.", "_");
             methodSuffix = "_Map";
         }
         else
@@ -1507,7 +1268,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             writer.println();
             writer.println("@Provides");//@javax.inject.Singleton");
             writer.println("@IntoSet");
-            //final String id = extension.id().replaceAll("\\.", "_");
             methodSuffix = "_Set";
         }
         final String methodName = defaultImplClassName.getSimpleName() + "_" + methodSuffix;
@@ -1525,5 +1285,4 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         writer.outdent();
         writer.println("}");
     }
-
 }

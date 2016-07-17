@@ -128,8 +128,13 @@ public class ModuleInfo
         return scope.getPackageName(groupId) + "." + "Dagger" + artifactId + scope+ "StartupModule";
     }
 
-    String getSimpleModuleName( Scopes scope)
+    public String getSimpleModuleName( Scopes scope)
     {
         return "Dagger" + artifactId + scope + "Module";
+    }
+
+    public String getSimpleComponentName( Scopes scope)
+    {
+        return artifactId + scope.toString() + "Component";
     }
 }
