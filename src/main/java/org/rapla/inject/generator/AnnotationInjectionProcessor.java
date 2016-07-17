@@ -1435,7 +1435,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         final InjectionContext[] context = extensionPoint.context();
         final TypeElement defaultImpl = ((TypeElement) typeUtils.asElement(typeUtils.erasure(implementingClassTypeElement.asType())));
         final String className = defaultImpl.getQualifiedName().toString();
-        final String id = className;
+        final String id = extension.id();
         final GeneratedSourceFile generated = new GeneratedSourceFile(interfaceElementType.getQualifiedName().toString(), className, id);
         if (InjectionContext.isInjectableEverywhere(context))
         {
