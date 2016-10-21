@@ -2,7 +2,6 @@ package org.rapla.logger;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.rapla.logger.internal.Log4jAdapter;
 import org.rapla.logger.internal.Slf4jAdapter;
 
 import javax.inject.Provider;
