@@ -48,11 +48,13 @@ public class HTTPConnector implements JsonRemoteConnector
         conn.setRequestProperty("Accept", accept);
         if (authenticationToken != null)
         {
+            conn.setRequestProperty("Cookie", "JSESSIONID=" + authenticationToken);
             conn.setRequestProperty("Authorization", "Bearer " + authenticationToken);
         }
         conn.setReadTimeout(120000); //set timeout to 120 seconds
         conn.setConnectTimeout(50000); //set connect timeout to 50 seconds
         conn.setDoOutput(true);
+
         conn.connect();
 
         if (requestMethod.equals("PUT") || requestMethod.equals("POST") || requestMethod.equals("PATCH"))

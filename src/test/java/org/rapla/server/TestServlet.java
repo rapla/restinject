@@ -1,6 +1,7 @@
 package org.rapla.server;
 
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
+import org.rapla.client.standalone.StandaloneConnector;
 import org.rapla.inject.InjectionContext;
 import org.rapla.inject.Injector;
 import org.rapla.inject.raplainject.SimpleRaplaInjector;
@@ -29,6 +30,16 @@ public class TestServlet extends HttpServlet
 
     HttpServletDispatcher dispatcher;
     private Injector membersInjector;
+    private final StandaloneConnector standaloneConnector;
+    public TestServlet()
+    {
+        this(null);
+    }
+
+    public TestServlet(StandaloneConnector standaloneConnector)
+    {
+        this.standaloneConnector = standaloneConnector;
+    }
 
     protected String getPrefix()
     {
@@ -104,33 +115,46 @@ public class TestServlet extends HttpServlet
 
     @Override protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
-        System.out.println( "QueryString " +request.getQueryString() + " Test param " + request.getParameter("param"));
-        request.setAttribute(ResteasyMembersInjector.INJECTOR_CONTEXT, membersInjector);
-        Map<String,String> headers = new LinkedHashMap<>();
-        final Enumeration<String> headerNames = request.getHeaderNames();
-        while ( headerNames.hasMoreElements())
-        {
-            String headerName = headerNames.nextElement();
-            headers.put(headerName, request.getHeader( headerName));
-        }
-        System.out.println("service request full " + request.toString() + " uri: " + request.getRequestURI() + " context: " + request.getContextPath() + " \npathInfo " + request.getPathInfo() + " \nservlet path " + request.getServletPath() + " \nHeaders: " + headers.toString()) ;
-        //response.addHeader("Access-Control-Allow-Origin","*");
-//        if ( request.getMethod().toLowerCase().equals("options"))
-//        {
-////            response.addHeader("Access-Control-Allow-Origin","*");
-//            response.setStatus(200);
-//            return;
-//        }
-
         try
         {
-            dispatcher.service(request, response);
-        } catch (ServletException|IOException ex)
+            System.out.println("QueryString " + request.getQueryString() + " Test param " + request.getParameter("param"));
+            request.setAttribute(ResteasyMembersInjector.INJECTOR_CONTEXT, membersInjector);
+            Map<String, String> headers = new LinkedHashMap<>();
+            final Enumeration<String> headerNames = request.getHeaderNames();
+            while (headerNames.hasMoreElements())
+            {
+                String headerName = headerNames.nextElement();
+                headers.put(headerName, request.getHeader(headerName));
+            }
+            System.out.println("service request full " + request.toString() + " uri: " + request.getRequestURI() + " context: " + request.getContextPath() + " \npathInfo "
+                    + request.getPathInfo() + " \nservlet path " + request.getServletPath() + " \nHeaders: " + headers.toString());
+            //response.addHeader("Access-Control-Allow-Origin","*");
+            //        if ( request.getMethod().toLowerCase().equals("options"))
+            //        {
+            ////            response.addHeader("Access-Control-Allow-Origin","*");
+            //            response.setStatus(200);
+            //            return;
+            //        }
+
+            try
+            {
+                dispatcher.service(request, response);
+            }
+            catch (ServletException | IOException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                ex.printStackTrace();
+            }
+        }
+        finally
         {
-            throw ex;
-        } catch (Exception ex)
-        {
-            ex.printStackTrace();
+            if ( standaloneConnector != null)
+            {
+                standaloneConnector.requestFinished();
+            }
         }
 
     }
