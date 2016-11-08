@@ -22,13 +22,8 @@ public abstract class AbstractLoggerTest
         try
         {
             File folder = new File("target/temp/");
-            folder.delete();
             folder.mkdirs();
             file = new File(folder, getLogFileName());
-            final boolean delete = file.delete();
-            System.out.println("Deleted " + file + " before test = " + delete );
-            //   InputStream stream = Log4jLoggerTest.class.getResourceAsStream("/logging.properties");
-//            LogManager.getLogManager().readConfiguration(stream);
         }
         catch (Exception e)
         {
