@@ -66,6 +66,11 @@ public class ExampleServiceImpl implements ExampleService
         result.setDate( param.getLastRequestTime());
         final Collection<Integer> actionIds = param.getActionIds();
         final List<String> resultIds = new ArrayList<String>();
+        Map<String,Result.Moyo> map = new LinkedHashMap<>();
+        final Result.Moyo value = new Result.Moyo();
+        value.setAsd("Test");
+        map.put("1", value);
+        result.setMap( map);
         for (Integer id : actionIds)
         {
             resultIds.add(id.toString());

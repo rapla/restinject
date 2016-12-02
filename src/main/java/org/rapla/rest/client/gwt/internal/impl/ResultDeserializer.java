@@ -14,8 +14,6 @@
 
 package org.rapla.rest.client.gwt.internal.impl;
 
-import com.google.gwt.core.client.JavaScriptObject;
-
 /**
  * Inteface class for deserializers of results from JSON RPC calls. Since
  * primitive and array results need to be handled specially, not all results can
@@ -24,6 +22,5 @@ import com.google.gwt.core.client.JavaScriptObject;
  * @param <T> the result type of an RPC call.
  */
 public interface ResultDeserializer<T> {
-  //public T fromResult(JavaScriptObject responseObject);
-  public T fromJson(Object responseObject);
+  T fromJson(Object responseObject);
 }

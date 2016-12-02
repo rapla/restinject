@@ -14,7 +14,6 @@
 
 package org.rapla.rest.client.gwt.internal.impl.ser;
 
-import com.google.gwt.core.client.JavaScriptObject;
 import org.rapla.rest.client.gwt.internal.impl.ResultDeserializer;
 
 public class PrimitiveArrayResultDeserializers  {
@@ -83,13 +82,13 @@ public class PrimitiveArrayResultDeserializers  {
         @Override
         public Short[] fromJson(Object responseObject) {
           final Short[] tmp = new Short[getResultSize(responseObject)];
-          PrimitiveArraySerializer.INSTANCE.fromJson(getResult(responseObject),
+          PrimitiveArraySerializer.INSTANCE.fromJson(responseObject,
               tmp);
           return tmp;
         }
       };
 
-    protected static native JavaScriptObject getResult(Object result)
+    protected static native Object getResult(Object result)
   /*-{
     return result;
   }-*/;

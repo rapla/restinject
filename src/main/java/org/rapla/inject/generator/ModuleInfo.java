@@ -41,7 +41,8 @@ public class ModuleInfo
             processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Found param moduleName: " + moduleName);
             return moduleName;
         }
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "moduleName not found using " + moduleName);
+        moduleName = "org.rapla";
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, "moduleName not found using " +moduleName);
         return moduleName;
     }
     

@@ -16,9 +16,6 @@ package org.rapla.rest.client.gwt.internal.impl.ser;
 
 import org.rapla.rest.client.gwt.internal.impl.JsonSerializer;
 
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsonUtils;
-
 public class PrimitiveArraySerializer {
   public static final PrimitiveArraySerializer INSTANCE =
       new PrimitiveArraySerializer();
@@ -55,7 +52,7 @@ public class PrimitiveArraySerializer {
         sb.append(',');
       }
       if (o[i] != null) {
-        sb.append(JsonUtils.escapeValue(String.valueOf(o[i])));
+        sb.append(JsonSerializer.escapeValue(String.valueOf(o[i])));
       } else
         sb.append(JsonSerializer.JS_NULL);
     }
@@ -157,108 +154,108 @@ public class PrimitiveArraySerializer {
   }
 
   // DeSerialisation native getters
-  private static final native boolean getBoolean(JavaScriptObject jso, int pos)
+  private static final native boolean getBoolean(Object jso, int pos)
   /*-{ return jso[pos]; }-*/;
 
-  private static final native byte getByte(JavaScriptObject jso, int pos)
+  private static final native byte getByte(Object jso, int pos)
   /*-{ return jso[pos]; }-*/;
 
-  private static final native String getString(JavaScriptObject jso, int pos)
+  private static final native String getString(Object jso, int pos)
   /*-{ return jso[pos]; }-*/;
 
-  private static final native double getDouble(JavaScriptObject jso, int pos)
+  private static final native double getDouble(Object jso, int pos)
   /*-{ return jso[pos]; }-*/;
 
-  private static final native float getFloat(JavaScriptObject jso, int pos)
+  private static final native float getFloat(Object jso, int pos)
   /*-{ return jso[pos]; }-*/;
 
-  private static final native int getInteger(JavaScriptObject jso, int pos)
+  private static final native int getInteger(Object jso, int pos)
   /*-{ return jso[pos]; }-*/;
 
-  private static final native short getShort(JavaScriptObject jso, int pos)
+  private static final native short getShort(Object jso, int pos)
   /*-{ return jso[pos]; }-*/;
 
   // DeSerialisation of boxed primitive arrays
-  public void fromJson(final JavaScriptObject jso, final Boolean[] r) {
+  public void fromJson(final Object jso, final Boolean[] r) {
     for (int i = 0; i < r.length; i++) {
       r[i] = getBoolean(jso, i);
     }
   }
 
-  public void fromJson(final JavaScriptObject jso, final Byte[] r) {
+  public void fromJson(final Object jso, final Byte[] r) {
     for (int i = 0; i < r.length; i++) {
       r[i] = getByte(jso, i);
     }
   }
 
-  public void fromJson(final JavaScriptObject jso, final Character[] r) {
+  public void fromJson(final Object jso, final Character[] r) {
     for (int i = 0; i < r.length; i++) {
       r[i] = JsonSerializer.toChar(getString(jso, i));
     }
   }
 
-  public void fromJson(final JavaScriptObject jso, final Double[] r) {
+  public void fromJson(final Object jso, final Double[] r) {
     for (int i = 0; i < r.length; i++) {
       r[i] = getDouble(jso, i);
     }
   }
 
-  public void fromJson(final JavaScriptObject jso, final Float[] r) {
+  public void fromJson(final Object jso, final Float[] r) {
     for (int i = 0; i < r.length; i++) {
       r[i] = getFloat(jso, i);
     }
   }
 
-  public void fromJson(final JavaScriptObject jso, final Integer[] r) {
+  public void fromJson(final Object jso, final Integer[] r) {
     for (int i = 0; i < r.length; i++) {
       r[i] = getInteger(jso, i);
     }
   }
 
-  public void fromJson(final JavaScriptObject jso, final Short[] r) {
+  public void fromJson(final Object jso, final Short[] r) {
     for (int i = 0; i < r.length; i++) {
       r[i] = getShort(jso, i);
     }
   }
 
   // DeSerialisation of primitive arrays
-  public void fromJson(final JavaScriptObject jso, final boolean[] r) {
+  public void fromJson(final Object jso, final boolean[] r) {
     for (int i = 0; i < r.length; i++) {
       r[i] = getBoolean(jso, i);
     }
   }
 
-  public void fromJson(final JavaScriptObject jso, final byte[] r) {
+  public void fromJson(final Object jso, final byte[] r) {
     for (int i = 0; i < r.length; i++) {
       r[i] = getByte(jso, i);
     }
   }
 
-  public void fromJson(final JavaScriptObject jso, final char[] r) {
+  public void fromJson(final Object jso, final char[] r) {
     for (int i = 0; i < r.length; i++) {
       r[i] = JsonSerializer.toChar(getString(jso, i));
     }
   }
 
-  public void fromJson(final JavaScriptObject jso, final double[] r) {
+  public void fromJson(final Object jso, final double[] r) {
     for (int i = 0; i < r.length; i++) {
       r[i] = getDouble(jso, i);
     }
   }
 
-  public void fromJson(final JavaScriptObject jso, final float[] r) {
+  public void fromJson(final Object jso, final float[] r) {
     for (int i = 0; i < r.length; i++) {
       r[i] = getFloat(jso, i);
     }
   }
 
-  public void fromJson(final JavaScriptObject jso, final int[] r) {
+  public void fromJson(final Object jso, final int[] r) {
     for (int i = 0; i < r.length; i++) {
       r[i] = getInteger(jso, i);
     }
   }
 
-  public void fromJson(final JavaScriptObject jso, final short[] r) {
+  public void fromJson(final Object jso, final short[] r) {
     for (int i = 0; i < r.length; i++) {
       r[i] = getShort(jso, i);
     }

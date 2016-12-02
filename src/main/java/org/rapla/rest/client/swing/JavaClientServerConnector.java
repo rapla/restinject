@@ -4,8 +4,8 @@ import org.rapla.rest.client.AuthenticationException;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.ExceptionDeserializer;
 import org.rapla.rest.client.RemoteConnectException;
-import org.rapla.rest.client.SerializableExceptionInformation;
-import org.rapla.rest.client.SerializableExceptionInformation.SerializableExceptionStacktraceInformation;
+import org.rapla.rest.SerializableExceptionInformation;
+import org.rapla.rest.SerializableExceptionInformation.SerializableExceptionStacktraceInformation;
 
 import java.io.IOException;
 import java.net.URL;
@@ -103,7 +103,6 @@ public class JavaClientServerConnector
 
     private Exception deserializeExceptionObject(ExceptionDeserializer customConnector, JsonRemoteConnector.CallResult resultMessage, JavaJsonSerializer serializer)
     {
-
         try
         {
             SerializableExceptionInformation deserializedException = serializer.deserializeException(resultMessage.getResult());

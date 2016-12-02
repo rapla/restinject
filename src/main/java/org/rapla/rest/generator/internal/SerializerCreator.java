@@ -524,7 +524,7 @@ public class SerializerCreator implements SerializerClasses
             {
                 w.print("private static final native String");
                 w.print(" jsonGet0_" + fname);
-                w.print("(final JavaScriptObject instance)");
+                w.print("(final Object instance)");
                 w.println("/*-{ ");
                 w.print("  return instance.");
                 w.print(fname);
@@ -534,7 +534,7 @@ public class SerializerCreator implements SerializerClasses
                 w.print("private static final ");
                 w.print(isPrimitiveChar(type) ? "char" : "Character");
                 w.print(" jsonGet_" + fname);
-                w.print("(JavaScriptObject instance)");
+                w.print("(Object instance)");
                 w.println(" {");
                 w.print("  return ");
                 w.print(JsonSerializer);
@@ -549,7 +549,7 @@ public class SerializerCreator implements SerializerClasses
                 w.print("private static final native ");
                 if (isArray(type))
                 {
-                    w.print("JavaScriptObject");
+                    w.print("Object");
                 }
                 else if (isJsonPrimitive(type))
                 {
@@ -564,7 +564,7 @@ public class SerializerCreator implements SerializerClasses
                     w.print("Object");
                 }
                 w.print(" jsonGet_" + fname);
-                w.print("(JavaScriptObject instance)");
+                w.print("(Object instance)");
                 w.println("/*-{ ");
 
                 w.print("  return instance.");
@@ -715,19 +715,18 @@ public class SerializerCreator implements SerializerClasses
         else
         {
             w.println("if (in == null) return null;");
-            w.println("final JavaScriptObject jso = (JavaScriptObject)in;");
             w.print("final ");
             w.print(targetType.getQualifiedName().toString());
             w.print(" dst = new ");
             w.println(targetType.getQualifiedName().toString() + "();");
-            w.println("fromJsonImpl(jso, dst);");
+            w.println("fromJsonImpl(in, dst);");
             w.println("return dst;");
         }
         w.outdent();
         w.println("}");
         w.println();
 
-        w.print("protected void fromJsonImpl(JavaScriptObject jso,");
+        w.print("protected void fromJsonImpl(Object jso,");
         w.print(targetType.getQualifiedName().toString());
         w.println(" dst) {");
         w.indent();
@@ -1003,7 +1002,6 @@ public class SerializerCreator implements SerializerClasses
 
         pw.println("package " + pkgName + ";");
         pw.println();
-        addImport(pw, JavaScriptObject);
         addImport(pw, JsonSerializer);
         String superclass;
         if (isEnum(targetType.asType()))

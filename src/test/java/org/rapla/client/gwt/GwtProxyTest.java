@@ -8,6 +8,7 @@ import javax.inject.Singleton;
 
 import org.junit.Test;
 import org.rapla.client.AbstractProxyTest;
+import org.rapla.client.gwt.dagger.DaggerRaplaGwtComponent;
 import org.rapla.common.ExampleService;
 import org.rapla.common.ExampleService_GwtJsonProxy;
 import org.rapla.common.ExampleSimpleService;
@@ -27,40 +28,7 @@ import dagger.Component;
 public class GwtProxyTest extends GWTTestCase
 {
 
-    AbstractProxyTest genericTest = new AbstractProxyTest()
-    {
-
-        @Override
-        protected CustomConnector createConnector()
-        {
-            return new GwtCustomConnector();
-        }
-
-        @Override
-        protected ExampleService createExampleServiceProxy()
-        {
-            return new ExampleService_GwtJsonProxy(connector);
-        }
-
-        @Override
-        protected ExampleSimpleService createExampleSimpleServiceProxy()
-        {
-            return new ExampleSimpleService_GwtJsonProxy(connector);
-        }
-
-        @Override
-        public void assertEq(Object o1, Object o2)
-        {
-            GWTTestCase.assertEquals(o1, o2);
-        }
-
-        @Override
-        public void fail_(String message)
-        {
-            GWTTestCase.fail(message);
-        }
-    };
-
+    MyAbstractProxyTest genericTest = new MyAbstractProxyTest();
     /**
      * Specifies a module to use when running this test case. The returned
      * module must include the source for this class.
@@ -85,6 +53,7 @@ public class GwtProxyTest extends GWTTestCase
     {
         super.gwtSetUp();
         genericTest.setUp();
+
     }
 
     public void testEncoding() throws Exception
@@ -187,6 +156,12 @@ public class GwtProxyTest extends GWTTestCase
         genericTest.testChar();
     }
 
+    public void testWrongUrl() throws Exception
+    {
+        genericTest.setCustomPath("WrongPath");
+        genericTest.testChar();
+    }
+
     public void testGwtCall() throws Exception
     {
 
@@ -239,9 +214,54 @@ public class GwtProxyTest extends GWTTestCase
     public void testStartGeneratedServerComponent()
     {
         System.out.println("Before GWT create");
-        ComponentStarter starter = GWT.create(ComponentStarter.class);
+        ComponentStarter starter = DaggerRaplaGwtComponent.create().getComponentStarter();
         System.out.println("After GWT create " + starter);
         assertEquals("gwt", starter.start());
     }
 
+    private static class MyAbstractProxyTest extends AbstractProxyTest
+    {
+        private String customPath;
+
+        public void setCustomPath(String customPath)
+        {
+            this.customPath = customPath;
+        }
+
+        @Override
+        protected CustomConnector createConnector()
+        {
+            return new GwtCustomConnector();
+        }
+
+        @Override
+        protected ExampleService createExampleServiceProxy()
+        {
+            return new ExampleService_GwtJsonProxy(connector)
+            {
+                @Override protected void setPath(String path)
+                {
+                    super.setPath(customPath != null ? customPath: path);
+                }
+            };
+        }
+
+        @Override
+        protected ExampleSimpleService createExampleSimpleServiceProxy()
+        {
+            return new ExampleSimpleService_GwtJsonProxy(connector);
+        }
+
+        @Override
+        public void assertEq(Object o1, Object o2)
+        {
+            GWTTestCase.assertEquals(o1, o2);
+        }
+
+        @Override
+        public void fail_(String message)
+        {
+            GWTTestCase.fail(message);
+        }
+    }
 }

@@ -23,5 +23,8 @@
  <source path='client'>
   <exclude name='swing/**' />
  </source>
+ <source path=''>
+  <include name='SerializableExceptionInformation.java'/>
+ </source>
  <source path='' includes='GenericObjectSerializable.java'/>
 </module>

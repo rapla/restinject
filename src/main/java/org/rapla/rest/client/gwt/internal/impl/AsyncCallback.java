@@ -18,7 +18,6 @@ package org.rapla.rest.client.gwt.internal.impl;
 public interface AsyncCallback<T> {
   /**
    * Called when an asynchronous call fails to complete normally.
-   * {@link com.google.gwt.user.client.rpc.InvocationException}s,
    * or checked exceptions thrown by the service method are examples of the type
    * of failures that can be passed to this method.
    *

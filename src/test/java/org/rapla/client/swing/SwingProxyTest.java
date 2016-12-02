@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.rapla.client.AbstractProxyTest;
 import org.rapla.common.ExampleService_JavaJsonProxy;
+import org.rapla.common.ExampleSimpleService;
 import org.rapla.common.ExampleSimpleService_JavaJsonProxy;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.swing.HTTPConnector;
@@ -18,6 +19,7 @@ import org.rapla.server.ServletTestContainer;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.List;
 
 @RunWith(JUnit4.class)
 public class SwingProxyTest extends AbstractProxyTest
@@ -71,9 +73,21 @@ public class SwingProxyTest extends AbstractProxyTest
         String token =null;
         String body = null;
         final JsonRemoteConnector.CallResult options = connector.sendCallWithString("OPTIONS", url, body, token, Collections.emptyMap());
-        System.out.println( options.getResult());
+        assertEq("\"Options\"",options.getResult());
         assertEq(200,options.getResponseCode());
     }
+
+    @Test public void testNotThere() throws Exception
+    {
+        HTTPConnector connector = new HTTPConnector();
+        final URL url = new URL(this.connector.getFullQualifiedUrl("ExampleSimpleServiceFalse"));
+        String token =null;
+        String body = null;
+        final JsonRemoteConnector.CallResult options = connector.sendCallWithString("GET", url, body, token, Collections.emptyMap());
+        System.out.println( options.getResult());
+        assertEq(404,options.getResponseCode());
+    }
+
 
 
 }

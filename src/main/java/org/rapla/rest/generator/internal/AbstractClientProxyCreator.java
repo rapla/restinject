@@ -25,6 +25,7 @@ import javax.tools.Diagnostic;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -36,7 +37,7 @@ import org.rapla.inject.InjectionContext;
 import org.rapla.inject.generator.internal.SourceWriter;
 import org.rapla.rest.client.CustomConnector;
 
-public abstract class AbstractClientProxyCreator implements SerializerClasses
+public abstract class AbstractClientProxyCreator
 {
     protected final ProcessingEnvironment processingEnvironment;
     protected TypeElement svcInf;
@@ -45,6 +46,9 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
     protected String generatorName;
     protected int instanceField;
     private final InjectionContext context;
+
+    public static final String AbstractJsonProxy= "org.rapla.rest.client.AbstractJsonProxy";
+
 
     protected AbstractClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, SerializerCreator serializerCreator,
             ResultDeserializerCreator deserializerCreator, String generatorName, InjectionContext context)
@@ -266,7 +270,6 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         pw.println("import " + CustomConnector.class.getCanonicalName() + ";");
         pw.println("import " + DefaultImplementation.class.getCanonicalName() + ";");
         pw.println("import " + InjectionContext.class.getCanonicalName() + ";");
-        pw.println("import " + AbstractJsonProxy + ";");
         writeImports(pw);
         pw.println();
         pw.println(getGeneratorString(interfaceName));
@@ -506,6 +509,10 @@ public abstract class AbstractClientProxyCreator implements SerializerClasses
         else if (method.getAnnotation(GET.class) != null)
         {
             methodType = "GET";
+        }
+        else if (method.getAnnotation(OPTIONS.class) != null)
+        {
+            methodType = "OPTIONS";
         }
         else
         {

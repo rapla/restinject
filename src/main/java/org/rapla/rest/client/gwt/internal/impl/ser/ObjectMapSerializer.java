@@ -23,8 +23,6 @@ import javax.inject.Provider;
 import org.rapla.rest.client.gwt.internal.impl.JsonSerializer;
 import org.rapla.rest.client.gwt.internal.impl.ResultDeserializer;
 
-import com.google.gwt.core.client.JavaScriptObject;
-
 /**
  * Serialization for a {@link Map} using any Object key.
  * <p>
@@ -86,18 +84,14 @@ public class ObjectMapSerializer<K, V> extends
       return null;
     }
 
-    final JavaScriptObject jso = (JavaScriptObject) o;
-    final int n = size(jso);
+    final int n = size(o);
     final HashMap<K, V> r = new LinkedHashMap<K, V>();
     for (int i = 0; i < n;) {
-      final K k = keySerializer.get().fromJson(get(jso, i++));
-      final V v = valueSerializer.get().fromJson(get(jso, i++));
+      final K k = keySerializer.get().fromJson(get(o, i++));
+      final V v = valueSerializer.get().fromJson(get(o, i++));
       r.put(k, v);
     }
     return r;
   }
 
-  private static final native int size(JavaScriptObject o)/*-{ return o.length; }-*/;
-
-  private static final native Object get(JavaScriptObject o, int i)/*-{ return o[i]; }-*/;
 }

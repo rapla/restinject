@@ -19,7 +19,6 @@ import java.util.Date;
 import org.rapla.rest.client.gwt.internal.impl.JsonSerializer;
 import org.rapla.rest.client.gwt.internal.impl.ResultDeserializer;
 
-import com.google.gwt.core.client.JavaScriptObject;
 import org.rapla.rest.client.internal.isodate.ISODateTimeFormat;
 
 /** Default serialization for a {@link Date}. */

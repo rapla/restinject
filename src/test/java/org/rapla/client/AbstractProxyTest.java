@@ -55,6 +55,14 @@ public abstract class AbstractProxyTest
         assertEq("2", iterator.next());
         final ExampleService.Result result1 = test.sayHello2(p);
         assertEq( date, result1.getDate());
+        final Map<String, ExampleService.Result.Moyo> map = result1.getMap();
+        if ( map == null)
+        {
+            fail_("Map is null");
+        }
+        final ExampleService.Result.Moyo moyo = map.get("1");
+        final String asd = moyo.getAsd();
+        assertEq("Test", asd);
         test.sayHello3(p);
 
     }
@@ -122,7 +130,8 @@ public abstract class AbstractProxyTest
         }
         catch (RuntimeException e)
         {
-
+            final String message = e.getMessage();
+            assertEq("Something went wrong", message);
         }
     }
 

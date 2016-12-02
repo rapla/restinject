@@ -7,15 +7,10 @@ import jsinterop.annotations.JsProperty;
 @jsinterop.annotations.JsType(isNative = true,name = "XMLHttpRequest",namespace = JsPackage.GLOBAL)
 public interface XMLHttpRequest
 {
-//    public int status;
-//    public int readyState;
-//    public String responseText;
-//    public String statusText;
-//    public Onreadystatechange onreadystatechange;
-    public  void setRequestHeader(String s, String applicationJson);
-    public  void send(String requestData);
-    public  String getResponseHeader(String s);
-    public  void open(String httpMethod, String url, boolean asynchronous);
+    void setRequestHeader(String s, String applicationJson);
+    void send(String requestData);
+    String getResponseHeader(String s);
+    void open(String httpMethod, String url, boolean asynchronous);
 
     @JsFunction
     @FunctionalInterface
@@ -25,39 +20,21 @@ public interface XMLHttpRequest
     }
 
     @JsProperty
-    public int getStatus();
-//    {
-//        return status;
-//    }
+    int getStatus();
 
     @JsProperty
-    public String getResponseText();
-//    {
-//        return responseText;
-//    }
+    String getResponseText();
 
     @JsProperty
-    public String getStatusText();
-//    {
-//        return statusText;
-//    }
+    String getStatusText();
 
     @JsProperty
-    public int getReadyState();
-//    {
-//        return readyState;
-//    }
+    int getReadyState();
 
     @JsProperty
-    public void setOnreadystatechange(Onreadystatechange onreadystatechange);
-//    {
-//        this.onreadystatechange = onreadystatechange;
-//    }
+    void setOnreadystatechange(Onreadystatechange onreadystatechange);
 
     @JsProperty
-    public Onreadystatechange getOnreadystatechange();
-//    {
-//        return onreadystatechange;
-//    }
+    Onreadystatechange getOnreadystatechange();
 
 }

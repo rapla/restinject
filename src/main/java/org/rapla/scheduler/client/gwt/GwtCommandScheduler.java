@@ -7,40 +7,23 @@ import org.rapla.scheduler.Cancelable;
 import org.rapla.scheduler.Command;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.Promise;
-
-import com.google.gwt.core.client.Scheduler;
 import org.rapla.scheduler.impl.UnsynchronizedPromise;
 
 public  class GwtCommandScheduler implements CommandScheduler
 {
-
     Logger logger;
     public GwtCommandScheduler(Logger logger)
     {
         this.logger= logger;
     }
 
-    /*
-    @Override public void execute(final Runnable command)
-    {
-        schedule(new Command()
-        {
-            @Override public void execute() throws Exception
-            {
-                command.run();
-            }
-        }, 0);
-    }
-    */
-
     @Override
     public Cancelable schedule(final Command command, long delay, final long period)
     {
         if (period > 0)
         {
-            Scheduler.RepeatingCommand cmd = new Scheduler.RepeatingCommand()
+            SchedulerImpl.RepeatingCommand cmd = new SchedulerImpl.RepeatingCommand()
             {
-
                 @Override
                 public boolean execute()
                 {
@@ -56,11 +39,11 @@ public  class GwtCommandScheduler implements CommandScheduler
                     return true;
                 }
             };
-            Scheduler.get().scheduleFixedPeriod(cmd, (int) period);
+            SchedulerImpl.get(logger).scheduleFixedPeriod(cmd, (int) period);
         }
         else
         {
-            Scheduler.ScheduledCommand entry = new Scheduler.ScheduledCommand()
+            SchedulerImpl.ScheduledCommand entry = new SchedulerImpl.ScheduledCommand()
             {
 
                 @Override
@@ -78,7 +61,7 @@ public  class GwtCommandScheduler implements CommandScheduler
 
                 }
             };
-            Scheduler.get().scheduleEntry(entry);
+            SchedulerImpl.get(logger).scheduleEntry(entry);
         }
 
         return new Cancelable()
@@ -94,7 +77,7 @@ public  class GwtCommandScheduler implements CommandScheduler
     public <T> Promise<T> supply(final Callable<T> supplier)
     {
         final UnsynchronizedPromise<T> promise = new UnsynchronizedPromise<T>();
-        Scheduler.get().scheduleDeferred(() ->
+        scheduleDeferred(() ->
         {
             try
             {
@@ -113,7 +96,7 @@ public  class GwtCommandScheduler implements CommandScheduler
     public Promise<Void> run(final Command supplier)
     {
         final UnsynchronizedPromise<Void> promise = new UnsynchronizedPromise<Void>();
-        Scheduler.get().scheduleDeferred(() ->
+        scheduleDeferred(() ->
         {
             try
             {
@@ -133,7 +116,7 @@ public  class GwtCommandScheduler implements CommandScheduler
     {
         final UnsynchronizedPromise<T> promise = new UnsynchronizedPromise<T>();
         // We call the proxy directly so we don't mess with the callbacks
-        Scheduler.get().scheduleDeferred(() ->
+        scheduleDeferred(() ->
         {
             GwtClientServerConnector.registerSingleThreadedCallback(new AsyncCallback<T>()
             {
@@ -160,6 +143,12 @@ public  class GwtCommandScheduler implements CommandScheduler
         });
         return promise;
     }
+
+    private void scheduleDeferred(SchedulerImpl.ScheduledCommand cmd)
+    {
+        SchedulerImpl.get(logger).scheduleDeferred(cmd);
+    }
+
 
     @Override
     public Cancelable schedule(Command command, long delay)

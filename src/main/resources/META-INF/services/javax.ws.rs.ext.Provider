@@ -1,6 +1,5 @@
 org.rapla.rest.server.provider.resteasy.ResteasyMembersInjector
-org.rapla.rest.server.provider.exception.RestExceptionMapper
-org.rapla.rest.server.provider.exception.ExceptionMessageBodyWriter
+org.rapla.rest.server.provider.resteasy.RestExceptionMapper
 org.rapla.rest.server.provider.json.JsonReader
 org.rapla.rest.server.provider.json.JsonStringReader
 org.rapla.rest.server.provider.json.JsonWriter

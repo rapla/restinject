@@ -18,8 +18,6 @@ import javax.inject.Provider;
 
 import org.rapla.rest.client.gwt.internal.impl.JsonSerializer;
 
-import com.google.gwt.core.client.JavaScriptObject;
-
 /**
  * Default serialization for any Object[] sort of type.
  * <p>
@@ -52,13 +50,13 @@ public class ObjectArraySerializer<T> {
     sb.append(']');
   }
 
-  public void fromJson(final JavaScriptObject jso, final T[] r) {
+  public void fromJson(final Object jso, final T[] r) {
     for (int i = 0; i < r.length; i++) {
       r[i] = serializer.get().fromJson(get(jso, i));
     }
   }
 
-  public static native int size(JavaScriptObject o)/*-{ return o.length; }-*/;
+  public static native int size(Object o)/*-{ return o.length; }-*/;
 
-  private static final native Object get(JavaScriptObject o, int i)/*-{ return o[i]; }-*/;
+  private static final native Object get(Object o, int i)/*-{ return o[i]; }-*/;
 }

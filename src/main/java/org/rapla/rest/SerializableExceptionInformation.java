@@ -1,4 +1,4 @@
-package org.rapla.rest.client;
+package org.rapla.rest;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -68,6 +68,12 @@ public class SerializableExceptionInformation
 
     public SerializableExceptionInformation()
     {
+    }
+
+    @Override public String toString()
+    {
+        return "SerializableExceptionInformation{" + "message='" + message + '\'' + ", exceptionClass='" + exceptionClass + '\'' + ", messages=" + messages
+                + '}';
     }
 
     public SerializableExceptionInformation(Throwable t)

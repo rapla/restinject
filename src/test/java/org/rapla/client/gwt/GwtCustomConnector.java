@@ -5,8 +5,8 @@ import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
 import org.rapla.logger.Logger;
 import org.rapla.logger.internal.JavaUtilLoggerForGwt;
+import org.rapla.rest.SerializableExceptionInformation;
 import org.rapla.rest.client.CustomConnector;
-import org.rapla.rest.client.SerializableExceptionInformation;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -41,6 +41,10 @@ public class GwtCustomConnector implements CustomConnector
         String aClass = exceptionInformations.getExceptionClass();
         if ( aClass != null)
         {
+            if ( aClass.equals( NullPointerException.class.getCanonicalName()))
+            {
+                return new NullPointerException(exceptionInformations.getMessage());
+            }
         }
         return new Exception(aClass + " " + exceptionInformations.getMessage() + " " + exceptionInformations.getMessages());
         // throw new Au

@@ -117,7 +117,14 @@ public class HTTPConnector implements JsonRemoteConnector
                         inputStream = conn.getInputStream();
                     }
                 }
-                resultString = readResultToString(inputStream);
+                if ( inputStream != null)
+                {
+                    resultString = readResultToString(inputStream);
+                }
+                else
+                {
+                    resultString = "";
+                }
             }
             finally
             {

@@ -1,6 +1,7 @@
 package org.rapla.client.gwt;
 
 import com.google.gwt.junit.client.GWTTestCase;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.rapla.client.AbstractPromiseTest;
 import org.rapla.common.ExampleService;

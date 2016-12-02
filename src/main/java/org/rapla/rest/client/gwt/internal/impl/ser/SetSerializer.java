@@ -14,8 +14,6 @@
 
 package org.rapla.rest.client.gwt.internal.impl.ser;
 
-import com.google.gwt.core.client.JavaScriptObject;
-
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
@@ -66,17 +64,11 @@ public class SetSerializer<T> extends JsonSerializer<java.util.Set<T>>
     if (o == null) {
       return null;
     }
-
-    final JavaScriptObject jso = (JavaScriptObject) o;
-    final int n = size(jso);
+    final int n = size(o);
     final LinkedHashSet<T> r = new LinkedHashSet<T>(n);
     for (int i = 0; i < n; i++) {
-      r.add(serializer.get().fromJson(get(jso, i)));
+      r.add(serializer.get().fromJson(get(o, i)));
     }
     return r;
   }
-
-  private static final native int size(JavaScriptObject o)/*-{ return o.length; }-*/;
-
-  private static final native Object get(JavaScriptObject o, int i)/*-{ return o[i]; }-*/;
 }

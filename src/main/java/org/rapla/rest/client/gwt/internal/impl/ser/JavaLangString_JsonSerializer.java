@@ -17,9 +17,6 @@ package org.rapla.rest.client.gwt.internal.impl.ser;
 import org.rapla.rest.client.gwt.internal.impl.JsonSerializer;
 import org.rapla.rest.client.gwt.internal.impl.ResultDeserializer;
 
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsonUtils;
-
 /** Default serialization for a String. */
 public final class JavaLangString_JsonSerializer extends
     JsonSerializer<String> implements
@@ -37,6 +34,6 @@ public final class JavaLangString_JsonSerializer extends
 
   @Override
   public void printJson(final StringBuilder sb, final String o) {
-    sb.append(JsonUtils.escapeValue(o));
+    sb.append(escapeValue(o));
   }
 }

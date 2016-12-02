@@ -129,7 +129,7 @@ public class ResultDeserializerCreator
 
         w.println("@Override");
         w.print("public " + ctn + "[] ");
-        w.println("fromResult(JavaScriptObject responseObject) {");
+        w.println("fromResult(Object responseObject) {");
         w.indent();
         w.print("final " + ctn + "[] tmp = new " + ctn);
         w.println("[getResultSize(responseObject)];");
@@ -169,7 +169,6 @@ public class ResultDeserializerCreator
         final String simpleName = getDeserializerSimpleName(targetType, processingEnvironment);
         SourceWriter pw = new SourceWriter(pkgName, simpleName, processingEnvironment);
         pw.println("package " + pkgName + ";");
-        pw.println("import " + SerializerClasses.JavaScriptObject + ";");
         pw.println("import " + SerializerClasses.ResultDeserializer + ";");
         pw.println(getGeneratorString());
         pw.println("public class " + simpleName + " extends " + SerializerClasses.ArrayResultDeserializer + " implements "

@@ -1,7 +1,6 @@
 package org.rapla.rest.server.provider.json;
 
 import org.rapla.rest.JsonParserWrapper;
-import org.rapla.rest.client.SerializableExceptionInformation;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;

@@ -15,6 +15,7 @@ import org.rapla.inject.InjectionContext;
 @DefaultImplementation(context = InjectionContext.server, of = ExampleSimpleService.class)
 public class ExampleSimpleServiceImpl implements ExampleSimpleService
 {
+
     @Inject
     RemoteSession session;
 
@@ -45,6 +46,11 @@ public class ExampleSimpleServiceImpl implements ExampleSimpleService
         return param + session.toString(request) + session2.toString( request);
     }
 
+    @Override public String options()
+    {
+        return "Options";
+    }
+
     @Override
     public List<String> translations(String id)
     {
@@ -64,7 +70,7 @@ public class ExampleSimpleServiceImpl implements ExampleSimpleService
     @Override
     public List<String> exception()
     {
-        throw new RuntimeException("Something went wrong");
+        throw new NullPointerException("Something went wrong");
     }
 
     @Override

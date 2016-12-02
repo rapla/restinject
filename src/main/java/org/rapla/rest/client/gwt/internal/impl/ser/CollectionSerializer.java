@@ -14,7 +14,6 @@
 
 package org.rapla.rest.client.gwt.internal.impl.ser;
 
-import com.google.gwt.core.client.JavaScriptObject;
 import org.rapla.rest.client.gwt.internal.impl.JsonSerializer;
 import org.rapla.rest.client.gwt.internal.impl.ResultDeserializer;
 
@@ -63,17 +62,11 @@ public class CollectionSerializer<T> extends JsonSerializer<java.util.Collection
     if (o == null) {
       return null;
     }
-
-    final JavaScriptObject jso = (JavaScriptObject) o;
-    final int n = size(jso);
+    final int n = size(o);
     final ArrayList<T> r = new ArrayList<T>(n);
     for (int i = 0; i < n; i++) {
-      r.add(serializer.get().fromJson(get(jso, i)));
+      r.add(serializer.get().fromJson(get(o, i)));
     }
     return r;
   }
-
-  private static final native int size(JavaScriptObject o)/*-{ return o.length; }-*/;
-
-  private static final native Object get(JavaScriptObject o, int i)/*-{ return o[i]; }-*/;
 }

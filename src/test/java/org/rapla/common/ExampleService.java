@@ -96,8 +96,19 @@ public interface ExampleService
     class Result {
         private String name;
         private Collection<String> ids;
+        private Map<String,Moyo> map;
         private Moyo[] moyos;
         private Date date;
+
+        public Map<String,Moyo> getMap()
+        {
+            return map;
+        }
+
+        public void setMap(Map<String,Moyo> map)
+        {
+            this.map = map;
+        }
 
         public String getName()
         {

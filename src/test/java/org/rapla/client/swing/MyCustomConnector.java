@@ -3,7 +3,7 @@ package org.rapla.client.swing;
 import org.rapla.logger.ConsoleLogger;
 import org.rapla.logger.Logger;
 import org.rapla.rest.client.CustomConnector;
-import org.rapla.rest.client.SerializableExceptionInformation;
+import org.rapla.rest.SerializableExceptionInformation;
 
 import java.lang.reflect.Constructor;
 

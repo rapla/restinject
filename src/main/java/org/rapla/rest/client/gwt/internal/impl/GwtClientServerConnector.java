@@ -1,12 +1,13 @@
 package org.rapla.rest.client.gwt.internal.impl;
 
-import com.google.gwt.core.client.JavaScriptObject;
+import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 import org.rapla.logger.Logger;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.ExceptionDeserializer;
 import org.rapla.rest.client.RemoteConnectException;
-import org.rapla.rest.client.SerializableExceptionInformation;
-import org.rapla.rest.client.SerializableExceptionInformation.SerializableExceptionStacktraceInformation;
+import org.rapla.rest.SerializableExceptionInformation;
+import org.rapla.rest.SerializableExceptionInformation.SerializableExceptionStacktraceInformation;
 
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
@@ -288,18 +289,18 @@ public class GwtClientServerConnector<T>
             {
                 Exception e = null;
                 JsonErrorResult errorResult = (JsonErrorResult) parsedResult;
-                final String message = errorResult.message();
-                final List<String> messages = errorResult.messages() != null ? new ArrayList<>(Arrays.asList(errorResult.messages())) : Collections.emptyList();
+                final String message = errorResult.getMessage();
+                final List<String> messages = errorResult.getMessages() != null ? new ArrayList<>(Arrays.asList(errorResult.getMessages())) : Collections.emptyList();
                 ArrayList<SerializableExceptionStacktraceInformation> stacktrace = new ArrayList<>();
-                final Data[] data = errorResult.data();
+                final Data[] data = errorResult.getData();
                 if (data != null)
                 {
                     for (Data ste : data)
                     {
-                        stacktrace.add(new SerializableExceptionStacktraceInformation(ste.className(), ste.methodName(), ste.lineNumber(), ste.fileName()));
+                        stacktrace.add(new SerializableExceptionStacktraceInformation(ste.getClassName(), ste.getMethodName(), ste.getLineNumber(), ste.getFileName()));
                     }
                 }
-                final String exceptionClass = errorResult.exceptionClass();
+                final String exceptionClass = errorResult.getExceptionClass();
                 SerializableExceptionInformation exceptionInformation = new SerializableExceptionInformation(message, exceptionClass, messages, stacktrace);
                 e = exceptionDeserializer.deserializeException(exceptionInformation, sc);
                 if (e == null)
@@ -370,35 +371,36 @@ public class GwtClientServerConnector<T>
     return o;
   }-*/;
 
-    private static class JsonErrorResult extends JavaScriptObject
+    @JsType(isNative = true)
+    private interface JsonErrorResult
     {
-        protected JsonErrorResult()
-        {
-        }
+        @JsProperty
+        String getMessage();
 
-        final native String message()/*-{ return this.message; }-*/;
+        @JsProperty
+        String getExceptionClass();
 
-        final native String exceptionClass()/*-{ return this.exceptionClass; }-*/;
+        @JsProperty
+        String[] getMessages();
 
-        final native String[] messages()/*-{ return this.message; }-*/;
-
-        final native Data[] data()/*-{ return this.data}-*/;
+        @JsProperty
+        Data[] getData();
     }
 
-    private static class Data extends JavaScriptObject
+    @JsType(isNative = true)
+    interface Data
     {
+        @JsProperty
+        String getClassName();
 
-        protected Data()
-        {
-        }
+        @JsProperty
+        String getMethodName();
 
-        final native String className()/*-{return this.className}-*/;
+        @JsProperty
+        int getLineNumber();
 
-        final native String methodName()/*-{return this.methodName}-*/;
-
-        final native int lineNumber()/*-{return this.lineNumber}-*/;
-
-        final native String fileName()/*-{return this.fileName}-*/;
+        @JsProperty
+        String getFileName();
     }
 
     public static native String encodeBase64(String decodedURLComponent) /*-{

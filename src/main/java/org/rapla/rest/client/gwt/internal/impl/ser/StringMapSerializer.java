@@ -14,17 +14,13 @@
 
 package org.rapla.rest.client.gwt.internal.impl.ser;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import javax.inject.Provider;
-
 import org.rapla.rest.client.gwt.internal.impl.JsonSerializer;
 import org.rapla.rest.client.gwt.internal.impl.ResultDeserializer;
 
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsonUtils;
+import javax.inject.Provider;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Serialization for a {@link Map} using only String keys.
@@ -58,7 +54,7 @@ public class StringMapSerializer<V> extends
       } else {
         sb.append(',');
       }
-      sb.append(JsonUtils.escapeValue(e.getKey()));
+      sb.append(escapeValue(e.getKey()));
       sb.append(':');
       encode(sb, valueSerializer.get(), e.getValue());
     }
@@ -80,13 +76,12 @@ public class StringMapSerializer<V> extends
       return null;
     }
 
-    final JavaScriptObject jso = (JavaScriptObject) o;
     final Map<String, V> r = new LinkedHashMap<String, V>();
-    copy(r, jso);
+    copy(r, o);
     return r;
   }
 
-  private native void copy(Map<String, V> r, JavaScriptObject jsObject)
+  private native void copy(Map<String, V> r, Object jsObject)
   /*-{
     for (var key in jsObject) {
       this.@org.rapla.rest.client.gwt.internal.impl.ser.StringMapSerializer::copyOne(Ljava/util/Map;Ljava/lang/String;Ljava/lang/Object;)(r, key, jsObject[key]);

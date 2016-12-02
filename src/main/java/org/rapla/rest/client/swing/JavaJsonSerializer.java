@@ -9,7 +9,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import org.rapla.rest.JsonParserWrapper;
 import org.rapla.rest.client.RemoteConnectException;
-import org.rapla.rest.client.SerializableExceptionInformation;
+import org.rapla.rest.SerializableExceptionInformation;
 import org.rapla.rest.client.internal.isodate.ISODateTimeFormat;
 
 import java.util.ArrayList;

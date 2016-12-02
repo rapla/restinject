@@ -3,7 +3,9 @@
 <module>
     <inherits name='com.google.gwt.core.Core'/>
     <inherits name='org.rapla.rest.rest'/>
+    <!--
     <inherits name='org.rapla.inject.inject'/>
+    -->
     <inherits name='org.rapla.scheduler.scheduler'/>
     <inherits name='RestinjectExternal'/>
     <!--

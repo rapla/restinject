@@ -14,7 +14,6 @@
 
 package org.rapla.rest.client.gwt.internal.impl.ser;
 
-import com.google.gwt.core.client.JavaScriptObject;
 import org.rapla.rest.client.gwt.internal.impl.JsonSerializer;
 import org.rapla.rest.client.gwt.internal.impl.ResultDeserializer;
 

@@ -17,8 +17,6 @@ package org.rapla.rest.client.gwt.internal.impl.ser;
 import org.rapla.rest.client.gwt.internal.impl.JsonSerializer;
 import org.rapla.rest.client.gwt.internal.impl.ResultDeserializer;
 
-import com.google.gwt.core.client.JavaScriptObject;
-
 /** Base serializer for Enum types. */
 public abstract class EnumSerializer<T extends Enum<?>> extends
     JsonSerializer<T> implements ResultDeserializer<T> {
