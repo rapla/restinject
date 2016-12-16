@@ -2,7 +2,7 @@ package org.rapla.scheduler.impl;
 
 import org.rapla.logger.Logger;
 import org.rapla.scheduler.Cancelable;
-import org.rapla.scheduler.Command;
+import org.rapla.function.Command;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.Promise;
 

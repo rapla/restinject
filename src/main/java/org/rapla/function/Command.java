@@ -11,7 +11,7 @@
 | Definition as published by the Open Source Initiative (OSI).             |
 *--------------------------------------------------------------------------*/
 
-package org.rapla.scheduler;
+package org.rapla.function;
 
 @FunctionalInterface
 public interface Command {

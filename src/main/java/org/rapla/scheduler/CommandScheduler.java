@@ -1,5 +1,7 @@
 package org.rapla.scheduler;
 
+import org.rapla.function.Command;
+
 public interface CommandScheduler
 {
     Cancelable schedule(Command command, long delay);

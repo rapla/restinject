@@ -1,5 +1,10 @@
 package org.rapla.scheduler.impl;
 
+import org.rapla.function.BiConsumer;
+import org.rapla.function.BiFunction;
+import org.rapla.function.Command;
+import org.rapla.function.Consumer;
+import org.rapla.function.Function;
 import org.rapla.scheduler.Promise;
 
 import java.util.ArrayList;
@@ -46,10 +51,10 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         });
     }
 
-    private UnsynchronizedPromise(UnsynchronizedPromise parent, Runnable fn)
+    private UnsynchronizedPromise(UnsynchronizedPromise parent, Command fn)
     {
         this(parent, (act) -> {
-            fn.run();
+            fn.execute();
             return null;
         });
     }
@@ -65,10 +70,10 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         this(parent, (a1, a2) -> fn.apply(a1), null);
     }
 
-    private UnsynchronizedPromise(UnsynchronizedPromise parent, Promise other, Runnable fn)
+    private UnsynchronizedPromise(UnsynchronizedPromise parent, Promise other, Command fn)
     {
         this(parent, (a, b) -> {
-            fn.run();
+            fn.execute();
             return null;
         }, other);
     }
@@ -152,7 +157,7 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         return new UnsynchronizedPromise(this, action);
     }
 
-    @Override public Promise<Void> thenRun(Runnable action)
+    @Override public Promise<Void> thenRun(Command action)
     {
         return new UnsynchronizedPromise(this, action);
     }
@@ -167,7 +172,7 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         return new UnsynchronizedPromise(this, other, fn);
     }
 
-    @Override public Promise<Void> runAfterBoth(Promise<?> other, Runnable fn)
+    @Override public Promise<Void> runAfterBoth(Promise<?> other, Command fn)
     {
         return new UnsynchronizedPromise(this, other, fn);
     }
@@ -229,9 +234,9 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         });
     }
 
-    @Override public Promise<Void> runAfterEither(Promise<?> other, Runnable fn)
+    @Override public Promise<Void> runAfterEither(Promise<?> other, Command fn)
     {
-        return acceptEither((Promise) other, (a) -> fn.run());
+        return acceptEither((Promise) other, (a) -> fn.execute());
     }
 
     @Override public Promise<T> whenComplete(BiConsumer<? super T, ? super Throwable> fn)

@@ -380,10 +380,10 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 pathAnnotationFound = true;
             }
         }
-        final String qualifiedName = interfaceElement.getQualifiedName().toString();
+        final String qualifiedName = getClassname(interfaceElement);
         appendToServiceList(interfaceListFile, qualifiedName);
         addServiceFile(interfaceElement, implementationElement, interfaceListFileFolder);
-        processedAnnotations.addImplementation(qualifiedName, implementationElement.getQualifiedName().toString());
+        processedAnnotations.addImplementation(qualifiedName, getClassname(implementationElement));
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding DefaultImplemenation " + implementationElement);
         return pathAnnotationFound;
     }

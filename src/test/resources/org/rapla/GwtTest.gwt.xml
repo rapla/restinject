@@ -3,6 +3,7 @@
 <module>
     <inherits name='com.google.gwt.core.Core'/>
     <inherits name='org.rapla.rest.rest'/>
+    <inherits name='org.rapla.function.function'/>
     <!--
     <inherits name='org.rapla.inject.inject'/>
     -->
@@ -21,6 +22,7 @@
         <exclude name='**/standalone/**' />
     </source>
     <source path='inject'/>
+
     <source path='logger'/>
     <source path='common'/>
     <source path='dagger'/>

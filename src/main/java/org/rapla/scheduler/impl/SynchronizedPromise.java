@@ -1,5 +1,10 @@
 package org.rapla.scheduler.impl;
 
+import org.rapla.function.BiConsumer;
+import org.rapla.function.BiFunction;
+import org.rapla.function.Command;
+import org.rapla.function.Consumer;
+import org.rapla.function.Function;
 import org.rapla.scheduler.Promise;
 
 import java.util.concurrent.CompletableFuture;
@@ -70,8 +75,9 @@ class SynchronizedPromise<T> implements Promise<T>
         return w(f.thenAcceptAsync(consumer, promiseExecuter));
     }
 
-    @Override public Promise<Void> thenRun(Runnable action)
+    @Override public Promise<Void> thenRun(Command command)
     {
+        final Runnable action = wrapAction(command);
         return w(f.thenRunAsync(action, promiseExecuter));
     }
 
@@ -107,9 +113,24 @@ class SynchronizedPromise<T> implements Promise<T>
         return w(f.thenAcceptBothAsync(v, biConsumer, promiseExecuter));
     }
 
-    @Override public Promise<Void> runAfterBoth(Promise<?> other, Runnable action)
+    @Override public Promise<Void> runAfterBoth(Promise<?> other, Command command)
     {
+        final Runnable action = wrapAction(command);
         return w(f.runAfterBothAsync(v(other), action, promiseExecuter));
+    }
+
+    private Runnable wrapAction(Command command)
+    {
+        return () -> {
+                try
+                {
+                    command.execute();
+                }
+                catch (Exception e)
+                {
+                    throw new PromiseRuntimeException(e);
+                }
+            };
     }
 
     @Override public <U> Promise<U> applyToEither(Promise<? extends T> other, Function<? super T, U> fn)
@@ -142,9 +163,10 @@ class SynchronizedPromise<T> implements Promise<T>
         return w(f.acceptEitherAsync(v(other), action, promiseExecuter));
     }
 
-    @Override public Promise<Void> runAfterEither(Promise<?> other, Runnable fn)
+    @Override public Promise<Void> runAfterEither(Promise<?> other, Command command)
     {
-        return w(f.runAfterEitherAsync(v(other), fn, promiseExecuter));
+        final Runnable action = wrapAction(command);
+        return w(f.runAfterEitherAsync(v(other), action, promiseExecuter));
     }
 
     @Override public <U> Promise<U> thenCompose(Function<? super T, ? extends Promise<U>> fn)

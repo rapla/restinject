@@ -4,7 +4,7 @@ import org.rapla.logger.Logger;
 import org.rapla.rest.client.gwt.internal.impl.AsyncCallback;
 import org.rapla.rest.client.gwt.internal.impl.GwtClientServerConnector;
 import org.rapla.scheduler.Cancelable;
-import org.rapla.scheduler.Command;
+import org.rapla.function.Command;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.Promise;
 import org.rapla.scheduler.impl.UnsynchronizedPromise;
