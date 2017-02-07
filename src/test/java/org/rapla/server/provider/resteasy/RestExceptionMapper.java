@@ -1,4 +1,4 @@
-package org.rapla.rest.server.provider.resteasy;
+package org.rapla.server.provider.resteasy;
 
 import org.jboss.resteasy.spi.ApplicationException;
 import org.rapla.logger.RaplaBootstrapLogger;

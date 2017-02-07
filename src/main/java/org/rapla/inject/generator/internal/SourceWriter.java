@@ -103,7 +103,7 @@ public class SourceWriter
     public void close() throws IOException
     {
         printWriter.close();
-        boolean generate;
+        final boolean generate;
         String componentName = getComponentName();
         String packageName = getPackageName();
         final byte[] bytes = toBytes();
@@ -123,17 +123,21 @@ public class SourceWriter
             }
             if (bytesFromInputStream != null)
             {
-                generate = !Arrays.equals(bytes, bytesFromInputStream);
-                if (generate && !resource.delete())
+                final boolean changed = !Arrays.equals(bytes, bytesFromInputStream);
+                if (changed && !resource.delete())
                 {
-                    processingEnv.getMessager().printMessage(Kind.ERROR, "Could not delete file " + packageName + "." + componentName + ".java", null);
+                    processingEnv.getMessager().printMessage(Kind.WARNING, "Could not delete file " + packageName + "." + componentName + ".java" + " ModuleInformation maybe old. Please run a full rebuild to resolve.", null);
+                    generate = false;
+                }
+                else
+                {
+                    generate = changed;
                 }
             }
             else
             {
                 generate = true;
             }
-            generate = true;
         }
         else
         {
