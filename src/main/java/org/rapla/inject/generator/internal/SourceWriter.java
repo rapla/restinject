@@ -113,30 +113,27 @@ public class SourceWriter
         final FileObject resource = filer.getResource(loc, packageName, componentName + ".java");
         if (resource != null)
         {
-            byte[] bytesFromInputStream = null;
-            try (InputStream in = resource.openInputStream())
+            generate = true;
+            if (!resource.delete())
             {
-                bytesFromInputStream = getBytesFromInputStream(in);
-            }
-            catch (IOException ex)
-            {
-            }
-            if (bytesFromInputStream != null)
-            {
-                final boolean changed = !Arrays.equals(bytes, bytesFromInputStream);
-                if (changed && !resource.delete())
-                {
-                    processingEnv.getMessager().printMessage(Kind.WARNING, "Could not delete file " + packageName + "." + componentName + ".java" + " ModuleInformation maybe old. Please run a full rebuild to resolve.", null);
-                    generate = false;
-                }
-                else
-                {
-                    generate = changed;
-                }
-            }
-            else
-            {
-                generate = true;
+//                byte[] bytesFromInputStream = null;
+//                try (InputStream in = resource.openInputStream())
+//                {
+//                    bytesFromInputStream = getBytesFromInputStream(in);
+//                }
+//                catch (IOException ex)
+//                {
+//                }
+//                if (bytesFromInputStream != null)
+//                {
+//                    processingEnv.getMessager().printMessage(Kind.WARNING, "Could not delete file " + packageName + "." + componentName + ".java" + " ModuleInformation maybe old. Please run a full rebuild to resolve.", null);
+//                    //generate = true;
+//                }
+                //            }
+                //            else
+                //            {
+                //                generate = true;
+                //            }
             }
         }
         else
