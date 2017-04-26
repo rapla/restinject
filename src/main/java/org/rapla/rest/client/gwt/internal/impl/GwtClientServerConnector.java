@@ -203,7 +203,7 @@ public class GwtClientServerConnector<T>
         }
     }
 
-    public void onResponseReceived(XMLHttpRequest rsp, AsyncCallback callback)
+    protected void onResponseReceived(XMLHttpRequest rsp, AsyncCallback callback)
     {
         final int sc = rsp.getStatus();
         final String responseText = rsp.getResponseText();
@@ -287,27 +287,7 @@ public class GwtClientServerConnector<T>
             log("Checking error.");
             if (sc != 200)
             {
-                Exception e = null;
-                JsonErrorResult errorResult = (JsonErrorResult) parsedResult;
-                final String message = errorResult.getMessage();
-                final List<String> messages = errorResult.getMessages() != null ? new ArrayList<>(Arrays.asList(errorResult.getMessages())) : Collections.emptyList();
-                ArrayList<SerializableExceptionStacktraceInformation> stacktrace = new ArrayList<>();
-                final Data[] data = errorResult.getData();
-                if (data != null)
-                {
-                    for (Data ste : data)
-                    {
-                        stacktrace.add(new SerializableExceptionStacktraceInformation(ste.getClassName(), ste.getMethodName(), ste.getLineNumber(), ste.getFileName()));
-                    }
-                }
-                final String exceptionClass = errorResult.getExceptionClass();
-                SerializableExceptionInformation exceptionInformation = new SerializableExceptionInformation(message, exceptionClass, messages, stacktrace);
-                e = exceptionDeserializer.deserializeException(exceptionInformation, sc);
-                if (e == null)
-                {
-                    final String errmsg = message;
-                    e = new RemoteConnectException(errmsg);
-                }
+                Exception e = getError(sc, (JsonErrorResult) parsedResult);
                 callback.onFailure(e);
                 return;
             }
@@ -344,6 +324,31 @@ public class GwtClientServerConnector<T>
         }
 
         callback.onFailure(new RemoteConnectException("No JSON response: " + responseText + " Status " + statusText));
+    }
+
+    private Exception getError(int sc, JsonErrorResult parsedResult)
+    {
+        JsonErrorResult errorResult = parsedResult;
+        final String message = errorResult.getMessage();
+        final List<String> messages = errorResult.getMessages() != null ? new ArrayList<>(Arrays.asList(errorResult.getMessages())) : Collections.emptyList();
+        ArrayList<SerializableExceptionStacktraceInformation> stacktrace = new ArrayList<>();
+        final Data[] data = errorResult.getData();
+        if (data != null)
+        {
+            for (Data ste : data)
+            {
+                stacktrace.add(new SerializableExceptionStacktraceInformation(ste.getClassName(), ste.getMethodName(), ste.getLineNumber(), ste.getFileName()));
+            }
+        }
+        final String exceptionClass = errorResult.getExceptionClass();
+        SerializableExceptionInformation exceptionInformation = new SerializableExceptionInformation(message, exceptionClass, messages, stacktrace);
+        Exception e = exceptionDeserializer.deserializeException(exceptionInformation, sc);
+        if (e == null)
+        {
+            final String errmsg = message;
+            e = new RemoteConnectException(errmsg);
+        }
+        return e;
     }
 
     protected void log(String message)

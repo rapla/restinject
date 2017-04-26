@@ -1,12 +1,9 @@
 package org.rapla.rest.generator.internal;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import org.rapla.inject.DefaultImplementation;
+import org.rapla.inject.InjectionContext;
+import org.rapla.inject.generator.internal.SourceWriter;
+import org.rapla.rest.client.CustomConnector;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -21,7 +18,6 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import javax.tools.Diagnostic;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -31,11 +27,13 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
-
-import org.rapla.inject.DefaultImplementation;
-import org.rapla.inject.InjectionContext;
-import org.rapla.inject.generator.internal.SourceWriter;
-import org.rapla.rest.client.CustomConnector;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public abstract class AbstractClientProxyCreator
 {
@@ -63,19 +61,7 @@ public abstract class AbstractClientProxyCreator
 
     abstract protected String encode(String encodingParam);
 
-    protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType)
-    {
-        final String serverConnectorClass = getServerConnectorClass();
-        w.print("Object result = " + serverConnectorClass + ".doInvoke(");
-        w.print("\"" + methodType + "\"");
-        w.print(", methodUrl , additionalHeaders,postBody.toString(),");
-        w.print(resultDeserialzerField);
-        w.print(", \"" + resultType.toString() + "\"");
-        w.print(", connector);");
-        w.println(" ");
-    }
-
-    abstract protected String getServerConnectorClass();
+    abstract protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType);
 
     //abstract protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType);
 

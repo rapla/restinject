@@ -27,15 +27,15 @@ public class JavaClientServerConnector
     }
 
     public static <T> T doInvoke(final String requestMethodType, final String url,  final Map<String, String> additionalHeaders,String body,
-            final JavaJsonSerializer ser, String resultType, CustomConnector connector) throws Exception
+            final JavaJsonSerializer ser, CustomConnector connector) throws Exception
     {
         final JavaClientServerConnector javaClientServerConnector = new JavaClientServerConnector();
-        final T result = (T)javaClientServerConnector.send(requestMethodType, url, additionalHeaders, body, ser, resultType, connector);
+        final T result = (T)javaClientServerConnector.send(requestMethodType, url, additionalHeaders, body, ser, connector);
         return result;
     }
 
     synchronized private Object send( String requestMethodType, String url, Map<String, String> additionalHeaders,String body,
-             JavaJsonSerializer serializer,String resultType,CustomConnector customConnector) throws Exception
+             JavaJsonSerializer serializer,CustomConnector customConnector) throws Exception
     {
         JsonRemoteConnector remote = remoteConnector;
         String contentType =  "application/json";
@@ -47,10 +47,7 @@ public class JavaClientServerConnector
         }
         catch ( IOException ex)
         {
-            // TODO: Workaround to allow internatianlization of internal connect errors
-            SerializableExceptionInformation exInfo = new SerializableExceptionInformation(new RemoteConnectException(ex.getMessage()));
-            int resultStatus = 502;
-            throw customConnector.deserializeException(exInfo,resultStatus);
+            throw getWrappedIOException(customConnector, ex);
         }
         Exception error = getError(customConnector, resultMessage, serializer);
         if ( error != null)
@@ -58,19 +55,21 @@ public class JavaClientServerConnector
             if (error instanceof AuthenticationException)
             {
                 String newAuthCode = customConnector.reauth(this.getClass());
-                // try the same call again with the new result, this time with no auth code failed fallback
+                // try the same call again with the new result, this time with the newAuthCode
                 if (newAuthCode != null)
                 {
                     try
                     {
-                        resultMessage = remote.sendCallWithString(requestMethodType, new URL(url), body, authenticationToken, contentType, additionalHeaders);
+                        resultMessage = remote.sendCallWithString(requestMethodType, new URL(url), body, newAuthCode, contentType, additionalHeaders);
                     }
                     catch (IOException ex)
                     {
-                        // TODO: Workaround to allow internatianlization of internal connect errors
-                        SerializableExceptionInformation exInfo = new SerializableExceptionInformation(new RemoteConnectException(ex.getMessage()));
-                        int resultStatus =502;
-                        throw customConnector.deserializeException(exInfo, resultStatus);
+                        throw getWrappedIOException(customConnector, ex);
+                    }
+                    error = getError(customConnector, resultMessage, serializer);
+                    if ( error != null)
+                    {
+                        throw  error;
                     }
                 }
                 else
@@ -87,6 +86,14 @@ public class JavaClientServerConnector
         return result;
     }
 
+    // TODO: Workaround to allow internationalization of internal connect errors
+    private Exception getWrappedIOException(CustomConnector customConnector, IOException ex)
+    {
+        SerializableExceptionInformation exInfo = new SerializableExceptionInformation(new RemoteConnectException(ex.getMessage()));
+        int resultStatus =502;
+        return customConnector.deserializeException(exInfo, resultStatus);
+    }
+
     protected Exception getError(ExceptionDeserializer customConnector, JsonRemoteConnector.CallResult resultMessage, JavaJsonSerializer serializer) throws Exception
     {
         final int responseCode = resultMessage.getResponseCode();
@@ -95,8 +102,6 @@ public class JavaClientServerConnector
 
             Exception ex = deserializeExceptionObject(customConnector, resultMessage, serializer);
             return ex;
-            //SerializableExceptionInformation exInfo = new SerializableExceptionInformation(new RemoteConnectException(ex.getMessage()));
-            //return customConnector.deserializeException(exInfo, responseCode);
         }
         return null;
     }

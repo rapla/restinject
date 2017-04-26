@@ -84,9 +84,14 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
     }
 
     @Override
-    protected String getServerConnectorClass()
+    protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType)
     {
-        return JavaClientServerConnector.class.getSimpleName();
+        w.print("Object result = JavaClientServerConnector.doInvoke(");
+        w.print("\"" + methodType + "\"");
+        w.print(", methodUrl , additionalHeaders,postBody.toString(),");
+        w.print(resultDeserialzerField);
+        w.print(", connector);");
+        w.println(" ");
     }
 
     @Override

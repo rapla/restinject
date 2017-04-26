@@ -65,9 +65,16 @@ public class GwtProxyCreator extends AbstractClientProxyCreator implements Seria
         }
     }
 
-    protected String getServerConnectorClass()
+    @Override
+    protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType)
     {
-        return "GwtClientServerConnector";
+        w.print("Object result = GwtClientServerConnector.doInvoke(");
+        w.print("\"" + methodType + "\"");
+        w.print(", methodUrl , additionalHeaders,postBody.toString(),");
+        w.print(resultDeserialzerField);
+        w.print(", \"" + resultType.toString() + "\"");
+        w.print(", connector);");
+        w.println(" ");
     }
 
     protected String[] writeSerializers(SourceWriter w, List<? extends VariableElement> params, TypeMirror resultType)
