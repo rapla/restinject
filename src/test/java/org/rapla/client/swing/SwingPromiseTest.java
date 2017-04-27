@@ -14,7 +14,7 @@ import org.rapla.common.ExampleService_JavaJsonProxy;
 import org.rapla.logger.ConsoleLogger;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.scheduler.CommandScheduler;
-import org.rapla.scheduler.impl.UtilConcurrentCommandScheduler;
+import org.rapla.scheduler.sync.UtilConcurrentCommandScheduler;
 import org.rapla.server.ServletTestContainer;
 
 import junit.framework.TestCase;

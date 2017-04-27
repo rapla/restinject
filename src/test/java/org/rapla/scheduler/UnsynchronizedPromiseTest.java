@@ -5,8 +5,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.rapla.logger.ConsoleLogger;
-import org.rapla.scheduler.impl.UnsynchronizedPromise;
-import org.rapla.scheduler.impl.UtilConcurrentCommandScheduler;
+import org.rapla.scheduler.sync.UtilConcurrentCommandScheduler;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;

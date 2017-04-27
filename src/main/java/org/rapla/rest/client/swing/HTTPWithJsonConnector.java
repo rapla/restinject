@@ -1,4 +1,4 @@
-package org.rapla.rest.client;
+package org.rapla.rest.client.swing;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -14,9 +14,9 @@ import java.util.Collections;
 import java.util.Map;
 
 @Deprecated
-public class HTTPJsonConnector extends HTTPConnector
+public class HTTPWithJsonConnector extends HTTPConnector
 {
-    public HTTPJsonConnector() {
+    public HTTPWithJsonConnector() {
         super();
     }
 

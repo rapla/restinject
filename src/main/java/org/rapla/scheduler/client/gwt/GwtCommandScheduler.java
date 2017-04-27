@@ -7,11 +7,11 @@ import org.rapla.scheduler.Cancelable;
 import org.rapla.function.Command;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.Promise;
-import org.rapla.scheduler.impl.UnsynchronizedPromise;
+import org.rapla.scheduler.UnsynchronizedPromise;
 
 public  class GwtCommandScheduler implements CommandScheduler
 {
-    Logger logger;
+    protected  Logger logger;
     public GwtCommandScheduler(Logger logger)
     {
         this.logger= logger;
@@ -61,7 +61,7 @@ public  class GwtCommandScheduler implements CommandScheduler
 
                 }
             };
-            SchedulerImpl.get(logger).scheduleEntry(entry);
+            SchedulerImpl.get(logger).scheduleDeferred(entry);
         }
 
         return new Cancelable()

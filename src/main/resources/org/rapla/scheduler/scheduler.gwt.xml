@@ -4,5 +4,6 @@
     <inherits name='org.rapla.function.function'/>
     <source path=''>
         <exclude name='server/**' />
+        <exclude name='sync/**'/>
     </source>
 </module>

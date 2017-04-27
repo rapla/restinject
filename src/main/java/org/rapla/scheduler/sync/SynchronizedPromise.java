@@ -1,4 +1,4 @@
-package org.rapla.scheduler.impl;
+package org.rapla.scheduler.sync;
 
 import org.rapla.function.BiConsumer;
 import org.rapla.function.BiFunction;

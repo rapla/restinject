@@ -1,4 +1,4 @@
-package org.rapla.scheduler.impl;
+package org.rapla.scheduler.sync;
 
 import org.rapla.logger.Logger;
 import org.rapla.scheduler.Cancelable;

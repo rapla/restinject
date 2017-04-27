@@ -1,11 +1,10 @@
-package org.rapla.scheduler.impl;
+package org.rapla.scheduler;
 
 import org.rapla.function.BiConsumer;
 import org.rapla.function.BiFunction;
 import org.rapla.function.Command;
 import org.rapla.function.Consumer;
 import org.rapla.function.Function;
-import org.rapla.scheduler.Promise;
 
 import java.util.ArrayList;
 import java.util.List;

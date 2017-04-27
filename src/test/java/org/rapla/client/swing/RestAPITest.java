@@ -9,7 +9,7 @@ import com.google.gson.JsonParser;
 import org.eclipse.jetty.server.Server;
 import org.rapla.rest.client.swing.HTTPConnector;
 import org.rapla.rest.client.swing.JsonRemoteConnector.CallResult;
-import org.rapla.rest.client.HTTPJsonConnector;
+import org.rapla.rest.client.swing.HTTPWithJsonConnector;
 import org.rapla.server.ServletTestContainer;
 
 import com.google.gson.JsonElement;
@@ -54,7 +54,7 @@ public class RestAPITest extends  TestCase {
         URL baseUrl = new URL("http://localhost:8052/rapla/");
         String username = "admin";
         String password = "secret";
-        HTTPJsonConnector connector = new HTTPJsonConnector();
+        HTTPWithJsonConnector connector = new HTTPWithJsonConnector();
 
         // first we login using the auth method
         String authenticationToken = null;
@@ -92,7 +92,7 @@ public class RestAPITest extends  TestCase {
         };
         URL baseUrl = new URL("http://localhost:8052/rapla/");
         String username = "christopher";
-        HTTPJsonConnector connector = new HTTPJsonConnector();
+        HTTPWithJsonConnector connector = new HTTPWithJsonConnector();
         {
             URL methodURL =new URL(baseUrl,"user/" + username );
             //JsonObject callObj = new JsonObject();
