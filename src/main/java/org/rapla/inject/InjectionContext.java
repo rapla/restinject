@@ -1,10 +1,5 @@
 package org.rapla.inject;
 
-import org.rapla.inject.dagger.DaggerReflectionStarter;
-import org.rapla.inject.generator.AnnotationInjectionProcessor;
-
-import java.util.LinkedHashSet;
-
 /**
  * Specifies in which context the default implemention or the extension point is available.
  * If you specify more then one InjectionContext then the extension point will be available in all specified contexts.
@@ -20,19 +15,14 @@ import java.util.LinkedHashSet;
  */
 public enum InjectionContext
 {
-    server,
-    client,
-    swing,
-    gwt,
-    android,
-    ios,
-    all;
+    server, client, swing, gwt, android, ios, all;
 
-    public static final String MODULE_LIST = "META-INF/org.rapla.servicelist";
+    public static final String MODULE_FILE_NAME = "org.rapla.servicelist";
+    public static final String MODULE_LIST_LOCATION = "META-INF/" + MODULE_FILE_NAME;
 
-    public static boolean inList(InjectionContext context,InjectionContext... contexts)
+    public static boolean inList(InjectionContext context, InjectionContext... contexts)
     {
-        for ( InjectionContext cont:contexts)
+        for (InjectionContext cont : contexts)
         {
             if (cont == context)
             {
@@ -41,9 +31,10 @@ public enum InjectionContext
         }
         return false;
     }
+
     public static boolean isInjectableOnSwing(InjectionContext... contexts)
     {
-        for ( InjectionContext context:contexts)
+        for (InjectionContext context : contexts)
         {
             if (context == swing || context == all || context == client)
             {
@@ -55,7 +46,7 @@ public enum InjectionContext
 
     public static boolean isInjectableOnGwt(InjectionContext... contexts)
     {
-        for ( InjectionContext context:contexts)
+        for (InjectionContext context : contexts)
         {
             if (context == gwt || context == all || context == client)
             {
@@ -67,7 +58,7 @@ public enum InjectionContext
 
     public static boolean isInjectableOnAndroid(InjectionContext... contexts)
     {
-        for ( InjectionContext context:contexts)
+        for (InjectionContext context : contexts)
         {
             if (context == android || context == all || context == client)
             {
@@ -80,7 +71,7 @@ public enum InjectionContext
 
     public static boolean isInjectableOnIos(InjectionContext... contexts)
     {
-        for ( InjectionContext context:contexts)
+        for (InjectionContext context : contexts)
         {
             if (context == ios || context == all || context == client)
             {
@@ -90,10 +81,9 @@ public enum InjectionContext
         return false;
     }
 
-
     public static boolean isInjectableOnServer(InjectionContext... contexts)
     {
-        for ( InjectionContext context:contexts)
+        for (InjectionContext context : contexts)
         {
             if (context == all || context == server)
             {
@@ -105,9 +95,9 @@ public enum InjectionContext
 
     public static boolean isInjectableOnClient(InjectionContext... contexts)
     {
-        for ( InjectionContext context:contexts)
+        for (InjectionContext context : contexts)
         {
-            if (context == all ||context == client)
+            if (context == all || context == client)
             {
                 return true;
             }
@@ -117,7 +107,7 @@ public enum InjectionContext
 
     public static boolean isInjectableEverywhere(InjectionContext... contexts)
     {
-        if ( contexts.length == 0)
+        if (contexts.length == 0)
         {
             return true;
         }
@@ -127,7 +117,7 @@ public enum InjectionContext
         boolean isSwing = false;
         boolean isAndroid = false;
         boolean isIos = false;
-        for ( InjectionContext context:contexts)
+        for (InjectionContext context : contexts)
         {
             if (context == all)
             {
@@ -159,11 +149,11 @@ public enum InjectionContext
             }
 
         }
-        if ( isGwt && isSwing && isAndroid && isIos)
+        if (isGwt && isSwing && isAndroid && isIos)
         {
             isClient = true;
         }
-        if ( isClient && isServer)
+        if (isClient && isServer)
         {
             return true;
         }
@@ -172,13 +162,18 @@ public enum InjectionContext
 
     public boolean isSupported(InjectionContext... context)
     {
-        switch ( this)
+        switch (this)
         {
-            case  server: return isInjectableOnServer(context);
-            case  swing: return isInjectableOnSwing(context);
-            case  android: return isInjectableOnAndroid(context);
-            case  ios: return isInjectableOnAndroid(context);
-            case  gwt: return isInjectableOnGwt(context);
+            case server:
+                return isInjectableOnServer(context);
+            case swing:
+                return isInjectableOnSwing(context);
+            case android:
+                return isInjectableOnAndroid(context);
+            case ios:
+                return isInjectableOnAndroid(context);
+            case gwt:
+                return isInjectableOnGwt(context);
         }
         return false;
     }
