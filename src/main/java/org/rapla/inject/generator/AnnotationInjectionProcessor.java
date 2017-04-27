@@ -75,7 +75,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 {
 
 
-    public final static JavaFileManager.Location META_INF_LOCATION = StandardLocation.CLASS_OUTPUT;
+    public final static JavaFileManager.Location META_INF_LOCATION = StandardLocation.SOURCE_OUTPUT;
     private SerializerCreator serializerCreator;
     private ResultDeserializerCreator deserializerCreator;
     public final static String MODULE_NAME_OPTION = "moduleName";

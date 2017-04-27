@@ -114,7 +114,7 @@ public class SourceWriter
         if (resource != null)
         {
             generate = true;
-            if (!resource.delete())
+            //if (!resource.delete())
             {
 //                byte[] bytesFromInputStream = null;
 //                try (InputStream in = resource.openInputStream())
