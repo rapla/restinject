@@ -127,13 +127,8 @@ public class SynchronisedPromiseTest
         final AtomicReference<Throwable> result = new AtomicReference<Throwable>();
         final CompletableFuture<String> completableFuture = future.whenComplete((string, ex) ->
         {
-            //result.set(ex.getCause());
-        }).exceptionally(ex ->
-                {
-                    ex.printStackTrace();
-                    return "asd";
-                }
-        );
+            result.set(ex.getCause());
+        });
         TestCase.assertEquals(expectedException, result.get());
         try
         {
@@ -150,26 +145,33 @@ public class SynchronisedPromiseTest
     public void testCompleteExceptionaly() throws Throwable
     {
         final AtomicReference<Throwable> result = new AtomicReference<Throwable>();
-        final Exception expectedException = new RuntimeException("Bla");
+        final AtomicReference<Throwable> result2 = new AtomicReference<Throwable>();
+        final Exception expectedException = new Exception("Bla");
         final Promise<String> innerPromise = utilConcurrentCommandScheduler.supply(() ->
         {
             Thread.sleep(500);
-            if (true)
+            boolean fail = true;
+            if (fail)
             {
                 throw expectedException;
             }
             return "";
+            
         });
         final Promise<String> promise = innerPromise.whenComplete((string, ex) ->
         {
             result.set(ex);
-        });
+        }).whenComplete((string,ex)->
+        {
+			result2.set(ex);
+		});
         try
         {
             waitFor(promise, 1000000);
         } catch (Exception ex)
         {
             TestCase.assertEquals(expectedException, result.get());
+            TestCase.assertEquals(expectedException, result2.get());
             TestCase.assertEquals(expectedException, ex);
         }
 
