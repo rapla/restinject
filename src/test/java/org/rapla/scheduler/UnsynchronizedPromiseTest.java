@@ -37,31 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
         TestCase.assertEquals(text, acceptedText2.get());
     }
 
-    @Test public void testAccept1CompletableFuture() throws Exception
-    {
-        String text = "Hello World";
-        final UtilConcurrentCommandScheduler utilConcurrentCommandScheduler = new UtilConcurrentCommandScheduler(new ConsoleLogger());
-        Promise<String> promise = utilConcurrentCommandScheduler.supply(() -> {
-            Thread.sleep(500);
-            return text;
-        });
-        Semaphore semaphore = new Semaphore(0);
-        AtomicReference<String> acceptedText = new AtomicReference<String>();
-        promise.thenAccept((t) -> {
-            acceptedText.set(t);
-            semaphore.release();
-        });
 
-        AtomicReference<String> acceptedText2 = new AtomicReference<String>();
-        promise.thenAccept((t) -> {
-            acceptedText2.set(t);
-            semaphore.release();
-        });
-        TestCase.assertTrue(semaphore.tryAcquire(1000, TimeUnit.MILLISECONDS));
-        TestCase.assertTrue(semaphore.tryAcquire(1000, TimeUnit.MILLISECONDS));
-        TestCase.assertEquals(text, acceptedText.get());
-        TestCase.assertEquals(text, acceptedText2.get());
-    }
 
     @Test public void testAccept2() throws Exception
     {
@@ -73,6 +49,48 @@ import java.util.concurrent.atomic.AtomicReference;
             acceptedText.set(t);
         });
         TestCase.assertEquals(text, acceptedText.get());
+    }
+
+    @Test public void testComplete() throws Exception
+    {
+        String text = "Hello World";
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
+        AtomicReference<String> acceptedText = new AtomicReference<String>();
+        promise.whenComplete((string,ex) -> {
+            acceptedText.set( string);
+        });
+        promise.complete(text);
+        TestCase.assertEquals(text, acceptedText.get());
+    }
+
+    @Test public void testCompleteExceptionaly() throws Exception
+    {
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
+        AtomicReference<Throwable> result = new AtomicReference<Throwable>();
+        Exception expectedException = new RuntimeException("Bla");
+        promise.whenComplete((string,ex) -> {
+            result.set( ex);
+        });
+        promise.abort(expectedException);
+        TestCase.assertEquals(expectedException, result.get());
+    }
+
+    @Test
+    public void testCompleteExceptionaly2() throws Exception
+    {
+        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
+        AtomicReference<Throwable> result = new AtomicReference<Throwable>();
+        Exception expectedException = new RuntimeException("Bla");
+        promise.whenComplete((string,ex) -> {
+            throw expectedException;
+        }).exceptionally((ex)->
+        {
+            result.set( ex);
+            return null;
+        }
+        );
+        promise.complete("Test");
+        TestCase.assertEquals(expectedException, result.get());
     }
 
     @Test public void testApply1() throws Exception
