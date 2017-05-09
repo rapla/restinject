@@ -190,7 +190,7 @@ public class UnsynchronizedPromise<T> implements Promise<T>
 
     @Override public <U> Promise<U> applyToEither(Promise<? extends T> other, Function<? super T, U> fn)
     {
-        final UnsynchronizedPromise<U> resultPromise = new UnsynchronizedPromise<>();
+        final UnsynchronizedCompletablePromise<U> resultPromise = new UnsynchronizedCompletablePromise<>();
         final BooleanContainer resultIsPending = new BooleanContainer();
         other.thenAccept((r) -> {
             final U apply = fn.apply(r);
@@ -203,7 +203,7 @@ public class UnsynchronizedPromise<T> implements Promise<T>
             final boolean pending = resultIsPending.getAndSet(false);
             if (pending)
             {
-                resultPromise.abort(ex);
+                resultPromise.completeExceptionally(ex);
             }
             return null;
         });
@@ -218,7 +218,7 @@ public class UnsynchronizedPromise<T> implements Promise<T>
             final boolean pending = resultIsPending.getAndSet(false);
             if (pending)
             {
-                resultPromise.abort(ex);
+                resultPromise.completeExceptionally(ex);
             }
             return null;
         });
@@ -260,17 +260,17 @@ public class UnsynchronizedPromise<T> implements Promise<T>
 
     @Override public <U> Promise<U> thenCompose(Function<? super T, ? extends Promise<U>> fn)
     {
-        final UnsynchronizedPromise<U> resultPromise = new UnsynchronizedPromise<>();
+        final UnsynchronizedCompletablePromise<U> resultPromise = new UnsynchronizedCompletablePromise<>();
         this.thenAccept((r) -> {
             final Promise<U> apply = fn.apply(r);
             apply.thenAccept((r2) -> {
                 resultPromise.complete(r2);
             }).exceptionally((ex) -> {
-                resultPromise.abort(ex);
+                resultPromise.completeExceptionally(ex);
                 return null;
             });
         }).exceptionally((ex) -> {
-            resultPromise.abort(ex);
+            resultPromise.completeExceptionally(ex);
             return null;
         });
         return resultPromise;
@@ -281,7 +281,7 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         return new UnsynchronizedPromise<T>(fn, this);
     }
 
-    private void changeState(Object result, Object result2, Throwable ex)
+    protected void changeState(Object result, Object result2, Throwable ex)
     {
         if (state != State.pending)
         {
@@ -328,14 +328,5 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         fireComplete(this.result, exception);
     }
 
-    public void complete(T result)
-    {
-        changeState(result, null, null);
-    }
-
-    public void abort(Throwable ex)
-    {
-        changeState(null, null, ex);
-    }
 
 }

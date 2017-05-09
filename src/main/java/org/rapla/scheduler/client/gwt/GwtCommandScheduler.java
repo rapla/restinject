@@ -1,13 +1,17 @@
 package org.rapla.scheduler.client.gwt;
 
+import org.rapla.function.Consumer;
 import org.rapla.logger.Logger;
 import org.rapla.rest.client.gwt.internal.impl.AsyncCallback;
 import org.rapla.rest.client.gwt.internal.impl.GwtClientServerConnector;
 import org.rapla.scheduler.Cancelable;
 import org.rapla.function.Command;
 import org.rapla.scheduler.CommandScheduler;
+import org.rapla.scheduler.CompletablePromise;
 import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.UnsynchronizedCompletablePromise;
 import org.rapla.scheduler.UnsynchronizedPromise;
+import org.rapla.scheduler.sync.SynchronizedCompletablePromise;
 
 public  class GwtCommandScheduler implements CommandScheduler
 {
@@ -76,7 +80,7 @@ public  class GwtCommandScheduler implements CommandScheduler
     @Override
     public <T> Promise<T> supply(final Callable<T> supplier)
     {
-        final UnsynchronizedPromise<T> promise = new UnsynchronizedPromise<T>();
+        final UnsynchronizedCompletablePromise<T> promise = new UnsynchronizedCompletablePromise<T>();
         scheduleDeferred(() ->
         {
             try
@@ -86,7 +90,7 @@ public  class GwtCommandScheduler implements CommandScheduler
             }
             catch (Throwable ex)
             {
-                promise.abort(ex);
+                promise.completeExceptionally(ex);
             }
         });
         return promise;
@@ -95,7 +99,7 @@ public  class GwtCommandScheduler implements CommandScheduler
     @Override
     public Promise<Void> run(final Command supplier)
     {
-        final UnsynchronizedPromise<Void> promise = new UnsynchronizedPromise<Void>();
+        final UnsynchronizedCompletablePromise<Void> promise = new UnsynchronizedCompletablePromise<Void>();
         scheduleDeferred(() ->
         {
             try
@@ -105,7 +109,7 @@ public  class GwtCommandScheduler implements CommandScheduler
             }
             catch (Throwable ex)
             {
-                promise.abort(ex);
+                promise.completeExceptionally(ex);
             }
         });
         return promise;
@@ -114,7 +118,7 @@ public  class GwtCommandScheduler implements CommandScheduler
     @Override
     public <T> Promise<T> supplyProxy(final Callable<T> supplier)
     {
-        final UnsynchronizedPromise<T> promise = new UnsynchronizedPromise<T>();
+        final UnsynchronizedCompletablePromise<T> promise = new UnsynchronizedCompletablePromise<T>();
         // We call the proxy directly so we don't mess with the callbacks
         scheduleDeferred(() ->
         {
@@ -123,7 +127,7 @@ public  class GwtCommandScheduler implements CommandScheduler
                 @Override
                 public void onFailure(Throwable caught)
                 {
-                    promise.abort(caught);
+                    promise.completeExceptionally(caught);
                 }
 
                 @Override
@@ -138,11 +142,12 @@ public  class GwtCommandScheduler implements CommandScheduler
             }
             catch (Exception ex)
             {
-                promise.abort(ex);
+                promise.completeExceptionally(ex);
             }
         });
         return promise;
     }
+
 
     private void scheduleDeferred(SchedulerImpl.ScheduledCommand cmd)
     {
@@ -156,14 +161,26 @@ public  class GwtCommandScheduler implements CommandScheduler
         return schedule(command, delay, -1);
     }
 
-    @Override public Cancelable scheduleSynchronized(Object synchronizationObject, Command task, long delay)
+    @Override public Cancelable scheduleSynchronized(Object synchronizationObject, Runnable task, long delay)
     {
-        return schedule(task,delay);
+        return schedule(()->task.run(),delay);
     }
 
     protected void warn(String message, Exception e)
     {
         logger.warn( message, e);
+    }
+
+    @Override
+    public <T> CompletablePromise<T> createCompletable()
+    {
+        return new UnsynchronizedCompletablePromise<>();
+    }
+
+    @Override
+    public <T> Promise<T> synchronizeTo(Promise<T> promise)
+    {
+        return promise;
     }
 
 }

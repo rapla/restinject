@@ -180,7 +180,7 @@ public class SynchronisedPromiseTest
     @Test
     public void testCompleteExceptionaly2() throws Exception
     {
-        UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
+        UnsynchronizedCompletablePromise<String> promise = new UnsynchronizedCompletablePromise<String>();
         AtomicReference<Throwable> result = new AtomicReference<Throwable>();
         Exception expectedException = new RuntimeException("Bla");
         promise.whenComplete((string, ex) ->

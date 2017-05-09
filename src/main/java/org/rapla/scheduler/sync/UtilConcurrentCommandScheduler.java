@@ -4,7 +4,9 @@ import org.rapla.logger.Logger;
 import org.rapla.scheduler.Cancelable;
 import org.rapla.function.Command;
 import org.rapla.scheduler.CommandScheduler;
+import org.rapla.scheduler.CompletablePromise;
 import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.UnsynchronizedCompletablePromise;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -16,18 +18,20 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-public class UtilConcurrentCommandScheduler implements CommandScheduler
+public class UtilConcurrentCommandScheduler implements CommandScheduler, Executor
 {
-    private final ScheduledExecutorService executor;
+    private final ScheduledExecutorService scheduledExecutor;
     private final Executor promiseExecuter;
     private final Logger logger;
 
+    private ConcurrentHashMap<Object, CancableTask> futureTasks = new ConcurrentHashMap<Object, CancableTask>();
+
     public UtilConcurrentCommandScheduler(Logger logger)
     {
-        this(logger,6);
+        this(logger, 6);
     }
 
-    public UtilConcurrentCommandScheduler(Logger logger,int poolSize)
+    public UtilConcurrentCommandScheduler(Logger logger, int poolSize)
     {
         this.logger = logger;
         final ScheduledExecutorService executor = Executors.newScheduledThreadPool(poolSize, new ThreadFactory()
@@ -46,13 +50,13 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler
                 return thread;
             }
         });
-        this.executor = executor;
+        this.scheduledExecutor = executor;
         this.promiseExecuter = executor;
     }
 
     public void execute(Runnable task)
     {
-        schedule(task, 0);
+        scheduledExecutor.execute(task);
     }
 
     @Override
@@ -88,7 +92,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler
 
     protected Cancelable schedule(Runnable task, long delay)
     {
-        if (executor.isShutdown())
+        if (scheduledExecutor.isShutdown())
         {
             Exception ex = new Exception("Can't schedule command because executer is already shutdown " + task.toString());
             error(ex.getMessage(), ex);
@@ -96,7 +100,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler
         }
 
         TimeUnit unit = TimeUnit.MILLISECONDS;
-        ScheduledFuture<?> schedule = executor.schedule(task, delay, unit);
+        ScheduledFuture<?> schedule = scheduledExecutor.schedule(task, delay, unit);
         return createCancable(schedule);
     }
 
@@ -114,37 +118,36 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler
         };
     }
 
-
     protected void error(String message, Exception ex)
     {
-        logger.error( message,ex);
+        logger.error(message, ex);
     }
 
     protected void debug(String message)
     {
-        logger.debug( message);
+        logger.debug(message);
     }
 
     protected void info(String message)
     {
-        logger.info( message);
+        logger.info(message);
     }
 
     protected void warn(String message)
     {
-        logger.warn( message);
+        logger.warn(message);
     }
 
     private Cancelable schedule(Runnable task, long delay, long period)
     {
-        if (executor.isShutdown())
+        if (scheduledExecutor.isShutdown())
         {
             Exception ex = new Exception("Can't schedule command because executer is already shutdown " + task.toString());
             error(ex.getMessage(), ex);
             return createCancable(null);
         }
         TimeUnit unit = TimeUnit.MILLISECONDS;
-        ScheduledFuture<?> schedule = executor.scheduleWithFixedDelay(task, delay, period, unit);
+        ScheduledFuture<?> schedule = scheduledExecutor.scheduleWithFixedDelay(task, delay, period, unit);
         return createCancable(schedule);
     }
 
@@ -155,36 +158,37 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler
         return schedule(task, delay, period);
     }
 
+
     @Override
-    public Cancelable scheduleSynchronized(final Object synchronizationObject, Command command, final long delay)
+    public  Cancelable scheduleSynchronized(Object synchronizationObject, Runnable task, long delay)
     {
-        Runnable task = createTask( command );
-        CancableTask wrapper = new CancableTask(task,delay)
+        CancableTask wrapper = new CancableTask(task, delay)
         {
             @Override
             protected void replaceWithNext(CancableTask next)
             {
-                futureTasks.replace( synchronizationObject , this, next);
+                futureTasks.replace(synchronizationObject, this, next);
             }
+
             @Override
             protected void endOfQueueReached()
             {
                 synchronized (synchronizationObject)
                 {
-                    futureTasks.remove( synchronizationObject);
+                    futureTasks.remove(synchronizationObject);
                 }
             }
         };
         synchronized (synchronizationObject)
         {
-            CancableTask existing = futureTasks.putIfAbsent( synchronizationObject, wrapper);
+            CancableTask existing = futureTasks.putIfAbsent(synchronizationObject, wrapper);
             if (existing == null)
             {
                 wrapper.scheduleThis();
             }
             else
             {
-                existing.pushToEndOfQueue( wrapper );
+                existing.pushToEndOfQueue(wrapper);
             }
             return wrapper;
         }
@@ -269,7 +273,6 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler
         abstract protected void endOfQueueReached();
     }
 
-    ConcurrentHashMap<Object, CancableTask> futureTasks = new ConcurrentHashMap<Object, CancableTask>();
 
     /*
     public Cancelable scheduleSynchronized(final Object synchronizationObject, Runnable task, final long delay)
@@ -311,7 +314,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler
         try
         {
             info("Stopping scheduler thread.");
-            List<Runnable> shutdownNow = executor.shutdownNow();
+            List<Runnable> shutdownNow = scheduledExecutor.shutdownNow();
             for (Runnable task : shutdownNow)
             {
                 long delay = -1;
@@ -325,7 +328,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler
                     warn("Interrupted active task " + task);
                 }
             }
-            executor.awaitTermination(3, TimeUnit.SECONDS);
+            scheduledExecutor.awaitTermination(2, TimeUnit.SECONDS);
             info("Stopped scheduler thread.");
         }
         catch (Throwable ex)
@@ -388,7 +391,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler
                 try
                 {
                     command.execute();
-                    future.complete( Promise.VOID);
+                    future.complete(Promise.VOID);
                 }
                 catch (Exception ex)
                 {
@@ -410,6 +413,41 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler
     public Promise<Void> run(Command command)
     {
         return run(command, promiseExecuter);
+    }
+
+    @Override
+    public <T> CompletablePromise<T> createCompletable()
+    {
+        CompletableFuture<T> future = new CompletableFuture<>();
+        SynchronizedCompletablePromise<T> promise = new SynchronizedCompletablePromise<T>(promiseExecuter, future);
+        return promise;
+    }
+
+    public <T> Promise<T> synchronizeTo(Promise<T> promise)
+    {
+        return synchronizeTo(promise,promiseExecuter);
+    }
+
+    /** the promise complete and exceptional methods will be called with the passed executer Consumer&lt;Runnable&gt; is the same as java.util.concurrent.Executor interface
+     * You can use this to synchronize to SwingEventQueues*/
+    public <T> Promise<T> synchronizeTo(Promise<T> promise, Executor executor)
+    {
+        final CompletablePromise<T> completablePromise = new UnsynchronizedCompletablePromise<>();
+        promise.whenComplete((t, ex) ->
+        {
+            executor.execute(() ->
+            {
+                if (ex != null)
+                {
+                    completablePromise.completeExceptionally(ex);
+                }
+                else
+                {
+                    completablePromise.complete(t);
+                }
+            });
+        });
+        return completablePromise;
     }
 
 }
