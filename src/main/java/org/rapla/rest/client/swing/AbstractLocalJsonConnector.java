@@ -20,8 +20,9 @@ public abstract class AbstractLocalJsonConnector implements JsonRemoteConnector
         return parseCallResult(rawResult);
     }
 
-    protected CallResult parseCallResult(String rawResult)
+    static CallResult parseCallResult(String rawResult)
     {
+
         /*
 HTTP/1.1 200 OK
 Date: Mon, 23 May 2005 22:38:34 GMT
@@ -52,6 +53,8 @@ Connection: close
         String line;
         try
         {
+            long chunkSize = 0;
+            long currentChunk=0;
             while ((line = br.readLine()) != null)
             {
                 if(header)
@@ -67,11 +70,45 @@ Connection: close
                 }
                 else
                 {
-                    if (!firstBodyLine || !isChunked)
+                    if (firstBodyLine )
+                    {
+                        if ( isChunked)
+                        {
+                            chunkSize = Long.decode("0X"+line);
+                            currentChunk = 0;
+                        }
+                        else
+                        {
+                            body += line + "\n";
+                        }
+                        firstBodyLine = false;
+                    }
+                    else if ( !isChunked)
                     {
                         body += line + "\n";
                     }
-                    firstBodyLine = false;
+                    else
+                    {
+                        if ( currentChunk >=chunkSize)
+                        {
+                            chunkSize = Long.decode("0X"+line);
+                            currentChunk = 0;
+                            if ( chunkSize == 0)
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            if ( currentChunk > 0)
+                            {
+                                currentChunk+=2;
+                                body +="\n";
+                            }
+                            body += line;
+                            currentChunk += line.length();
+                        }
+                    }
                 }
                 if(responseCode == null)
                 {
@@ -83,11 +120,11 @@ Connection: close
                     header = false;
                 }
             }
-            if ( isChunked)
-            {
-                final int length = ("0\r\n\r\n").length();
-                body = body.substring(0, body.length() - length + 1);
-            }
+//            if ( isChunked)
+//            {
+//                final int length = ("0\r\n\r\n").length();
+//                body = body.substring(0, body.length() - length + 1);
+//            }
         }
         catch (IOException e)
         {
