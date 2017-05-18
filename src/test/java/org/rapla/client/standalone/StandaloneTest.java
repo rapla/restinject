@@ -7,7 +7,6 @@ import org.eclipse.jetty.webapp.WebAppContext;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.rapla.client.AbstractProxyTest;
@@ -19,7 +18,6 @@ import org.rapla.common.ExampleSimpleService_JavaJsonProxy;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.swing.HTTPConnector;
 import org.rapla.rest.client.swing.JavaClientServerConnector;
-import org.rapla.rest.client.swing.JsonRemoteConnector;
 import org.rapla.server.TestServlet;
 
 import java.io.File;

@@ -13,4 +13,22 @@ public class ResolvedPromise<T> extends UnsynchronizedPromise<T>
     {
         super(ex);
     }
+
+    public T getResult()
+    {
+        return result;
+    }
+
+    public Throwable getException()
+    {
+        return exception;
+    }
+
+    public boolean isCompleted()
+    {
+        return result != null;
+    }
+
+
+
 }

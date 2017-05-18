@@ -22,7 +22,7 @@ public class JsonStringWriter implements MessageBodyWriter<String>
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType)
     {
-        return mediaType.equals(MediaType.APPLICATION_JSON_TYPE);
+        return MediaType.APPLICATION_JSON_TYPE.isCompatible(mediaType);
     }
 
     @Override

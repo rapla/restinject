@@ -24,7 +24,7 @@ public interface ExampleSimpleService
     @Path("addDay") Date addDay(@QueryParam("date") Date date) throws Exception;
 
     @GET
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces({"application/json;charset=UTF-8"})
     @Path("sayHello")
     String sayHello(@QueryParam("param") String param);
 

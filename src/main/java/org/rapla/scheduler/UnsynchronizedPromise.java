@@ -18,13 +18,13 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         rejected
     }
 
-    private Object result;
+    protected T result;
     private Promise other;
-    private Throwable exception;
+    protected Throwable exception;
     private List<UnsynchronizedPromise> listeners;
     private State state = State.pending;
-    private BiFunction<Object, Object, Object> fn;
-    private Function<Throwable, ? extends Object> exFn;
+    private BiFunction< T,Object, T> fn;
+    private Function<Throwable, ? extends T> exFn;
 
     public UnsynchronizedPromise()
     {
@@ -58,13 +58,13 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         });
     }
 
-    private UnsynchronizedPromise(Function<Throwable, ? extends Object> exFn, UnsynchronizedPromise parent)
+    private UnsynchronizedPromise(Function<Throwable, ? extends T> exFn, UnsynchronizedPromise parent)
     {
         this.exFn = exFn;
         parent.initState(this, null);
     }
 
-    private UnsynchronizedPromise(UnsynchronizedPromise parent, Function<Object, Object> fn)
+    private UnsynchronizedPromise(UnsynchronizedPromise parent, Function<Object, T> fn)
     {
         this(parent, (a1, a2) -> fn.apply(a1), null);
     }
@@ -85,14 +85,14 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         }, other);
     }
 
-    private UnsynchronizedPromise(UnsynchronizedPromise parent, BiFunction<Object, Object, Object> fn, Promise other)
+    private UnsynchronizedPromise(UnsynchronizedPromise parent, BiFunction<T, Object, T> fn, Promise other)
     {
         this.fn = fn;
         this.other = other;
         parent.initState(this, other);
     }
 
-    private void completed(final Object result, Throwable ex)
+    private void completed(final T result, Throwable ex)
     {
         if (other != null && ex == null)
         {
@@ -108,7 +108,7 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         }
     }
 
-    private void fireComplete(Object result, Throwable ex)
+    private void fireComplete(T result, Throwable ex)
     {
         if (listeners != null)
         {
@@ -281,7 +281,7 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         return new UnsynchronizedPromise<T>(fn, this);
     }
 
-    protected void changeState(Object result, Object result2, Throwable ex)
+    protected void changeState(T result, Object result2, Throwable ex)
     {
         if (state != State.pending)
         {

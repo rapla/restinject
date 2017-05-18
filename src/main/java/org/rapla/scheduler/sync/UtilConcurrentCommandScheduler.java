@@ -11,18 +11,21 @@ import org.rapla.scheduler.UnsynchronizedCompletablePromise;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class UtilConcurrentCommandScheduler implements CommandScheduler, Executor
 {
     private final ScheduledExecutorService scheduledExecutor;
     private final Executor promiseExecuter;
-    private final Logger logger;
+    protected final Logger logger;
 
     private ConcurrentHashMap<Object, CancableTask> futureTasks = new ConcurrentHashMap<Object, CancableTask>();
 
@@ -273,41 +276,80 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
         abstract protected void endOfQueueReached();
     }
 
-
-    /*
-    public Cancelable scheduleSynchronized(final Object synchronizationObject, Runnable task, final long delay)
+    public <T> T waitFor(Promise<T> promise, int timeout) throws Exception
     {
-        CancableTask wrapper = new CancableTask(task,delay)
+        long index = System.currentTimeMillis();
+        final CompletableFuture<T> future = new CompletableFuture<>();
+        promise.whenComplete((t, ex) ->
         {
-            @Override
-            protected void replaceWithNext(CancableTask next)
+            if ( logger.isDebugEnabled())
             {
-                futureTasks.replace( synchronizationObject , this, next);
+                logger.debug("promise complete " + index);
             }
-            @Override
-            protected void endOfQueueReached()
+            if (ex != null)
             {
-                synchronized (synchronizationObject)
-                {
-                    futureTasks.remove( synchronizationObject);
-                }
-            }
-        };
-        synchronized (synchronizationObject)
-        {
-            CancableTask existing = futureTasks.putIfAbsent( synchronizationObject, wrapper);
-            if (existing == null)
-            {
-                wrapper.scheduleThis();
+                future.completeExceptionally(ex);
             }
             else
             {
-                existing.pushToEndOfQueue( wrapper );
+                future.complete(t);
             }
-            return wrapper;
+            if ( logger.isDebugEnabled())
+            {
+                logger.debug("Release lock  " + index);
+            }
+        });
+        try
+        {
+            if ( logger.isDebugEnabled())
+            {
+                logger.debug("Aquire lock " + index);
+            }
+            T t = future.get(timeout, TimeUnit.MILLISECONDS);
+            if ( logger.isDebugEnabled())
+            {
+                logger.debug("SwingUtilities waitFor " + index);
+            }
+            return t;
+
+        }
+        catch (ExecutionException ex)
+        {
+            final Throwable cause = ex.getCause();
+            if ( cause instanceof Exception)
+            {
+                throw (Exception)cause;
+            }
+            if ( cause instanceof Error)
+            {
+                throw (Error)cause;
+            }
+            throw ex;
         }
     }
-    */
+
+    /*
+    public  <T> T waitFor(Promise<T> promise, int timeout) throws Throwable
+    {
+        Semaphore semaphore = new Semaphore(0);
+        AtomicReference<T> atomicReference = new AtomicReference<>();
+        AtomicReference<Throwable> atomicReferenceE = new AtomicReference<>();
+        promise.whenComplete((t, ex) -> {
+            atomicReferenceE.set(ex);
+            atomicReference.set(t);
+            semaphore.release();
+        });
+        semaphore.tryAcquire(timeout, TimeUnit.MILLISECONDS);
+        final Throwable throwable = atomicReferenceE.get();
+        if (throwable != null)
+        {
+            throw throwable;
+        }
+        final T t = atomicReference.get();
+        return t;
+    }
+*/
+
 
     public void cancel()
     {

@@ -36,7 +36,7 @@ public abstract class AbstractProxyTest
     protected abstract ExampleService createExampleServiceProxy();
 
     protected abstract ExampleSimpleService createExampleSimpleServiceProxy();
-
+/**/
     @Test public void test() throws Exception
     {
         ExampleService test = createExampleServiceProxy();

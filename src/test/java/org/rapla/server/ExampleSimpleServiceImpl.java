@@ -11,6 +11,7 @@ import javax.ws.rs.core.Context;
 import org.rapla.common.ExampleSimpleService;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
+import org.rapla.logger.Logger;
 
 @DefaultImplementation(context = InjectionContext.server, of = ExampleSimpleService.class)
 public class ExampleSimpleServiceImpl implements ExampleSimpleService
@@ -18,6 +19,8 @@ public class ExampleSimpleServiceImpl implements ExampleSimpleService
 
     @Inject
     RemoteSession session;
+    @Inject
+    Logger logger;
 
     RemoteSession session2;
     private final HttpServletRequest request;
@@ -37,6 +40,7 @@ public class ExampleSimpleServiceImpl implements ExampleSimpleService
     @Override
     public String sayHello(String param)
     {
+        logger.info("Say hello to " + param);
         return param + session.toString(request);
     }
 

@@ -9,6 +9,7 @@ import org.rapla.function.Command;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.CompletablePromise;
 import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.ResolvedPromise;
 import org.rapla.scheduler.UnsynchronizedCompletablePromise;
 import org.rapla.scheduler.UnsynchronizedPromise;
 import org.rapla.scheduler.sync.SynchronizedCompletablePromise;
@@ -175,6 +176,32 @@ public  class GwtCommandScheduler implements CommandScheduler
     public <T> CompletablePromise<T> createCompletable()
     {
         return new UnsynchronizedCompletablePromise<>();
+    }
+
+    @Override
+    public <T> T waitFor(Promise<T> promise, int timeout) throws Exception
+    {
+        if ( promise instanceof ResolvedPromise)
+        {
+            final ResolvedPromise<T> resolvedPromise = (ResolvedPromise<T>) promise;
+            if (resolvedPromise.isCompleted())
+            {
+                return resolvedPromise.getResult();
+            }
+            else
+            {
+                final Throwable exception = resolvedPromise.getException();
+                if ( exception instanceof Exception)
+                {
+                    throw (Exception)exception;
+                }
+                else
+                {
+                    throw new IllegalStateException(exception);
+                }
+            }
+        }
+        throw new UnsupportedOperationException("waitFor in gwt not supported for " + promise.getClass());
     }
 
     @Override
