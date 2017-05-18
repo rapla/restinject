@@ -73,7 +73,7 @@ public class SwingScheduler extends UtilConcurrentCommandScheduler
             }
             else
             {
-                logger.error("Possible Deadloch prevented, because a waitFor call is not completed yet. May cause gui update problems." );
+                logger.error("Possible deadlock prevented. A waitFor call is not completed yet. This may cause gui update problems." );
                 schedule(runnable, 0);
             }
         });
