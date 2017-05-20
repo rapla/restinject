@@ -14,57 +14,57 @@ abstract class AbstractJavaUtilLogger implements org.rapla.logger.Logger
         this.id = id;
     }
 
-    public boolean isTraceEnabled()
+    public Boolean isTraceEnabled()
     {
         return logger.isLoggable(Level.FINEST);
     }
 
-    public boolean isDebugEnabled()
+    public Boolean isDebugEnabled()
     {
         return logger.isLoggable(Level.CONFIG);
     }
 
-    public void trace(String message)
+    public Void trace(String message)
     {
-        log(Level.FINEST, message);
+        return log(Level.FINEST, message);
     }
 
-    public void debug(String message)
+    public Void debug(String message)
     {
-        log(Level.CONFIG, message);
+        return log(Level.CONFIG, message);
     }
 
-    public void info(String message)
+    public Void info(String message)
     {
-        log(Level.INFO, message);
+        return log(Level.INFO, message);
     }
 
-    public void warn(String message)
+    public Void warn(String message)
     {
-        log(Level.WARNING, message);
+        return log(Level.WARNING, message);
     }
 
-    public void warn(String message, Throwable cause)
+    public Void warn(String message, Throwable cause)
     {
-        log(Level.WARNING, message, cause);
+        return log(Level.WARNING, message, cause);
     }
 
-    public void error(String message)
+    public Void error(String message)
     {
-        log(Level.SEVERE, message);
+        return log(Level.SEVERE, message);
     }
 
-    public void error(String message, Throwable cause)
+    public Void error(String message, Throwable cause)
     {
-        log(Level.SEVERE, message, cause);
+        return log(Level.SEVERE, message, cause);
     }
 
-    private void log(Level level, String message)
+    private Void log(Level level, String message)
     {
-        log(level, message, null);
+        return log(level, message, null);
     }
 
-    abstract protected void log(Level level, String message, Throwable cause);
+    abstract protected Void log(Level level, String message, Throwable cause);
 
 
     public org.rapla.logger.Logger getChildLogger(String childLoggerName)

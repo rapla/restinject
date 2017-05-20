@@ -14,47 +14,49 @@ public abstract class AbstractLogger implements Logger{
         this.logLevel = logLevel;
     }
 
-    public void error(String message, Throwable cause) {
-        log( LEVEL_ERROR,message, cause);
+    public Void error(String message, Throwable cause) {
+        return log( LEVEL_ERROR,message, cause);
     }
 
-    private void log(int logLevel, String message) {
-        log( logLevel, message, null);
+    private Void log(int logLevel, String message) {
+        return log( logLevel, message, null);
     }
 
-    private void log(int logLevel, String message, Throwable cause)
+    private Void log(int logLevel, String message, Throwable cause)
     {
+        Void result = null;
         if ( logLevel < this.logLevel)
         {
-            return;
+            return result;
         }
         write( logLevel, message, cause);
+        return result;
     }
 
     protected abstract void write(int logLevel, String message, Throwable cause);
 
-    public void trace(String message) {
-        log( LEVEL_TRACE,message);
+    public Void trace(String message) {
+        return log( LEVEL_TRACE,message);
     }
 
-    public void debug(String message) {
-        log( LEVEL_DEBUG,message);  
+    public Void debug(String message) {
+        return log( LEVEL_DEBUG,message);
     }
     
-    public void info(String message) {
-        log( LEVEL_INFO,message);         
+    public Void info(String message) {
+        return log( LEVEL_INFO,message);
     }
 
-    public void warn(String message) {
-        log( LEVEL_WARN,message); 
+    public Void warn(String message) {
+        return log( LEVEL_WARN,message);
     }
     
-    public void warn(String message, Throwable cause) {
-        log( LEVEL_WARN,message, cause); 
+    public Void warn(String message, Throwable cause) {
+        return log( LEVEL_WARN,message, cause);
     }
 
-    public void error(String message) {
-        log( LEVEL_ERROR,message); 
+    public Void error(String message) {
+        return log( LEVEL_ERROR,message);
     }
 
 
@@ -67,11 +69,11 @@ public abstract class AbstractLogger implements Logger{
     }
 
    
-    public boolean isDebugEnabled() {
+    public Boolean isDebugEnabled() {
         return logLevel<= LEVEL_DEBUG;
     }
 
-    public boolean isTraceEnabled() {
+    public Boolean isTraceEnabled() {
         return logLevel<= LEVEL_TRACE;
     }
 

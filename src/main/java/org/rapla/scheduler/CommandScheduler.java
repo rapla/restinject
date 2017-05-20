@@ -13,10 +13,9 @@ public interface CommandScheduler
     <T> Promise<T> supply(Callable<T> supplier);
     <T> Promise<T> supplyProxy(Callable<T> supplier);
 
-    <T> Promise<T> synchronizeTo(Promise<T> promise);
     <T> CompletablePromise<T> createCompletable();
-
-    <T> T waitFor(Promise<T> promise, int timeout) throws Exception;
+    //<T> Promise<T> synchronizeTo(Promise<T> promise);
+    //    <T> T waitFor(Promise<T> promise, int timeout) throws Exception;
 
     @FunctionalInterface
     interface Callable<T> {

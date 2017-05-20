@@ -25,7 +25,7 @@ public class SwingScheduler extends UtilConcurrentCommandScheduler
         super(logger);
     }
 
-    @Override
+    /*
     public <T> Promise<T> synchronizeTo(Promise<T> promise)
     {
         long index = System.currentTimeMillis();
@@ -79,27 +79,7 @@ public class SwingScheduler extends UtilConcurrentCommandScheduler
         });
         return completablePromise;
     }
-
-    @Override
-    public <T> T waitFor(Promise<T> promise, int timeout) throws Exception
-    {
-        boolean eventDispatchThread = javax.swing.SwingUtilities.isEventDispatchThread();
-        if (eventDispatchThread)
-        {
-            waitingInCommandThread.set( true);
-        }
-        try
-        {
-            return super.waitFor(promise, timeout);
-        }
-        finally
-        {
-            if (eventDispatchThread)
-            {
-                waitingInCommandThread.set(false);
-            }
-        }
-    }
+    */
 
     @Override
     public Cancelable scheduleSynchronized(Object synchronizationObject, Runnable task, long delay)

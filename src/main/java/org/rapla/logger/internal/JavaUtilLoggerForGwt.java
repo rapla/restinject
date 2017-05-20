@@ -34,9 +34,10 @@ public class JavaUtilLoggerForGwt extends AbstractJavaUtilLogger
     }
 
 
-    @Override protected void log(Level level, String message, Throwable cause)
+    @Override protected Void log(Level level, String message, Throwable cause)
     {
         logger.log(level,message, cause);
+        return null;
     }
 
 

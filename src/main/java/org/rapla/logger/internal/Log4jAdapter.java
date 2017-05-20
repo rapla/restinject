@@ -29,8 +29,6 @@ public class Log4jAdapter implements Provider<Logger> {
         return new Wrapper(loggerForCategory, categoryName);
     }
 
-
-
     public Logger get() {
         return getLoggerForCategory( "rapla");
     }
@@ -46,31 +44,31 @@ public class Log4jAdapter implements Provider<Logger> {
             this.id = id;
         }
 
-        public boolean isDebugEnabled() {
+        public Boolean isDebugEnabled() {
             return logger.isDebugEnabled();
         }
 
-        public boolean isTraceEnabled() {
+        public Boolean isTraceEnabled() {
             return logger.isTraceEnabled();
         }
 
-        public void trace(String message) {
-            log(Level.TRACE, message);
+        public Void trace(String message) {
+            return log(Level.TRACE, message);
         }
 
-        public void debug(String message) {
-            log(Level.DEBUG, message);
+        public Void debug(String message) {
+            return log(Level.DEBUG, message);
         }
 
-		public void info(String message) {
-            log(Level.INFO, message);
+		public Void info(String message) {
+            return log(Level.INFO, message);
         }
 
-        private void log(Level infoInt, String message) {
-        	log( infoInt, message, null);
+        private Void log(Level infoInt, String message) {
+        	return log( infoInt, message, null);
 		}
 
-		private void log( Level level, String message,Throwable t) {
+		private Void log( Level level, String message,Throwable t) {
 			String fqcn = Wrapper.class.getName();
             if ( logger instanceof ExtendedLogger)
             {
@@ -80,23 +78,24 @@ public class Log4jAdapter implements Provider<Logger> {
             {
                 logger.log(level, message, t);
             }
+            return null;
 		}
         
 
-        public void warn(String message) {
-            log(Level.WARN, message);
+        public Void warn(String message) {
+            return log(Level.WARN, message);
         }
 
-        public void warn(String message, Throwable cause) {
-        	log( Level.WARN, message, cause);
+        public Void warn(String message, Throwable cause) {
+        	return log( Level.WARN, message, cause);
         }
 
-        public void error(String message) {
-        	log( Level.ERROR, message);
+        public Void error(String message) {
+        	return log( Level.ERROR, message);
         }
 
-        public void error(String message, Throwable cause) {
-        	log( Level.ERROR, message, cause);
+        public Void error(String message, Throwable cause) {
+        	return log( Level.ERROR, message, cause);
         }
 
         public Logger getChildLogger(String childLoggerName)

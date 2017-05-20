@@ -21,29 +21,29 @@ import javax.inject.Provider;
 
 @SuppressWarnings("restriction")
 
-public class Slf4jAdapter implements Provider<Logger> {
+public class Slf4jAdapter implements Provider<Logger>
+{
     static final public int TRACE_INT = 00;
     static final public int DEBUG_INT = 10;
     static final public int INFO_INT = 20;
     static final public int WARN_INT = 30;
     static final public int ERROR_INT = 40;
     static ILoggerFactory iLoggerFactory;
-    
-    static public Logger getLoggerForCategory(String categoryName) {
-        
+
+    static public Logger getLoggerForCategory(String categoryName)
+    {
         if (iLoggerFactory == null)
         {
             iLoggerFactory = createFactory();
         }
-
-        LocationAwareLogger loggerForCategory = (LocationAwareLogger)iLoggerFactory.getLogger(categoryName);
+        LocationAwareLogger loggerForCategory = (LocationAwareLogger) iLoggerFactory.getLogger(categoryName);
         return new Wrapper(loggerForCategory, categoryName);
     }
 
     private static ILoggerFactory createFactory()
     {
         iLoggerFactory = LoggerFactory.getILoggerFactory();
-        if ( iLoggerFactory.getClass().getName().equalsIgnoreCase("org.slf4j.impl.SimpleLoggerFactory"))
+        if (iLoggerFactory.getClass().getName().equalsIgnoreCase("org.slf4j.impl.SimpleLoggerFactory"))
         {
             try
             {
@@ -57,74 +57,86 @@ public class Slf4jAdapter implements Provider<Logger> {
         return iLoggerFactory;
     }
 
-    public Logger get() {
-        return getLoggerForCategory( "rapla");
+    public Logger get()
+    {
+        return getLoggerForCategory("rapla");
     }
-    
+
     static class Wrapper implements Logger
     {
         LocationAwareLogger logger;
         String id;
 
-        public Wrapper( LocationAwareLogger loggerForCategory, String id) {
+        public Wrapper(LocationAwareLogger loggerForCategory, String id)
+        {
             this.logger = loggerForCategory;
             this.id = id;
         }
 
-        public boolean isDebugEnabled() {
+        public Boolean isDebugEnabled()
+        {
             return logger.isDebugEnabled();
         }
 
-        public boolean isTraceEnabled() {
+        public Boolean isTraceEnabled()
+        {
             return logger.isTraceEnabled();
         }
 
-        public void trace(String message) {
-            log(TRACE_INT, message);
+        public Void trace(String message)
+        {
+            return log(TRACE_INT, message);
         }
 
-        public void debug(String message) {
-            log(DEBUG_INT, message);
+        public Void debug(String message)
+        {
+            return log(DEBUG_INT, message);
         }
 
-		public void info(String message) {
-            log(INFO_INT, message);
+        public Void info(String message)
+        {
+            return log(INFO_INT, message);
         }
 
-        private void log(int infoInt, String message) {
-        	log( infoInt, message, null);
-		}
-
-		private void log( int level, String message,Throwable t) {
-			Object[] argArray = null;
-			String fqcn = Wrapper.class.getName();
-			logger.log(null, fqcn, level,message,argArray, t);
-		}
-        
-
-        public void warn(String message) {
-            log( WARN_INT, message);
+        private Void log(int infoInt, String message)
+        {
+            return log(infoInt, message, null);
         }
 
-        public void warn(String message, Throwable cause) {
-        	log( WARN_INT, message, cause);
+        private Void log(int level, String message, Throwable t)
+        {
+            Object[] argArray = null;
+            String fqcn = Wrapper.class.getName();
+            logger.log(null, fqcn, level, message, argArray, t);
+            return null;
         }
 
-        public void error(String message) {
-        	log( ERROR_INT, message);
+        public Void warn(String message)
+        {
+            return log(WARN_INT, message);
         }
 
-        public void error(String message, Throwable cause) {
-        	log( ERROR_INT, message, cause);
+        public Void warn(String message, Throwable cause)
+        {
+            return log(WARN_INT, message, cause);
+        }
+
+        public Void error(String message)
+        {
+            return log(ERROR_INT, message);
+        }
+
+        public Void error(String message, Throwable cause)
+        {
+            return log(ERROR_INT, message, cause);
         }
 
         public Logger getChildLogger(String childLoggerName)
         {
             String childId = id + "." + childLoggerName;
-            return getLoggerForCategory( childId);
+            return getLoggerForCategory(childId);
         }
-        
-    }
 
+    }
 
 }

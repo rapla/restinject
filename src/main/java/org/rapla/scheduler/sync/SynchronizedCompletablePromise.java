@@ -3,7 +3,6 @@ package org.rapla.scheduler.sync;
 import org.rapla.scheduler.CompletablePromise;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 
 public class SynchronizedCompletablePromise<T> extends  SynchronizedPromise<T> implements CompletablePromise<T>
@@ -26,4 +25,5 @@ public class SynchronizedCompletablePromise<T> extends  SynchronizedPromise<T> i
     {
         f.completeExceptionally( ex);
     }
+
 }

@@ -276,57 +276,6 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
         abstract protected void endOfQueueReached();
     }
 
-    public <T> T waitFor(Promise<T> promise, int timeout) throws Exception
-    {
-        long index = System.currentTimeMillis();
-        final CompletableFuture<T> future = new CompletableFuture<>();
-        promise.whenComplete((t, ex) ->
-        {
-            if ( logger.isDebugEnabled())
-            {
-                logger.debug("promise complete " + index);
-            }
-            if (ex != null)
-            {
-                future.completeExceptionally(ex);
-            }
-            else
-            {
-                future.complete(t);
-            }
-            if ( logger.isDebugEnabled())
-            {
-                logger.debug("Release lock  " + index);
-            }
-        });
-        try
-        {
-            if ( logger.isDebugEnabled())
-            {
-                logger.debug("Aquire lock " + index);
-            }
-            T t = future.get(timeout, TimeUnit.MILLISECONDS);
-            if ( logger.isDebugEnabled())
-            {
-                logger.debug("SwingUtilities waitFor " + index);
-            }
-            return t;
-
-        }
-        catch (ExecutionException ex)
-        {
-            final Throwable cause = ex.getCause();
-            if ( cause instanceof Exception)
-            {
-                throw (Exception)cause;
-            }
-            if ( cause instanceof Error)
-            {
-                throw (Error)cause;
-            }
-            throw ex;
-        }
-    }
 
     /*
     public  <T> T waitFor(Promise<T> promise, int timeout) throws Throwable
@@ -465,13 +414,16 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
         return promise;
     }
 
+    /*
     public <T> Promise<T> synchronizeTo(Promise<T> promise)
     {
         return synchronizeTo(promise,promiseExecuter);
     }
+    /*
 
     /** the promise complete and exceptional methods will be called with the passed executer Consumer&lt;Runnable&gt; is the same as java.util.concurrent.Executor interface
      * You can use this to synchronize to SwingEventQueues*/
+    /*
     public <T> Promise<T> synchronizeTo(Promise<T> promise, Executor executor)
     {
         final CompletablePromise<T> completablePromise = new UnsynchronizedCompletablePromise<>();
@@ -491,5 +443,6 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
         });
         return completablePromise;
     }
+    */
 
 }

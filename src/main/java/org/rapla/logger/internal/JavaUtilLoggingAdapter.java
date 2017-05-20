@@ -64,8 +64,9 @@ public class JavaUtilLoggingAdapter implements Provider<org.rapla.logger.Logger>
         }
 
         @Override
-        protected void log(Level level, String message, Throwable cause) {
+        protected Void log(Level level, String message, Throwable cause) {
             JavaUtilLoggingAdapter.log_(logger,level,message,cause);
+            return null;
         }
 
         @Override protected org.rapla.logger.Logger createChildLogger(String childId)
