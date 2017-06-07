@@ -24,7 +24,7 @@ public class UnsynchronizedPromise<T> implements Promise<T>
     private List<UnsynchronizedPromise> listeners;
     private State state = State.pending;
     private BiFunction< T,Object, T> fn;
-    private Function<Throwable, ? extends T> exFn;
+    private Function<Throwable, ? extends T> exceptionFn;
 
     public UnsynchronizedPromise()
     {
@@ -58,9 +58,9 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         });
     }
 
-    private UnsynchronizedPromise(Function<Throwable, ? extends T> exFn, UnsynchronizedPromise parent)
+    private UnsynchronizedPromise(Function<Throwable, ? extends T> exceptionFn, UnsynchronizedPromise parent)
     {
-        this.exFn = exFn;
+        this.exceptionFn = exceptionFn;
         parent.initState(this, null);
     }
 
@@ -92,7 +92,7 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         parent.initState(this, other);
     }
 
-    private void completed(final T result, Throwable ex)
+    protected void completed(final T result, Throwable ex)
     {
         if (other != null && ex == null)
         {
@@ -285,7 +285,7 @@ public class UnsynchronizedPromise<T> implements Promise<T>
     {
         if (state != State.pending)
         {
-            throw new RuntimeException("Promise already " + state.name());
+            throw new IllegalStateException("Promise already completed: " + state.name());
         }
         if (ex != null)
         {
@@ -311,11 +311,11 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         }
         if (exception != null)
         {
-            if (exFn != null)
+            if (exceptionFn != null)
             {
                 try
                 {
-                    this.result = exFn.apply(ex);
+                    this.result = exceptionFn.apply(ex);
                     exception = null;
                 }
                 catch (Throwable ex2)
@@ -328,5 +328,9 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         fireComplete(this.result, exception);
     }
 
-
+    @Override
+    public Observable<T> toObservable()
+    {
+        return new ObservableFromPromise<>(this);
+    }
 }

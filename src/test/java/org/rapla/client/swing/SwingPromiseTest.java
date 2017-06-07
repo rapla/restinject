@@ -36,6 +36,7 @@ import junit.framework.TestCase;
     @After @Override public void tearDown() throws Exception
     {
         super.tearDown();
+        ((UtilConcurrentCommandScheduler)scheduler).cancel();
         server.stop();
     }
 
@@ -58,7 +59,7 @@ import junit.framework.TestCase;
 
     protected CustomConnector createConnector()
     {
-        return new MyCustomConnector();
+        return new MyCustomConnector(logger,scheduler);
     }
 
     protected CommandScheduler createScheduler()

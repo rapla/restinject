@@ -8,6 +8,7 @@ import com.google.gson.InstanceCreator;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
@@ -19,7 +20,11 @@ import com.google.gson.internal.Excluder;
 import com.google.gson.internal.bind.MapTypeAdapterFactory;
 import com.google.gson.internal.bind.ReflectiveTypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
+import org.rapla.logger.NullLogger;
 import org.rapla.rest.client.internal.isodate.ISODateTimeFormat;
+import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.ResolvedPromise;
+import org.rapla.scheduler.sync.SynchronizedCompletablePromise;
 
 import javax.inject.Provider;
 import java.lang.reflect.Type;
@@ -38,11 +43,13 @@ public class JsonParserWrapper
         final GsonBuilder gb = new GsonBuilder();
         gb.registerTypeAdapter(Set.class, new InstanceCreator<Set<Object>>()
         {
-            @Override public Set<Object> createInstance(final Type arg0)
+            @Override
+            public Set<Object> createInstance(final Type arg0)
             {
                 return new LinkedHashSet<Object>();
             }
         });
+        gb.registerTypeHierarchyAdapter(Promise.class, new PromiseAdapter());
         Map<Type, InstanceCreator<?>> instanceCreators = new LinkedHashMap<Type, InstanceCreator<?>>();
         instanceCreators.put(Map.class, new InstanceCreator<Map>()
         {
@@ -62,10 +69,10 @@ public class JsonParserWrapper
         FieldNamingStrategy fieldNamingPolicy = FieldNamingPolicy.IDENTITY;
         Excluder excluder = Excluder.DEFAULT;
         final ReflectiveTypeAdapterFactory reflectiveTypeAdapterFactory = new ReflectiveTypeAdapterFactory(constructorConstructor, fieldNamingPolicy, excluder);
+
         gb.registerTypeAdapterFactory(new MapTypeAdapterFactory(constructorConstructor, false));
         gb.registerTypeAdapterFactory(new MyAdaptorFactory(reflectiveTypeAdapterFactory));
         gb.registerTypeAdapter(Date.class, new GmtDateTypeAdapter());
-
         GsonBuilder configured = gb.disableHtmlEscaping();
         return configured;
     }
@@ -75,23 +82,56 @@ public class JsonParserWrapper
         return new Provider<JsonParser>()
         {
             GsonBuilder builder = defaultGsonBuilder();
-            @Override public JsonParser get()
+
+            @Override
+            public JsonParser get()
             {
                 return new JsonParser()
                 {
                     Gson gson = builder.create();
-                    @Override public String toJson(Object object)
+
+                    @Override
+                    public String toJson(Object object)
                     {
                         return gson.toJson(object);
                     }
 
-                    @Override public Object fromJson(String json, Class clazz)
+                    @Override
+                    public Object fromJson(String json, Class clazz)
                     {
                         return gson.fromJson(json, clazz);
                     }
                 };
             }
         };
+    }
+
+    public static class PromiseAdapter implements JsonSerializer<Promise>
+    {
+        NullLogger logger = new NullLogger();
+
+        @Override
+        public JsonElement serialize(Promise promise, Type type, JsonSerializationContext jsonSerializationContext)
+        {
+            final Object result;
+            try
+            {
+                result = SynchronizedCompletablePromise.waitFor(promise, -1, logger);
+            }
+            catch (Throwable ex)
+            {
+                throw new WrappedJsonSerializeException(ex);
+            }
+            return jsonSerializationContext.serialize(result);
+        }
+    }
+
+    public static class WrappedJsonSerializeException extends JsonParseException
+    {
+        public WrappedJsonSerializeException(Throwable ex)
+        {
+            super(ex.getMessage(), ex);
+        }
     }
 
     public static class GmtDateTypeAdapter implements JsonSerializer<Date>, JsonDeserializer<Date>
@@ -101,13 +141,15 @@ public class JsonParserWrapper
         {
         }
 
-        @Override public synchronized JsonElement serialize(Date date, Type type, JsonSerializationContext jsonSerializationContext)
+        @Override
+        public synchronized JsonElement serialize(Date date, Type type, JsonSerializationContext jsonSerializationContext)
         {
             String timestamp = ISODateTimeFormat.INSTANCE.formatTimestamp(date);
             return new JsonPrimitive(timestamp);
         }
 
-        @Override public synchronized Date deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext)
+        @Override
+        public synchronized Date deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext)
         {
             String asString = jsonElement.getAsString();
             try

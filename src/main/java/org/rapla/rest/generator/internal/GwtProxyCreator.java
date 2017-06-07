@@ -18,7 +18,7 @@ public class GwtProxyCreator extends AbstractClientProxyCreator implements Seria
 
     public GwtProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, SerializerCreator serializerCreator, ResultDeserializerCreator deserializerCreator, String generatorName)
     {
-        super(remoteService, processingEnvironment, serializerCreator, deserializerCreator, generatorName, InjectionContext.gwt);
+        super(remoteService, processingEnvironment, serializerCreator, deserializerCreator, generatorName, InjectionContext.gwt, "GwtClientServerConnector");
     }
 
     @Override protected String encode(String encodedParam)
@@ -63,18 +63,6 @@ public class GwtProxyCreator extends AbstractClientProxyCreator implements Seria
         {
             w.println(targetName + ".append(innerParamSb.toString());");
         }
-    }
-
-    @Override
-    protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType)
-    {
-        w.print("Object result = GwtClientServerConnector.doInvoke(");
-        w.print("\"" + methodType + "\"");
-        w.print(", methodUrl , additionalHeaders,postBody.toString(),");
-        w.print(resultDeserialzerField);
-        w.print(", \"" + resultType.toString() + "\"");
-        w.print(", connector);");
-        w.println(" ");
     }
 
     protected String[] writeSerializers(SourceWriter w, List<? extends VariableElement> params, TypeMirror resultType)

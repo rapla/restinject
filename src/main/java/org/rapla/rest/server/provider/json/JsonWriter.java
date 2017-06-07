@@ -43,7 +43,14 @@ public class JsonWriter<T> implements MessageBodyWriter<T>
         }
         else
         {
-            json = jsonParser.toJson(t);
+            try
+            {
+                json = jsonParser.toJson(t);
+            }
+            catch ( JsonParserWrapper.WrappedJsonSerializeException ex)
+            {
+                throw new WebApplicationException(ex);
+            }
         }
         entityStream.write(json.getBytes("UTF-8"));
     }

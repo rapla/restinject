@@ -3,6 +3,8 @@ package org.rapla.server;
 import org.rapla.common.ExampleService;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
+import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.ResolvedPromise;
 
 import javax.inject.Inject;
 import javax.ws.rs.Produces;
@@ -36,6 +38,13 @@ public class ExampleServiceImpl implements ExampleService
     {
         List<Result> list = sayHello3(param);
         return list;
+    }
+
+    @Override
+    public Promise<Collection<Result>> sayHelloAsync(Parameter param)
+    {
+        final Collection<Result> results = sayHello(param);
+        return new ResolvedPromise<>(results);
     }
 
     @Override
@@ -80,7 +89,7 @@ public class ExampleServiceImpl implements ExampleService
     }
 
     @Override
-    public Map<String, Set<String>> complex(Map<String,String> param)
+    public Promise<Map<String, Set<String>>> complex(Map<String,String> param)
     {
 
         Map<String, Set<String>> list = new LinkedHashMap<>();
@@ -88,7 +97,7 @@ public class ExampleServiceImpl implements ExampleService
         set.add("Hello");
         set.add(param.get("greeting"));
         list.put("greeting", set);
-        return list;
+        return new ResolvedPromise<>(list);
     }
 
     @Override public List<Result> sayHello6()

@@ -1,6 +1,7 @@
 package org.rapla.scheduler;
 
 import org.rapla.function.Command;
+import org.rapla.rest.client.AsyncCallback;
 
 public interface CommandScheduler
 {
@@ -11,8 +12,6 @@ public interface CommandScheduler
 
     Promise<Void> run(Command supplier);
     <T> Promise<T> supply(Callable<T> supplier);
-    <T> Promise<T> supplyProxy(Callable<T> supplier);
-
     <T> CompletablePromise<T> createCompletable();
     //<T> Promise<T> synchronizeTo(Promise<T> promise);
     //    <T> T waitFor(Promise<T> promise, int timeout) throws Exception;

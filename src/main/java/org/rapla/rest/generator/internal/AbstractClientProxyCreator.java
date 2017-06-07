@@ -4,6 +4,8 @@ import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
 import org.rapla.inject.generator.internal.SourceWriter;
 import org.rapla.rest.client.CustomConnector;
+import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.ResolvedPromise;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -45,11 +47,11 @@ public abstract class AbstractClientProxyCreator
     protected int instanceField;
     private final InjectionContext context;
 
-    public static final String AbstractJsonProxy= "org.rapla.rest.client.AbstractJsonProxy";
-
+    public static final String AbstractJsonProxy = "org.rapla.rest.client.AbstractJsonProxy";
+    private String connectorName;
 
     protected AbstractClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, SerializerCreator serializerCreator,
-            ResultDeserializerCreator deserializerCreator, String generatorName, InjectionContext context)
+            ResultDeserializerCreator deserializerCreator, String generatorName, InjectionContext context, String connectorName)
     {
         this.context = context;
         this.serializerCreator = serializerCreator;
@@ -57,20 +59,18 @@ public abstract class AbstractClientProxyCreator
         this.processingEnvironment = processingEnvironment;
         this.generatorName = generatorName;
         svcInf = remoteService;
+        this.connectorName = connectorName;
     }
 
     abstract protected String encode(String encodingParam);
-
-    abstract protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType);
-
-    //abstract protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType);
 
     protected void writeParam(SourceWriter w, String targetName, TypeMirror paramType, String pName, String serializerField, String annotationKey)
     {
         if (annotationKey != null && isSetOrListOrArray(paramType))
         {
-            final TypeMirror typeMirror = isArray(paramType) ? ((ArrayType) paramType).getComponentType()
-                    : ((DeclaredType) paramType).getTypeArguments().get(0);
+            final TypeMirror typeMirror = isArray(paramType) ?
+                    ((ArrayType) paramType).getComponentType() :
+                    ((DeclaredType) paramType).getTypeArguments().get(0);
             w.println("if (" + pName + " != null) {");
             w.indent();
             w.println("for(" + typeMirror.toString() + " innerParam : " + pName + ") {");
@@ -113,8 +113,8 @@ public abstract class AbstractClientProxyCreator
 
     private void serializeArg(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType, boolean encode, boolean forceJson)
     {
-        if (((SerializerCreator.isJsonPrimitive(paramType) || SerializerCreator.isBoxedPrimitive(paramType)))
-                && !(forceJson && SerializerCreator.isJsonString(paramType)))
+        if (((SerializerCreator.isJsonPrimitive(paramType) || SerializerCreator.isBoxedPrimitive(paramType))) && !(forceJson && SerializerCreator
+                .isJsonString(paramType)))
         {
             if (SerializerCreator.isJsonString(paramType) && encode)
             {
@@ -202,6 +202,11 @@ public abstract class AbstractClientProxyCreator
                 }
 
                 final TreeLogger branch = logger;//.branch(TreeLogger.DEBUG, m.getName() + ", result " + resultType.getQualifiedSourceName());
+                final boolean isPromise = isPromise(returnType);
+                if (isPromise)
+                {
+                    returnType = getPromiseTypeArgument(m, returnType);
+                }
                 serializerCreator.checkCanSerialize(branch, returnType);
                 if (SerializerCreator.isArray(returnType))
                 {
@@ -215,7 +220,7 @@ public abstract class AbstractClientProxyCreator
                 }
                 // (Boxed)Primitives are left, they are handled specially
             }
-            catch (IOException|UnableToCompleteException ex)
+            catch (IOException | UnableToCompleteException ex)
             {
                 throw new UnableToCompleteException("Can't generate method " + interfaceName + "." + m.getSimpleName().toString() + " cause " + ex.getMessage(),
                         ex);
@@ -245,13 +250,14 @@ public abstract class AbstractClientProxyCreator
         return modifiers.contains(Modifier.FINAL) || modifiers.contains(Modifier.PRIVATE) || methodClass.equals("java.lang.Object");
     }
 
-    protected SourceWriter getSourceWriter(String interfaceName) 
+    protected SourceWriter getSourceWriter(String interfaceName)
     {
         final String pkgName = processingEnvironment.getElementUtils().getPackageOf(svcInf).getQualifiedName().toString();
         final String className = svcInf.getSimpleName().toString() + getProxySuffix();
         SourceWriter pw = new SourceWriter(pkgName, className, processingEnvironment);
         pw.println("package " + pkgName + ";");
         pw.println("import " + Map.class.getCanonicalName() + ";");
+        pw.println("import " + ResolvedPromise.class.getCanonicalName() + ";");
         pw.println("import " + HashMap.class.getCanonicalName() + ";");
         pw.println("import " + CustomConnector.class.getCanonicalName() + ";");
         pw.println("import " + DefaultImplementation.class.getCanonicalName() + ";");
@@ -259,8 +265,9 @@ public abstract class AbstractClientProxyCreator
         writeImports(pw);
         pw.println();
         pw.println(getGeneratorString(interfaceName));
-        pw.println("@" + DefaultImplementation.class.getSimpleName() + "(of = " + interfaceName + ".class, context=" + InjectionContext.class.getSimpleName()
-                + "." + context + ")");
+        pw.println(
+                "@" + DefaultImplementation.class.getSimpleName() + "(of = " + interfaceName + ".class, context=" + InjectionContext.class.getSimpleName() + "."
+                        + context + ")");
         pw.println("public class " + className + " extends " + AbstractJsonProxy + " implements " + interfaceName);
         pw.println("{");
         pw.indent();
@@ -326,19 +333,36 @@ public abstract class AbstractClientProxyCreator
         return isList || isSet;
     }
 
+    protected boolean isPromise(TypeMirror paramType)
+    {
+        final Types typeUtils = processingEnvironment.getTypeUtils();
+        final DeclaredType PromiseType = getDeclaredType(Promise.class);
+        final boolean isPromise = typeUtils.isAssignable(paramType, PromiseType);
+        return isPromise;
+    }
+
     protected void generateProxyMethod(@SuppressWarnings("unused") final TreeLogger logger, final ExecutableElement method, final SourceWriter w)
             throws UnableToCompleteException
     {
         w.println();
         final List<? extends VariableElement> params = method.getParameters();
-        final TypeMirror callback = method.getReturnType();
-        TypeMirror resultType = callback;
+
+        final TypeMirror returnType = method.getReturnType();
+        TypeMirror resultType;
+        final boolean isPromise = isPromise(returnType);
+        if (isPromise)
+        {
+            resultType = getPromiseTypeArgument(method, returnType);
+        }
+        else
+        {
+            resultType = returnType;
+        }
         final String[] serializerFields = writeSerializers(w, params, resultType);
         String resultField = serializerFields[serializerFields.length - 1];
         resultField = resultField != null ? resultField : "";
 
         w.print("public ");
-
         w.print(method.getReturnType().toString());
         w.print(" ");
         final String methodName = method.getSimpleName().toString();
@@ -381,8 +405,10 @@ public abstract class AbstractClientProxyCreator
         }
         w.println(") " + exceptions.toString() + " {");
         w.indent();
-        final String cast = resultType.toString();
+        final String cast = returnType.toString();
+
         final boolean hasReturn = !cast.toLowerCase().equals("void");
+
         w.println("try{");
         w.indent();
         w.println("java.lang.String subPath = \"" + (method.getAnnotation(Path.class) != null ? method.getAnnotation(Path.class).value() : "") + "\";");
@@ -505,12 +531,22 @@ public abstract class AbstractClientProxyCreator
             throw new UnableToCompleteException("No accessor annotation on pubic method " + className + "." + methodName);
         }
         w.println("String methodUrl = getMethodUrl( subPath);");
-        writeCall(w, resultType, resultField, methodType);
+        w.print("Object result = ");
+        w.print(connectorName);
+        w.print(".doInvoke(");
+        w.print("\"" + methodType + "\"");
+        w.print(", methodUrl , additionalHeaders,postBody.toString(),");
+        w.print(resultField);
+        w.print(", \"" + resultType.toString() + "\"");
+        w.print(", connector");
+        w.print(", " + (isPromise ? true : false));
+        w.print(");");
+        w.println(" ");
+
         if (hasReturn)
         {
             w.println("return (" + cast + ") result;");
         }
-
         w.outdent();
         w.println("} catch (Exception ex) {");
         w.indent();
@@ -527,9 +563,35 @@ public abstract class AbstractClientProxyCreator
         w.println("throw new RuntimeException(ex);");
         w.outdent();
         w.println("}");
+
         w.outdent();
         w.println("}");
 
+    }
+
+    private TypeMirror getPromiseTypeArgument(ExecutableElement method, TypeMirror returnType) throws UnableToCompleteException
+    {
+        TypeMirror resultType;
+        boolean isGeneric = SerializerCreator.isParameterized(returnType);
+        if (isGeneric)
+        {
+            final List<? extends TypeMirror> typeArguments = ((DeclaredType) returnType).getTypeArguments();
+            if (typeArguments.size() != 1)
+            {
+                throw new UnableToCompleteException(
+                        "Can't generate Proxy in  " + method.toString() + ". Promise needs one type argument. Use typed promises like Promise<String>");
+            }
+            else
+            {
+                resultType = typeArguments.get(0);
+            }
+        }
+        else
+        {
+            throw new UnableToCompleteException("Can't generate Proxy in  " + method.toString()
+                    + ". Promise is untyped or has more then one type argument. Use typed promises like Promise<String>");
+        }
+        return resultType;
     }
 
     protected DeclaredType getDeclaredType(Class<?> clazz)

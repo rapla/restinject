@@ -81,11 +81,6 @@ public class GwtProxyTest extends GWTTestCase
         genericTest.test3();
     }
 
-    public void test4() throws Exception
-    {
-        genericTest.test4();
-    }
-
     public void testException() throws Exception
     {
         genericTest.testException();

@@ -1,5 +1,8 @@
 package org.rapla.scheduler.sync;
 
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import org.rapla.function.BiConsumer;
+import org.rapla.function.BiFunction;
 import org.rapla.logger.Logger;
 import org.rapla.scheduler.Cancelable;
 import org.rapla.function.Command;
@@ -395,12 +398,6 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
     }
 
     @Override
-    public <T> Promise<T> supplyProxy(Callable<T> supplier)
-    {
-        return supply(supplier, promiseExecuter);
-    }
-
-    @Override
     public Promise<Void> run(Command command)
     {
         return run(command, promiseExecuter);
@@ -409,8 +406,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
     @Override
     public <T> CompletablePromise<T> createCompletable()
     {
-        CompletableFuture<T> future = new CompletableFuture<>();
-        SynchronizedCompletablePromise<T> promise = new SynchronizedCompletablePromise<T>(promiseExecuter, future);
+        SynchronizedCompletablePromise<T> promise = new SynchronizedCompletablePromise<T>(promiseExecuter);
         return promise;
     }
 

@@ -5,7 +5,8 @@ import org.rapla.function.BiFunction;
 import org.rapla.function.Command;
 import org.rapla.function.Consumer;
 import org.rapla.function.Function;
-import org.rapla.scheduler.CompletablePromise;
+import org.rapla.scheduler.Observable;
+import org.rapla.scheduler.ObservableFromPromise;
 import org.rapla.scheduler.Promise;
 
 import java.util.concurrent.CompletableFuture;
@@ -212,14 +213,7 @@ class SynchronizedPromise<T> implements Promise<T>
         {
             try
             {
-                if (t instanceof PromiseRuntimeException)
-                {
-                    return fn.apply(t.getCause());
-                }
-                if (t instanceof CompletionException)
-                {
-                    return fn.apply(t.getCause());
-                }
+                t = getCause(t);
                 return fn.apply(t);
             }
             catch (Exception e)
@@ -230,6 +224,15 @@ class SynchronizedPromise<T> implements Promise<T>
         return w(f.exceptionally(fun));
     }
 
+    private Throwable getCause(Throwable t)
+    {
+        while (t instanceof CompletionException || t instanceof SynchronizedPromise.PromiseRuntimeException)
+        {
+            t = t.getCause();
+        }
+        return t;
+    }
+
     @Override
     public Promise<T> whenComplete(final BiConsumer<? super T, ? super Throwable> fn)
     {
@@ -237,18 +240,8 @@ class SynchronizedPromise<T> implements Promise<T>
         {
             try
             {
-                if (u instanceof PromiseRuntimeException)
-                {
-                    fn.accept(t, u.getCause());
-                }
-                else if (u instanceof CompletionException)
-                {
-                    fn.accept(t, u.getCause());
-                }
-                else
-                {
-                    fn.accept(t, u);
-                }
+                u = getCause(u);
+                fn.accept(t, u);
             }
             catch (Exception e)
             {
@@ -265,18 +258,8 @@ class SynchronizedPromise<T> implements Promise<T>
         {
             try
             {
-                if (u instanceof PromiseRuntimeException)
-                {
-                    return fn.apply(t, u.getCause());
-                }
-                else if (u instanceof CompletionException)
-                {
-                    return fn.apply(t, u.getCause());
-                }
-                else
-                {
-                    return fn.apply(t, u);
-                }
+                u = getCause( u);
+                return fn.apply(t, u);
             }
             catch (Exception e)
             {
@@ -300,6 +283,11 @@ class SynchronizedPromise<T> implements Promise<T>
         {
             return super.getCause();
         }
+    }
 
+    @Override
+    public Observable<T> toObservable()
+    {
+        return new ObservableFromPromise<>(this);
     }
 }

@@ -1,9 +1,12 @@
 package org.rapla.client;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.rapla.common.ExampleService;
+import org.rapla.logger.ConsoleLogger;
+import org.rapla.logger.Logger;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.Promise;
@@ -20,6 +23,7 @@ public abstract class AbstractPromiseTest
 
     protected CustomConnector connector;
     protected CommandScheduler scheduler;
+    protected Logger logger;
     private Map<String, String> paramMap = new LinkedHashMap<>();
 
     @Before public void setUp() throws Exception
@@ -27,6 +31,7 @@ public abstract class AbstractPromiseTest
         paramMap.put("greeting", "World");
         scheduler = createScheduler();
         connector = createConnector();
+        logger = new ConsoleLogger();
     }
 
     protected abstract CommandScheduler createScheduler();
@@ -125,10 +130,8 @@ public abstract class AbstractPromiseTest
     @Test public void testApplyAccept() throws Exception
     {
         ExampleService test = createAnnotationProcessingProxy();
-        final Promise<Map<String, Set<String>>> supply = scheduler.supply(() -> test.complex(paramMap));
-        supply.thenApply((map) -> {
-            return map.keySet();
-        }).thenAccept((s) -> {
+        final Promise<Map<String, Set<String>>> supply = test.complex(paramMap);
+        supply.thenApply((map) -> map.keySet()).thenAccept((s) -> {
             System.out.println("got keys: " + s);
             finishTest();
         });
@@ -163,7 +166,7 @@ public abstract class AbstractPromiseTest
     {
         ExampleService test = createAnnotationProcessingProxy();
         final RefContainer<Map<String, Set<String>>> result = new RefContainer<Map<String, Set<String>>>(null);
-        final Promise<Map<String, Set<String>>> supply = scheduler.supply(() -> test.complex(paramMap));
+        final Promise<Map<String, Set<String>>> supply = test.complex(paramMap);
         supply.thenApply((map) -> {
             // assume setting in data model
             result.set(map);
@@ -181,9 +184,8 @@ public abstract class AbstractPromiseTest
     @Test public void testCombine() throws Exception
     {
         ExampleService test = createAnnotationProcessingProxy();
-        RefContainer<Map<String, Set<String>>> result = new RefContainer<Map<String, Set<String>>>(null);
-        final Promise<Map<String, Set<String>>> promise1 = scheduler.supplyProxy(() -> test.complex(paramMap));
-        final Promise<Map<String, Set<String>>> promise2 = scheduler.supplyProxy(() -> test.complex(paramMap));
+        final Promise<Map<String, Set<String>>> promise1 = test.complex(paramMap);
+        final Promise<Map<String, Set<String>>> promise2 = test.complex(paramMap);
         promise1.thenCombine(promise2, (map1, map2) -> {
             final Set<String> keySet1 = map1.keySet();
             final Set<String> keySet2 = map2.keySet();
@@ -198,13 +200,13 @@ public abstract class AbstractPromiseTest
     @Test public void testCompose() throws Exception
     {
         ExampleService test = createAnnotationProcessingProxy();
-        final Promise<Map<String, Set<String>>> promise = scheduler.supplyProxy(() -> test.complex(paramMap));
+        final Promise<Map<String, Set<String>>> promise = test.complex(paramMap);
         final RefContainer<Map> result1 = new RefContainer<Map>();
         promise.thenCompose((map) -> {
             ExampleService.Parameter param = new ExampleService.Parameter();
             param.setActionIds(Arrays.asList(new Integer[] { map.keySet().size(), map.values().size() }));
             result1.set(map);
-            return scheduler.supplyProxy(() -> test.sayHello(param)).thenAccept((list) -> {
+            return scheduler.supply(() -> test.sayHello(param)).thenAccept((list) -> {
                 final ExampleService.Result resultParam = list.iterator().next();
                 final Collection<String> ids = resultParam.getIds();
                 final Map internalMap = result1.get();
@@ -220,8 +222,10 @@ public abstract class AbstractPromiseTest
     @Test public void testExceptionally() throws Exception
     {
         ExampleService test = createAnnotationProcessingProxy();
-        final Promise<Collection<ExampleService.Result>> promise = scheduler.supplyProxy(() -> test.sayHello(null));
+        final Promise<Map<String, Set<String>>> promise = test.complex(null);
         promise.exceptionally((ex) -> {
+            assertEq(NullPointerException.class,ex.getClass());
+            logger.error("Client Nullpointer expected", ex);
             finishTest();
             return null;
         });
@@ -231,8 +235,8 @@ public abstract class AbstractPromiseTest
     @Test public void testApplyToEither() throws Exception
     {
         ExampleService test = createAnnotationProcessingProxy();
-        final Promise<String> promise = scheduler.supplyProxy(() -> test.longcall());
-        final Promise<String> promise2 = scheduler.supplyProxy(() -> test.shortcall());
+        final Promise<String> promise = scheduler.supply(() -> test.longcall());
+        final Promise<String> promise2 = scheduler.supply(() -> test.shortcall());
         promise.applyToEither(promise2, (first) -> {
             assertEq("short",  first);
             finishTest();

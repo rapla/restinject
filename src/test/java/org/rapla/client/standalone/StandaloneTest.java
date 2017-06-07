@@ -18,6 +18,7 @@ import org.rapla.common.ExampleSimpleService_JavaJsonProxy;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.swing.HTTPConnector;
 import org.rapla.rest.client.swing.JavaClientServerConnector;
+import org.rapla.scheduler.sync.UtilConcurrentCommandScheduler;
 import org.rapla.server.TestServlet;
 
 import java.io.File;
@@ -29,11 +30,13 @@ public class StandaloneTest extends AbstractProxyTest
 
     private Server server;
     private LocalConnector localConnector;
+    private UtilConcurrentCommandScheduler scheduler;
 
     @Before
     public void setUp() throws Exception
     {
         super.setUp();
+        this.scheduler = new UtilConcurrentCommandScheduler(logger);
         File webappFolder = new File("test");
         server = new Server();
         localConnector = new LocalConnector(server);
@@ -44,7 +47,7 @@ public class StandaloneTest extends AbstractProxyTest
         context.setMaxFormContentSize(64000000);
 
         final ServletHolder servletHolder = new ServletHolder(TestServlet.class);
-        final StandaloneConnector connector = createConnector(localConnector);
+        final StandaloneConnector connector = createLocalConnector(localConnector);
         JavaClientServerConnector.setJsonRemoteConnector(connector);
         servletHolder.setServlet(new TestServlet(connector));
         context.addServlet(servletHolder, "/*");
@@ -54,13 +57,14 @@ public class StandaloneTest extends AbstractProxyTest
     @After
     public void tearDown() throws Exception
     {
+        scheduler.cancel();
         JavaClientServerConnector.setJsonRemoteConnector(new HTTPConnector());
         server.removeConnector( localConnector );
         server.stop();
         localConnector.destroy();
     }
 
-    StandaloneConnector createConnector(final LocalConnector connector)
+    StandaloneConnector createLocalConnector(final LocalConnector connector)
     {
         return new StandaloneConnector(connector);
     }
@@ -68,7 +72,7 @@ public class StandaloneTest extends AbstractProxyTest
     @Override
     protected CustomConnector createConnector()
     {
-        return new MyCustomConnector();
+        return new MyCustomConnector(logger,scheduler);
     }
 
     @Override

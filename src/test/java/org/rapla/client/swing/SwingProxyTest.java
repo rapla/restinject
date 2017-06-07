@@ -14,6 +14,7 @@ import org.rapla.common.ExampleSimpleService_JavaJsonProxy;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.swing.HTTPConnector;
 import org.rapla.rest.client.swing.JsonRemoteConnector;
+import org.rapla.scheduler.sync.UtilConcurrentCommandScheduler;
 import org.rapla.server.ServletTestContainer;
 
 import java.io.IOException;
@@ -25,15 +26,17 @@ import java.util.List;
 public class SwingProxyTest extends AbstractProxyTest
 {
     Server server;
+    private UtilConcurrentCommandScheduler scheduler;
 
     @Override protected CustomConnector createConnector()
     {
-        return new MyCustomConnector();
+        return new MyCustomConnector(logger, scheduler);
     }
     @Before
     public void setUp() throws Exception
     {
         super.setUp();
+        scheduler = new UtilConcurrentCommandScheduler(logger);
         server = ServletTestContainer.createServer();
         server.start();
     }
@@ -42,6 +45,7 @@ public class SwingProxyTest extends AbstractProxyTest
     public void tearDown() throws Exception
     {
         server.stop();
+        scheduler.cancel();
         Thread.sleep(500);
     }
 

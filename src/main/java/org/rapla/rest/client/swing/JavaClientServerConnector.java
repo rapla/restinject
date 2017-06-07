@@ -6,12 +6,17 @@ import org.rapla.rest.client.ExceptionDeserializer;
 import org.rapla.rest.client.RemoteConnectException;
 import org.rapla.rest.SerializableExceptionInformation;
 import org.rapla.rest.SerializableExceptionInformation.SerializableExceptionStacktraceInformation;
+import org.rapla.scheduler.CommandScheduler;
+import org.rapla.scheduler.CompletablePromise;
+import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.sync.SynchronizedCompletablePromise;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 public class JavaClientServerConnector
 {
@@ -26,12 +31,21 @@ public class JavaClientServerConnector
         remoteConnector = remote;
     }
 
-    public static <T> T doInvoke(final String requestMethodType, final String url,  final Map<String, String> additionalHeaders,String body,
-            final JavaJsonSerializer ser, CustomConnector connector) throws Exception
+    public static  Object doInvoke(final String requestMethodType, final String url,  final Map<String, String> additionalHeaders,String body,
+            final JavaJsonSerializer ser, String resultType,CustomConnector connector, boolean isPromise) throws Exception
     {
         final JavaClientServerConnector javaClientServerConnector = new JavaClientServerConnector();
-        final T result = (T)javaClientServerConnector.send(requestMethodType, url, additionalHeaders, body, ser, connector);
-        return result;
+        final CommandScheduler.Callable callable = () ->javaClientServerConnector.send(requestMethodType, url, additionalHeaders, body, ser, connector);
+        if ( !isPromise)
+        {
+            Object result =  callable.call() ;
+            return result;
+        }
+        else
+        {
+            final Promise resultPromise = connector.call(callable);
+            return resultPromise;
+        }
     }
 
     synchronized private Object send( String requestMethodType, String url, Map<String, String> additionalHeaders,String body,

@@ -17,10 +17,9 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
     public static final String PROXY_SUFFIX = "_JavaJsonProxy";
     public static final String JavaJsonSerializer = "org.rapla.rest.client.swing.JavaJsonSerializer";
 
-
     public JavaClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, SerializerCreator serializerCreator, ResultDeserializerCreator deserializerCreator, String generatorName)
     {
-        super(remoteService, processingEnvironment, serializerCreator, deserializerCreator, generatorName, InjectionContext.swing);
+        super(remoteService, processingEnvironment, serializerCreator, deserializerCreator, generatorName, InjectionContext.swing, "JavaClientServerConnector");
     }
 
     @Override
@@ -81,17 +80,6 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
     public String getProxySuffix()
     {
         return PROXY_SUFFIX;
-    }
-
-    @Override
-    protected void writeCall(SourceWriter w, TypeMirror resultType, String resultDeserialzerField, String methodType)
-    {
-        w.print("Object result = JavaClientServerConnector.doInvoke(");
-        w.print("\"" + methodType + "\"");
-        w.print(", methodUrl , additionalHeaders,postBody.toString(),");
-        w.print(resultDeserialzerField);
-        w.print(", connector);");
-        w.println(" ");
     }
 
     @Override

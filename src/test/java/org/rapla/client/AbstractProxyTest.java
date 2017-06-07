@@ -4,7 +4,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.rapla.common.ExampleService;
 import org.rapla.common.ExampleSimpleService;
+import org.rapla.logger.ConsoleLogger;
+import org.rapla.logger.Logger;
 import org.rapla.rest.client.CustomConnector;
+import org.rapla.scheduler.Promise;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +26,7 @@ public abstract class AbstractProxyTest
 {
     protected Map<String, String> paramMap;
     protected CustomConnector connector;
+    protected Logger logger = new ConsoleLogger();
 
     protected abstract CustomConnector createConnector();
 
@@ -108,16 +112,6 @@ public abstract class AbstractProxyTest
         final ExampleSimpleService exampleSimpleServiceProxy = createExampleSimpleServiceProxy();
         final Date nextDay = exampleSimpleServiceProxy.addDay(currentDate);
         assertEq(currentDate.getTime() + 1000l * 60l * 60l * 24l, nextDay.getTime());
-    }
-
-    @Test public void test4() throws Exception
-    {
-        ExampleService test = createExampleServiceProxy();
-        final Set<String> greeting = test.complex(paramMap).get("greeting");
-        assertEq(2, greeting.size());
-        final Iterator<String> iterator = greeting.iterator();
-        assertEq("Hello", iterator.next());
-        assertEq("World", iterator.next());
     }
 
     @Test public void testException() throws Exception

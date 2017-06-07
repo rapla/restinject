@@ -7,6 +7,10 @@ import org.rapla.logger.Logger;
 import org.rapla.logger.internal.JavaUtilLoggerForGwt;
 import org.rapla.rest.SerializableExceptionInformation;
 import org.rapla.rest.client.CustomConnector;
+import org.rapla.scheduler.CommandScheduler;
+import org.rapla.scheduler.CompletablePromise;
+import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.client.gwt.GwtCommandScheduler;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -19,6 +23,7 @@ public class GwtCustomConnector implements CustomConnector
     String accessToken;
     Logger logger = new JavaUtilLoggerForGwt("rapla");
 
+    CommandScheduler scheduler = new GwtCommandScheduler(logger);
     @Inject
     public GwtCustomConnector()
     {
@@ -53,6 +58,18 @@ public class GwtCustomConnector implements CustomConnector
     public Logger getLogger()
     {
         return logger;
+    }
+
+    @Override
+    public <T> CompletablePromise<T> createCompletable()
+    {
+        return scheduler.createCompletable();
+    }
+
+    @Override
+    public <T> Promise<T> call(CommandScheduler.Callable<T> supplier)
+    {
+        return scheduler.supply( supplier);
     }
 
     @Override public String getFullQualifiedUrl(String relativePath)

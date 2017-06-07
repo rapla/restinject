@@ -1,5 +1,7 @@
 package org.rapla.common;
 
+import org.rapla.scheduler.Promise;
+
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
@@ -33,6 +35,11 @@ public interface ExampleService
     @Path("sayHello")
     Collection<Result> sayHello(Parameter param);
 
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("sayHelloAsync")
+    Promise<Collection<Result>> sayHelloAsync(Parameter param);
+
     @GET
     @Path("helloChunk")
     String helloChunk();
@@ -50,7 +57,7 @@ public interface ExampleService
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("complex")
-    Map<String, Set<String>> complex(@QueryParam("param") Map<String,String> test);
+    Promise<Map<String, Set<String>>> complex(@QueryParam("param") Map<String,String> test);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

@@ -1,18 +1,12 @@
 package org.rapla.scheduler.client.gwt;
 
-import org.rapla.function.Consumer;
 import org.rapla.logger.Logger;
-import org.rapla.rest.client.gwt.internal.impl.AsyncCallback;
-import org.rapla.rest.client.gwt.internal.impl.GwtClientServerConnector;
 import org.rapla.scheduler.Cancelable;
 import org.rapla.function.Command;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.CompletablePromise;
 import org.rapla.scheduler.Promise;
-import org.rapla.scheduler.ResolvedPromise;
 import org.rapla.scheduler.UnsynchronizedCompletablePromise;
-import org.rapla.scheduler.UnsynchronizedPromise;
-import org.rapla.scheduler.sync.SynchronizedCompletablePromise;
 
 public  class GwtCommandScheduler implements CommandScheduler
 {
@@ -109,39 +103,6 @@ public  class GwtCommandScheduler implements CommandScheduler
                 promise.complete(null);
             }
             catch (Throwable ex)
-            {
-                promise.completeExceptionally(ex);
-            }
-        });
-        return promise;
-    }
-
-    @Override
-    public <T> Promise<T> supplyProxy(final Callable<T> supplier)
-    {
-        final UnsynchronizedCompletablePromise<T> promise = new UnsynchronizedCompletablePromise<T>();
-        // We call the proxy directly so we don't mess with the callbacks
-        scheduleDeferred(() ->
-        {
-            GwtClientServerConnector.registerSingleThreadedCallback(new AsyncCallback<T>()
-            {
-                @Override
-                public void onFailure(Throwable caught)
-                {
-                    promise.completeExceptionally(caught);
-                }
-
-                @Override
-                public void onSuccess(T result)
-                {
-                    promise.complete(result);
-                }
-            });
-            try
-            {
-                supplier.call();
-            }
-            catch (Exception ex)
             {
                 promise.completeExceptionally(ex);
             }

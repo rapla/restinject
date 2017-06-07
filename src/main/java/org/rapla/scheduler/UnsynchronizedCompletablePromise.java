@@ -4,11 +4,11 @@ public class UnsynchronizedCompletablePromise<T> extends UnsynchronizedPromise<T
 {
     public void complete(T result)
     {
-        changeState(result, null, null);
+        completed(result, null);
     }
 
     public void completeExceptionally(Throwable ex)
     {
-        changeState(null, null, ex);
+        completed(null,ex);
     }
 }

@@ -2,12 +2,19 @@ package org.rapla.rest.client.gwt.internal.impl;
 
 import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
+import org.rapla.function.BiConsumer;
+import org.rapla.function.Consumer;
 import org.rapla.logger.Logger;
+import org.rapla.rest.SerializableExceptionInformation;
+import org.rapla.rest.SerializableExceptionInformation.SerializableExceptionStacktraceInformation;
+import org.rapla.rest.client.AsyncCallback;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.ExceptionDeserializer;
 import org.rapla.rest.client.RemoteConnectException;
-import org.rapla.rest.SerializableExceptionInformation;
-import org.rapla.rest.SerializableExceptionInformation.SerializableExceptionStacktraceInformation;
+import org.rapla.scheduler.CommandScheduler;
+import org.rapla.scheduler.CompletablePromise;
+import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.UnsynchronizedCompletablePromise;
 
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
@@ -20,13 +27,6 @@ import java.util.Set;
 
 public class GwtClientServerConnector<T>
 {
-    private static AsyncCallback _callback;
-
-    public static void registerSingleThreadedCallback(AsyncCallback callback)
-    {
-        _callback = callback;
-    }
-
     private String httpMethod;
 
     protected final ExceptionDeserializer exceptionDeserializer;
@@ -52,8 +52,8 @@ public class GwtClientServerConnector<T>
         this.logger = logger;
     }
 
-    public static <T> T doInvoke(final String requestMethodType, final String url, final Map<String, String> additionalHeaders, final String body,
-            final ResultDeserializer<T> ser, String resultType, CustomConnector connector) throws Exception
+    public static <T> Object doInvoke(final String requestMethodType, final String url, final Map<String, String> additionalHeaders, final String body,
+            final ResultDeserializer<T> ser, String resultType, CustomConnector connector, boolean isPromise) throws Exception
     {
         GwtClientServerConnector gwtConnector = new GwtClientServerConnector<>(requestMethodType, connector, url, additionalHeaders, body, ser, resultType,
                 connector.getLogger());
@@ -62,21 +62,30 @@ public class GwtClientServerConnector<T>
         {
             gwtConnector.setToken(accessToken);
         }
-        if (_callback != null)
+        if ( isPromise)
         {
-            try
+
+            final CompletablePromise<T> promise = connector.createCompletable();
+            AsyncCallback callback = new AsyncCallback<T>()
             {
-                gwtConnector.send(_callback);
-            }
-            finally
-            {
-                _callback = null;
-            }
-            return null;
+                @Override
+                public void onFailure(Throwable caught)
+                {
+                    promise.completeExceptionally(caught);
+                }
+
+                @Override
+                public void onSuccess(T result)
+                {
+                    promise.complete(result);
+                }
+            };
+            gwtConnector.send( callback);
+            return promise;
         }
         else
         {
-            return (T) gwtConnector.send(null);
+            return gwtConnector.send(null);
         }
     }
 
@@ -98,30 +107,6 @@ public class GwtClientServerConnector<T>
     {
         this.token = token;
     }
-
-/*
-    public static class SynchronousXHR extends com.google.gwt.xhr.client.XMLHttpRequest
-    {
-
-        protected SynchronousXHR()
-        {
-        }
-
-        public native final void synchronousOpen(String method, String uri)
-        */
-/*-{
-            this.open(method, uri, false);
-        }-*//*
-;
-
-        public native final void setTimeout(int timeoutP)
-        */
-/*-{
-            this.timeout = timeoutP;
-        }-*//*
-;
-    }
-*/
 
     public T send(AsyncCallback callback) throws Exception
     {

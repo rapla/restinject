@@ -29,7 +29,7 @@ public class Bootstrap
 
     public Promise<Collection<ExampleService.Result>> callAsync(final ExampleService.Parameter p, final CommandScheduler scheduler) throws Exception
     {
-        final Promise<Collection<ExampleService.Result>> listPromise = scheduler.supplyProxy(()->webservice.sayHello(p));
+        final Promise<Collection<ExampleService.Result>> listPromise = webservice.sayHelloAsync(p);
         return listPromise;
     }
 }

@@ -1,6 +1,9 @@
 package org.rapla.common;
 
+import org.rapla.scheduler.Promise;
+
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -30,5 +33,10 @@ public interface EnumJsonService
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
     TrueFalse get(Parameter param);
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    Promise<TrueFalse> post(Parameter param);
+
 
 }

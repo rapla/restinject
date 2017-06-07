@@ -51,5 +51,7 @@ public interface Promise<T>
 
     /** same as {@link java.util.concurrent.CompletionStage#handle(java.util.function.BiFunction)}          but usable in gwt */
     <U> Promise<U> handle(BiFunction<? super T, Throwable, ? extends U> fn);
+
+    Observable<T> toObservable();
 }
 

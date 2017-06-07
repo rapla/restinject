@@ -1,9 +1,16 @@
 package org.rapla.client.swing;
 
+import org.rapla.function.Command;
 import org.rapla.logger.ConsoleLogger;
 import org.rapla.logger.Logger;
+import org.rapla.rest.client.AsyncCallback;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.SerializableExceptionInformation;
+import org.rapla.scheduler.CommandScheduler;
+import org.rapla.scheduler.CompletablePromise;
+import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.client.swing.SwingScheduler;
+import org.rapla.scheduler.sync.UtilConcurrentCommandScheduler;
 
 import java.lang.reflect.Constructor;
 
@@ -12,7 +19,13 @@ public class MyCustomConnector implements CustomConnector
 {
 
     String accessToken;
-    Logger logger = new ConsoleLogger();
+    Logger logger;
+    CommandScheduler scheduler;
+    public MyCustomConnector(Logger logger, CommandScheduler scheduler)
+    {
+        this.logger = logger;
+        this.scheduler = scheduler;
+    }
 
     @Override public String reauth(Class proxy) throws Exception
     {
@@ -61,6 +74,17 @@ public class MyCustomConnector implements CustomConnector
         return logger;
     }
 
+    @Override
+    public <T> CompletablePromise<T> createCompletable()
+    {
+        return scheduler.createCompletable();
+    }
+
+    @Override
+    public  <T> Promise<T> call(CommandScheduler.Callable<T> callback)
+    {
+        return scheduler.supply( callback);
+    }
 
     @Override public String getFullQualifiedUrl(String relativePath)
     {
