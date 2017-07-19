@@ -22,7 +22,7 @@ public class SerializableExceptionInformation
         public SerializableExceptionStacktraceInformation()
         {
         }
-        
+
         public SerializableExceptionStacktraceInformation(String className, String methodName, int lineNumber, String fileName)
         {
             super();
@@ -63,23 +63,21 @@ public class SerializableExceptionInformation
 
     private String message;
     private String exceptionClass;
-    private List<String> messages;
     private List<SerializableExceptionStacktraceInformation> stacktrace;
 
     public SerializableExceptionInformation()
     {
     }
 
-    @Override public String toString()
+    @Override
+    public String toString()
     {
-        return "SerializableExceptionInformation{" + "message='" + message + '\'' + ", exceptionClass='" + exceptionClass + '\'' + ", messages=" + messages
-                + '}';
+        return "SerializableExceptionInformation{" + "message='" + message + '\'' + ", exceptionClass='" + exceptionClass + '\'' + '}';
     }
 
     public SerializableExceptionInformation(Throwable t)
     {
         this.message = t.getMessage();
-        this.messages = null;
         this.stacktrace = new ArrayList<>();
         this.exceptionClass = t.getClass().getCanonicalName();
         final StackTraceElement[] stackTrace2 = t.getStackTrace();
@@ -89,14 +87,13 @@ public class SerializableExceptionInformation
         }
     }
 
-    public SerializableExceptionInformation(String message, String exceptionClass, List<String> messages, List<SerializableExceptionStacktraceInformation> stacktrace)
+    public SerializableExceptionInformation(String message, String exceptionClass, List<SerializableExceptionStacktraceInformation> stacktrace)
     {
         this.message = message;
         this.exceptionClass = exceptionClass;
-        this.messages = messages;
         this.stacktrace = stacktrace;
     }
-    
+
     public String getExceptionClass()
     {
         return exceptionClass;
@@ -105,11 +102,6 @@ public class SerializableExceptionInformation
     public String getMessage()
     {
         return message;
-    }
-
-    public List<String> getMessages()
-    {
-        return messages;
     }
 
     public List<SerializableExceptionStacktraceInformation> getStacktrace()

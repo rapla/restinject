@@ -1,16 +1,11 @@
 package org.rapla.client.swing;
 
-import org.rapla.function.Command;
-import org.rapla.logger.ConsoleLogger;
 import org.rapla.logger.Logger;
-import org.rapla.rest.client.AsyncCallback;
-import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.SerializableExceptionInformation;
+import org.rapla.rest.client.CustomConnector;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.CompletablePromise;
 import org.rapla.scheduler.Promise;
-import org.rapla.scheduler.client.swing.SwingScheduler;
-import org.rapla.scheduler.sync.UtilConcurrentCommandScheduler;
 
 import java.lang.reflect.Constructor;
 
@@ -64,7 +59,7 @@ public class MyCustomConnector implements CustomConnector
 
             }
         }
-        return new Exception(aClass + " " + exceptionInformations.getMessage() + " " + exceptionInformations.getMessages());
+        return new Exception(aClass + " " + exceptionInformations.getMessage());
         // throw new Au
     }
 

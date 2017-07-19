@@ -51,7 +51,7 @@ public class GwtCustomConnector implements CustomConnector
                 return new NullPointerException(exceptionInformations.getMessage());
             }
         }
-        return new Exception(aClass + " " + exceptionInformations.getMessage() + " " + exceptionInformations.getMessages());
+        return new Exception(aClass + " " + exceptionInformations.getMessage() );
         // throw new Au
     }
 

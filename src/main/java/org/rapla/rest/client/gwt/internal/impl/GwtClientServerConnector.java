@@ -120,6 +120,7 @@ public class GwtClientServerConnector<T>
         request.setRequestHeader("Content-Type", MediaType.APPLICATION_JSON);
         request.setRequestHeader("Accept", MediaType.APPLICATION_JSON);
 
+
         if (token != null)
         {
             request.setRequestHeader("Authorization", "Bearer " + getToken());
@@ -315,7 +316,6 @@ public class GwtClientServerConnector<T>
     {
         JsonErrorResult errorResult = parsedResult;
         final String message = errorResult.getMessage();
-        final List<String> messages = errorResult.getMessages() != null ? new ArrayList<>(Arrays.asList(errorResult.getMessages())) : Collections.emptyList();
         ArrayList<SerializableExceptionStacktraceInformation> stacktrace = new ArrayList<>();
         final Data[] data = errorResult.getData();
         if (data != null)
@@ -326,7 +326,7 @@ public class GwtClientServerConnector<T>
             }
         }
         final String exceptionClass = errorResult.getExceptionClass();
-        SerializableExceptionInformation exceptionInformation = new SerializableExceptionInformation(message, exceptionClass, messages, stacktrace);
+        SerializableExceptionInformation exceptionInformation = new SerializableExceptionInformation(message, exceptionClass,  stacktrace);
         Exception e = exceptionDeserializer.deserializeException(exceptionInformation, sc);
         if (e == null)
         {
@@ -338,7 +338,7 @@ public class GwtClientServerConnector<T>
 
     protected void log(String message)
     {
-        logger.info(message);
+        logger.debug(message);
     }
 
     protected static boolean isJsonBody(String type)
@@ -369,9 +369,6 @@ public class GwtClientServerConnector<T>
 
         @JsProperty
         String getExceptionClass();
-
-        @JsProperty
-        String[] getMessages();
 
         @JsProperty
         Data[] getData();

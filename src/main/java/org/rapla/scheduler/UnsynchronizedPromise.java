@@ -1,10 +1,12 @@
 package org.rapla.scheduler;
 
-import org.rapla.function.BiConsumer;
-import org.rapla.function.BiFunction;
-import org.rapla.function.Command;
-import org.rapla.function.Consumer;
-import org.rapla.function.Function;
+
+import io.reactivex.functions.Action;
+import io.reactivex.functions.BiConsumer;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import org.rapla.scheduler.client.swing.JavaObservable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,10 +52,10 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         });
     }
 
-    private UnsynchronizedPromise(UnsynchronizedPromise parent, Command fn)
+    private UnsynchronizedPromise(UnsynchronizedPromise parent, Action fn)
     {
         this(parent, (act) -> {
-            fn.execute();
+            fn.run();
             return null;
         });
     }
@@ -69,10 +71,10 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         this(parent, (a1, a2) -> fn.apply(a1), null);
     }
 
-    private UnsynchronizedPromise(UnsynchronizedPromise parent, Promise other, Command fn)
+    private UnsynchronizedPromise(UnsynchronizedPromise parent, Promise other, Action fn)
     {
         this(parent, (a, b) -> {
-            fn.execute();
+            fn.run();
             return null;
         }, other);
     }
@@ -156,7 +158,7 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         return new UnsynchronizedPromise(this, action);
     }
 
-    @Override public Promise<Void> thenRun(Command action)
+    @Override public Promise<Void> thenRun(Action action)
     {
         return new UnsynchronizedPromise(this, action);
     }
@@ -171,7 +173,7 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         return new UnsynchronizedPromise(this, other, fn);
     }
 
-    @Override public Promise<Void> runAfterBoth(Promise<?> other, Command fn)
+    @Override public Promise<Void> runAfterBoth(Promise<?> other, Action fn)
     {
         return new UnsynchronizedPromise(this, other, fn);
     }
@@ -233,9 +235,9 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         });
     }
 
-    @Override public Promise<Void> runAfterEither(Promise<?> other, Command fn)
+    @Override public Promise<Void> runAfterEither(Promise<?> other, Action fn)
     {
-        return acceptEither((Promise) other, (a) -> fn.execute());
+        return acceptEither((Promise) other, (a) -> fn.run());
     }
 
     @Override public Promise<T> whenComplete(BiConsumer<? super T, ? super Throwable> fn)
@@ -331,6 +333,6 @@ public class UnsynchronizedPromise<T> implements Promise<T>
     @Override
     public Observable<T> toObservable()
     {
-        return new ObservableFromPromise<>(this);
+        return new JavaObservable<>(this);
     }
 }

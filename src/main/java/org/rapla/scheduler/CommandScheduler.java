@@ -1,7 +1,6 @@
 package org.rapla.scheduler;
 
 import org.rapla.function.Command;
-import org.rapla.rest.client.AsyncCallback;
 
 public interface CommandScheduler
 {

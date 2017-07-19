@@ -1,12 +1,13 @@
 package org.rapla.scheduler.sync;
 
-import org.rapla.function.BiConsumer;
-import org.rapla.function.BiFunction;
-import org.rapla.function.Command;
-import org.rapla.function.Consumer;
-import org.rapla.function.Function;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.BiConsumer;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.subjects.SingleSubject;
+import org.rapla.scheduler.client.swing.JavaObservable;
 import org.rapla.scheduler.Observable;
-import org.rapla.scheduler.ObservableFromPromise;
 import org.rapla.scheduler.Promise;
 
 import java.util.concurrent.CompletableFuture;
@@ -84,7 +85,7 @@ class SynchronizedPromise<T> implements Promise<T>
     }
 
     @Override
-    public Promise<Void> thenRun(Command command)
+    public Promise<Void> thenRun(Action command)
     {
         final Runnable action = wrapAction(command);
         return w(f.thenRunAsync(action, promiseExecuter));
@@ -127,19 +128,19 @@ class SynchronizedPromise<T> implements Promise<T>
     }
 
     @Override
-    public Promise<Void> runAfterBoth(Promise<?> other, Command command)
+    public Promise<Void> runAfterBoth(Promise<?> other, Action command)
     {
         final Runnable action = wrapAction(command);
         return w(f.runAfterBothAsync(v(other), action, promiseExecuter));
     }
 
-    private Runnable wrapAction(Command command)
+    private Runnable wrapAction(Action command)
     {
         return () ->
         {
             try
             {
-                command.execute();
+                command.run();
             }
             catch (Exception e)
             {
@@ -183,7 +184,7 @@ class SynchronizedPromise<T> implements Promise<T>
     }
 
     @Override
-    public Promise<Void> runAfterEither(Promise<?> other, Command command)
+    public Promise<Void> runAfterEither(Promise<?> other, Action command)
     {
         final Runnable action = wrapAction(command);
         return w(f.runAfterEitherAsync(v(other), action, promiseExecuter));
@@ -288,6 +289,16 @@ class SynchronizedPromise<T> implements Promise<T>
     @Override
     public Observable<T> toObservable()
     {
-        return new ObservableFromPromise<>(this);
+        final SingleSubject<T> singleSubject = SingleSubject.create();
+        whenComplete((ob,ex)->{if ( ex != null )
+        {
+            singleSubject.onError(ex );
+        }
+        else
+        {
+            singleSubject.onSuccess( ob);
+        }});
+        final io.reactivex.Observable<T> observable = singleSubject.toObservable();
+        return new JavaObservable<T>(observable);
     }
 }

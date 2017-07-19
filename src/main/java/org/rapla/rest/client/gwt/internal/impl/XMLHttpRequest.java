@@ -11,6 +11,7 @@ public interface XMLHttpRequest
     void send(String requestData);
     String getResponseHeader(String s);
     void open(String httpMethod, String url, boolean asynchronous);
+    void abort();
 
     @JsFunction
     @FunctionalInterface
