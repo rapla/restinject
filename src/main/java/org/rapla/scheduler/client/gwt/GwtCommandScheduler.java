@@ -1,10 +1,11 @@
 package org.rapla.scheduler.client.gwt;
 
+import io.reactivex.functions.Action;
 import org.rapla.logger.Logger;
 import org.rapla.scheduler.Cancelable;
-import org.rapla.function.Command;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.CompletablePromise;
+import org.rapla.scheduler.Observable;
 import org.rapla.scheduler.Promise;
 import org.rapla.scheduler.UnsynchronizedCompletablePromise;
 
@@ -17,7 +18,7 @@ public  class GwtCommandScheduler implements CommandScheduler
     }
 
     @Override
-    public Cancelable schedule(final Command command, long delay, final long period)
+    public Cancelable schedule(final Action command, long delay, final long period)
     {
         if (period > 0)
         {
@@ -29,7 +30,7 @@ public  class GwtCommandScheduler implements CommandScheduler
                     try
                     {
                         //gwtLogger.info("Refreshing client with period " + period);
-                        command.execute();
+                        command.run();
                     }
                     catch (Exception e)
                     {
@@ -51,7 +52,7 @@ public  class GwtCommandScheduler implements CommandScheduler
                     try
                     {
                         //gwtLogger.info("Refreshing client without period ");
-                        command.execute();
+                        command.run();
                     }
                     catch (Exception e)
                     {
@@ -92,14 +93,14 @@ public  class GwtCommandScheduler implements CommandScheduler
     }
 
     @Override
-    public Promise<Void> run(final Command supplier)
+    public Promise<Void> run(final Action supplier)
     {
         final UnsynchronizedCompletablePromise<Void> promise = new UnsynchronizedCompletablePromise<Void>();
         scheduleDeferred(() ->
         {
             try
             {
-                supplier.execute();
+                supplier.run();
                 promise.complete(null);
             }
             catch (Throwable ex)
@@ -116,7 +117,7 @@ public  class GwtCommandScheduler implements CommandScheduler
     }
 
     @Override
-    public Cancelable schedule(Command command, long delay)
+    public Cancelable schedule(Action command, long delay)
     {
         return schedule(command, delay, -1);
     }
@@ -137,4 +138,9 @@ public  class GwtCommandScheduler implements CommandScheduler
         return new UnsynchronizedCompletablePromise<>();
     }
 
+    @Override
+    public <T> Observable<T> toObservable(Promise<T> promise)
+    {
+        return new JavaScriptObservable<>(null);
+    }
 }

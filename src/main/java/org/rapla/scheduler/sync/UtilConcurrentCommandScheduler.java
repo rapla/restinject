@@ -1,28 +1,24 @@
 package org.rapla.scheduler.sync;
 
-import com.google.gwt.user.client.rpc.AsyncCallback;
-import org.rapla.function.BiConsumer;
-import org.rapla.function.BiFunction;
+import io.reactivex.functions.Action;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
 import org.rapla.logger.Logger;
 import org.rapla.scheduler.Cancelable;
-import org.rapla.function.Command;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.CompletablePromise;
+import org.rapla.scheduler.Observable;
 import org.rapla.scheduler.Promise;
-import org.rapla.scheduler.UnsynchronizedCompletablePromise;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class UtilConcurrentCommandScheduler implements CommandScheduler, Executor
 {
@@ -66,13 +62,13 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
     }
 
     @Override
-    public Cancelable schedule(Command command, long delay)
+    public Cancelable schedule(Action command, long delay)
     {
         Runnable task = createTask(command);
         return schedule(task, delay);
     }
 
-    protected Runnable createTask(final Command command)
+    protected Runnable createTask(final Action command)
     {
         Runnable timerTask = new Runnable()
         {
@@ -80,7 +76,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
             {
                 try
                 {
-                    command.execute();
+                    command.run();
                 }
                 catch (Exception e)
                 {
@@ -158,7 +154,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
     }
 
     @Override
-    public Cancelable schedule(Command command, long delay, long period)
+    public Cancelable schedule(Action command, long delay, long period)
     {
         Runnable task = createTask(command);
         return schedule(task, delay, period);
@@ -372,7 +368,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
         return promise;
     }
 
-    private Promise<Void> run(final Command command, Executor executor)
+    private Promise<Void> run(final Action command, Executor executor)
     {
         if (command == null)
             throw new NullPointerException();
@@ -384,7 +380,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
             {
                 try
                 {
-                    command.execute();
+                    command.run();
                     future.complete(Promise.VOID);
                 }
                 catch (Exception ex)
@@ -398,7 +394,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
     }
 
     @Override
-    public Promise<Void> run(Command command)
+    public Promise<Void> run(Action command)
     {
         return run(command, promiseExecuter);
     }
@@ -408,6 +404,43 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
     {
         SynchronizedCompletablePromise<T> promise = new SynchronizedCompletablePromise<T>(promiseExecuter);
         return promise;
+    }
+
+    @Override
+    public <T> Observable<T> toObservable(Promise<T> promise)
+    {
+        JavaObservable<T> javaObservable;
+        if ( promise instanceof SynchronizedPromise)
+        {
+            SynchronizedPromise synchronizedPromise = (SynchronizedPromise) promise;
+            javaObservable = new JavaObservable(synchronizedPromise);
+
+        }
+        else
+        {
+            final PublishSubject<T> publishSubject = PublishSubject.create();
+            promise.whenComplete((arg, throwable) ->
+            {
+                try
+                {
+                    if (throwable != null)
+                    {
+                        publishSubject.onError(throwable);
+                    }
+                    else
+                    {
+                        publishSubject.onNext(arg);
+                    }
+                }
+                finally
+                {
+                    publishSubject.onComplete();
+                }
+
+            });
+            javaObservable = new JavaObservable<T>(publishSubject);
+        }
+        return javaObservable;
     }
 
     /*

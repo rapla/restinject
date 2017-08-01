@@ -5,15 +5,13 @@ import io.reactivex.functions.BiConsumer;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
-import io.reactivex.subjects.SingleSubject;
-import org.rapla.scheduler.client.swing.JavaObservable;
-import org.rapla.scheduler.Observable;
 import org.rapla.scheduler.Promise;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 
 class SynchronizedPromise<T> implements Promise<T>
 {
@@ -286,19 +284,10 @@ class SynchronizedPromise<T> implements Promise<T>
         }
     }
 
-    @Override
-    public Observable<T> toObservable()
+    public Future<T> toFuture()
     {
-        final SingleSubject<T> singleSubject = SingleSubject.create();
-        whenComplete((ob,ex)->{if ( ex != null )
-        {
-            singleSubject.onError(ex );
-        }
-        else
-        {
-            singleSubject.onSuccess( ob);
-        }});
-        final io.reactivex.Observable<T> observable = singleSubject.toObservable();
-        return new JavaObservable<T>(observable);
+        return this.f.toCompletableFuture();
     }
+
+
 }

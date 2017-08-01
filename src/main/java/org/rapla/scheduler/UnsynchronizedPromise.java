@@ -6,7 +6,6 @@ import io.reactivex.functions.BiConsumer;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
-import org.rapla.scheduler.client.swing.JavaObservable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -330,9 +329,4 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         fireComplete(this.result, exception);
     }
 
-    @Override
-    public Observable<T> toObservable()
-    {
-        return new JavaObservable<>(this);
-    }
 }

@@ -12,9 +12,9 @@
  *--------------------------------------------------------------------------*/
 package org.rapla.inject.raplainject;
 
+import io.reactivex.disposables.Disposable;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.DefaultImplementationRepeatable;
-import org.rapla.inject.Disposable;
 import org.rapla.inject.Extension;
 import org.rapla.inject.ExtensionPoint;
 import org.rapla.inject.ExtensionRepeatable;
@@ -522,7 +522,7 @@ public class SimpleRaplaInjector
     public void dispose()
     {
         getLogger().info("Shutting down rapla-container");
-        // prevent reentrence in dispose
+        // prevent reentrence in disposables
         synchronized (this)
         {
             if (disposing)
@@ -974,6 +974,7 @@ public class SimpleRaplaInjector
     {
         protected Object component;
         boolean dispose = true;
+        private boolean disposed = false;
 
         protected SingletonComponentHandler(Object component, boolean provider)
         {
@@ -1008,7 +1009,7 @@ public class SimpleRaplaInjector
 
         public void dispose()
         {
-            // prevent reentrence in dispose
+            // prevent reentrence in disposables
             synchronized (this)
             {
                 if (disposing)
@@ -1036,7 +1037,14 @@ public class SimpleRaplaInjector
             finally
             {
                 disposing = false;
+                disposed = true;
             }
+        }
+
+        @Override
+        public boolean isDisposed()
+        {
+            return disposed;
         }
 
         @Override

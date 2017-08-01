@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.7.0//EN" "http://gwtproject.org/doctype/2.7.0/gwt-module.dtd">
+<module>
+    <source path="functions">
+        <include name='Consumer.java'/>
+        <include name='BiConsumer.java'/>
+        <include name='Function.java'/>
+        <include name='BiFunction.java'/>
+        <include name='Action.java'/>
+
+    </source>
+    <source path="disposables">
+         <include name='Disposable.java'/>
+    </source>
+</module>

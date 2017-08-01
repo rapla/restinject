@@ -2,8 +2,6 @@ package org.rapla.rest.client.gwt.internal.impl;
 
 import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
-import org.rapla.function.BiConsumer;
-import org.rapla.function.Consumer;
 import org.rapla.logger.Logger;
 import org.rapla.rest.SerializableExceptionInformation;
 import org.rapla.rest.SerializableExceptionInformation.SerializableExceptionStacktraceInformation;
@@ -11,17 +9,11 @@ import org.rapla.rest.client.AsyncCallback;
 import org.rapla.rest.client.CustomConnector;
 import org.rapla.rest.client.ExceptionDeserializer;
 import org.rapla.rest.client.RemoteConnectException;
-import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.CompletablePromise;
-import org.rapla.scheduler.Promise;
-import org.rapla.scheduler.UnsynchronizedCompletablePromise;
 
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
