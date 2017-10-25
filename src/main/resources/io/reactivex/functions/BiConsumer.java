@@ -13,12 +13,16 @@
 
 package io.reactivex.functions;
 
+import jsinterop.annotations.JsFunction;
+import jsinterop.annotations.JsType;
+
 /**
  * A functional interface (callback) that accepts two values (of possibly different types).
  * @param <T1> the first value type
  * @param <T2> the second value type
  */
 @FunctionalInterface
+@JsFunction
 public interface BiConsumer<T1, T2> {
 
     /**

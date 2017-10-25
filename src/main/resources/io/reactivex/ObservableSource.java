@@ -10,21 +10,23 @@
  * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See
  * the License for the specific language governing permissions and limitations under the License.
  */
+package io.reactivex;
 
-package io.reactivex.functions;
-
-import jsinterop.annotations.JsFunction;
-import jsinterop.annotations.JsType;
+import io.reactivex.annotations.*;
 
 /**
- * A functional interface similar to Runnable but allows throwing a checked exception.
+ * Represents a basic, non-backpressured {@link Observable} source base interface,
+ * consumable via an {@link Observer}.
+ *
+ * @param <T> the element type
+ * @since 2.0
  */
-@FunctionalInterface
-@JsFunction
-public interface Action {
+public interface ObservableSource<T> {
+
     /**
-     * Runs the action and optionally throws a checked exception.
-     * @throws Exception if the implementation wishes to throw a checked exception
+     * Subscribes the given Observer to this ObservableSource instance.
+     * @param observer the Observer, not null
+     * @throws NullPointerException if {@code observer} is null
      */
-    void run() throws Exception;
+    void subscribe(@NonNull Observer<? super T> observer);
 }

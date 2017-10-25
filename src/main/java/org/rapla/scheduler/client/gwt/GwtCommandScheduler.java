@@ -1,5 +1,8 @@
 package org.rapla.scheduler.client.gwt;
 
+import com.github.timofeevda.gwt.rxjs.interop.observable.OnSubscribe;
+import com.github.timofeevda.gwt.rxjs.interop.observable.Subscriber;
+import com.github.timofeevda.gwt.rxjs.interop.subscription.TearDownSubscription;
 import io.reactivex.functions.Action;
 import org.rapla.logger.Logger;
 import org.rapla.scheduler.Cancelable;
@@ -141,6 +144,6 @@ public  class GwtCommandScheduler implements CommandScheduler
     @Override
     public <T> Observable<T> toObservable(Promise<T> promise)
     {
-        return new JavaScriptObservable<>(null);
+        return new JavaScriptObservable<>(promise);
     }
 }

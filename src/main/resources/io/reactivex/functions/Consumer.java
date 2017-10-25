@@ -14,12 +14,15 @@
 package io.reactivex.functions;
 
 import io.reactivex.annotations.NonNull;
+import jsinterop.annotations.JsFunction;
+import jsinterop.annotations.JsType;
 
 /**
  * A functional interface (callback) that accepts a single value.
  * @param <T> the value type
  */
 @FunctionalInterface
+@JsFunction
 public interface Consumer<T> {
     /**
      * Consume the given value.

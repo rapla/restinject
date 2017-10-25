@@ -14,6 +14,8 @@
 package io.reactivex.functions;
 
 import io.reactivex.annotations.NonNull;
+import jsinterop.annotations.JsFunction;
+import jsinterop.annotations.JsType;
 
 /**
  * A functional interface that takes a value and returns another value, possibly with a
@@ -23,6 +25,7 @@ import io.reactivex.annotations.NonNull;
  * @param <R> the output value type
  */
 @FunctionalInterface
+@JsFunction
 public interface Function<T, R> {
     /**
      * Apply some calculation to the input value and return some other value.

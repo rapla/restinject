@@ -14,6 +14,8 @@
 package io.reactivex.functions;
 
 import io.reactivex.annotations.NonNull;
+import jsinterop.annotations.JsFunction;
+import jsinterop.annotations.JsType;
 
 /**
  * A functional interface (callback) that computes a value based on multiple input values.
@@ -22,6 +24,7 @@ import io.reactivex.annotations.NonNull;
  * @param <R> the result type
  */
 @FunctionalInterface
+@JsFunction
 public interface BiFunction<T1, T2, R> {
 
     /**

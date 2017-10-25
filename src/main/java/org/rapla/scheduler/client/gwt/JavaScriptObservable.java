@@ -3,13 +3,14 @@ package org.rapla.scheduler.client.gwt;
 import com.github.timofeevda.gwt.rxjs.interop.functions.Action1;
 import com.github.timofeevda.gwt.rxjs.interop.functions.Func1;
 import com.github.timofeevda.gwt.rxjs.interop.observable.Observable;
+import com.github.timofeevda.gwt.rxjs.interop.observable.Observer;
+import com.github.timofeevda.gwt.rxjs.interop.subject.Subject;
 import com.github.timofeevda.gwt.rxjs.interop.subscription.Subscription;
-import io.reactivex.ObservableSource;
+import com.google.gwt.core.client.JavaScriptException;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
-
-import java.util.stream.Stream;
+import org.rapla.scheduler.Promise;
 
 public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T>
 {
@@ -18,28 +19,16 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
     JavaScriptObservable(Observable observable)
     {
         this.observable = observable;
-        Observable.merge(observable, observable);
-        final Observable observable1 = observable.throttleTime(250);
-        Observable.Projector test = new Observable.Projector()
-        {
-            @Override
-            public Observable project(Object item, int index)
-            {
-                return null;
-            }
-        };
-        Observable.ResultSelector test2 = new Observable.ResultSelector()
-        {
-            @Override
-            public Object selectResult(Object outerValue, Object innerValue, int outerIndex, int innerIndex)
-            {
-                return null;
-            }
-        };
-        observable1.switchMap(test);
-        Stream<String> stream = null;
-        final Stream<Integer> integerStream = stream.map((string) -> string.length());
+    }
 
+    JavaScriptObservable(Promise<T> promise)
+    {
+        Subject<T> subject = new Subject<T>();
+        promise.thenAccept( (t) ->{
+            subject.next( t); subject.complete();
+        });
+        promise.exceptionally( (ex) -> { subject.error( ex);return null; });
+        this.observable = observable;
     }
 
     @Override
@@ -73,7 +62,6 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
         };
     }
 
-
     @Override
     public org.rapla.scheduler.Observable<T> throttle(long milliseconds)
     {
@@ -81,8 +69,6 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
         final Observable observable = this.observable.throttleTime(milliseconds1);
         return t(observable);
     }
-
-
 
     @Override
     public org.rapla.scheduler.Observable<T> doOnError(Consumer<? super Throwable> onError)
@@ -117,16 +103,71 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
     }
 
     @Override
-    public <R> org.rapla.scheduler.Observable<R> switchMap(Function<? super T, ? extends ObservableSource<? extends R>> mapper)
+    public <R> org.rapla.scheduler.Observable<R> switchMap(Function<? super T, org.rapla.scheduler.Observable<R>> mapper)
     {
+
+        Observable.Projector<T,R> projector = new Observable.Projector<T,R>()
+        {
+            @Override
+            public Observable<R> project(T item, int index)
+            {
+                try
+                {
+                    final org.rapla.scheduler.Observable<R> apply = mapper.apply(item);
+                    Observable<R> jsObservable = ((JavaScriptObservable<R>) apply).observable;
+                    return jsObservable;
+                } catch (Exception ex)
+                {
+                    return Observable._throw( ex);
+                }
+            }
+        };
+        observable.switchMap(projector);
         throw new UnsupportedOperationException();
     }
 
     @Override
     public void subscribe(io.reactivex.Observer<? super T> observer)
     {
+        Observer<T> jsObserver  = new Observer<T>()
+        {
+            @Override
+            public void error(Object error)
+            {
+                if ( error instanceof JavaScriptException)
+                {
+                    final JavaScriptException jsError = (JavaScriptException) error;
+                    final Throwable cause = jsError.getCause();
+                    if ( cause != null)
+                    {
+                        observer.onError(cause);
+                    }
+                    else
+                    {
+                        observer.onError( jsError );
+                    }
+                }
+            }
 
+            @Override
+            public void next(T value)
+            {
+                observer.onNext( value);
+            }
+
+            @Override
+            public void complete()
+            {
+                observer.onComplete();
+            }
+        };
+        observable.subscribe( jsObserver );
     }
 
+    @Override
+    public Observable toNativeObservable()
+    {
+        return observable;
+    }
 }
 

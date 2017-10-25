@@ -60,7 +60,7 @@ public class JavaObservable<T> implements Observable<T>
     }
 
     @Override
-    public <R> Observable<R> switchMap(Function<? super T, ? extends ObservableSource<? extends R>> mapper)
+    public <R> Observable<R> switchMap(Function<? super T, Observable<R>> mapper)
     {
         final io.reactivex.Observable<R> rFlowable = observable.switchMap(mapper);
         return t(rFlowable);
@@ -70,5 +70,11 @@ public class JavaObservable<T> implements Observable<T>
     public void subscribe(Observer<? super T> observer)
     {
         observable.subscribe(observer);
+    }
+
+    @Override
+    public io.reactivex.Observable<T> toNativeObservable()
+    {
+        return observable;
     }
 }
