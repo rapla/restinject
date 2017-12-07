@@ -14,6 +14,7 @@
 package io.reactivex.functions;
 
 import jsinterop.annotations.JsFunction;
+import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsType;
 
 /**
@@ -23,6 +24,7 @@ import jsinterop.annotations.JsType;
  */
 @FunctionalInterface
 @JsFunction
+@JsType
 public interface BiConsumer<T1, T2> {
 
     /**

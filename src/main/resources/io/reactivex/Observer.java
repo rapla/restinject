@@ -15,6 +15,7 @@ package io.reactivex;
 
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
+import jsinterop.annotations.JsType;
 
 /**
  * Provides a mechanism for receiving push-based notifications.
@@ -31,6 +32,7 @@ import io.reactivex.disposables.Disposable;
  * @param <T>
  *          the type of item the Observer expects to observe
  */
+@JsType
 public interface Observer<T> {
 
     /**

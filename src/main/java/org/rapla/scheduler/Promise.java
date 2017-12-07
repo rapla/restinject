@@ -5,10 +5,12 @@ import io.reactivex.functions.BiConsumer;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import jsinterop.annotations.JsType;
 
 import java.util.concurrent.CompletionStage;
 
 /** same as {@link java.util.concurrent.CompletionStage} but usable in gwt */
+@JsType
 public interface Promise<T>
 {
     Void VOID = null;

@@ -15,6 +15,7 @@ package io.reactivex.functions;
 
 import io.reactivex.annotations.NonNull;
 import jsinterop.annotations.JsFunction;
+import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsType;
 
 /**
@@ -25,6 +26,7 @@ import jsinterop.annotations.JsType;
  */
 @FunctionalInterface
 @JsFunction
+@JsType
 public interface BiFunction<T1, T2, R> {
 
     /**

@@ -59,7 +59,6 @@ public class JsonWriter<T> implements MessageBodyWriter<T>
     {
         final SerializableExceptionInformation se = new SerializableExceptionInformation(exception);
         final String json = jsonParser.toJson(se);
-        System.out.println("TestServer " + json);
         return json;
     }
 }

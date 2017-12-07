@@ -26,6 +26,7 @@ import jsinterop.annotations.JsType;
  */
 @FunctionalInterface
 @JsFunction
+@JsType
 public interface Function<T, R> {
     /**
      * Apply some calculation to the input value and return some other value.

@@ -13,6 +13,7 @@
 package io.reactivex;
 
 import io.reactivex.annotations.*;
+import jsinterop.annotations.JsType;
 
 /**
  * Represents a basic, non-backpressured {@link Observable} source base interface,
@@ -21,6 +22,7 @@ import io.reactivex.annotations.*;
  * @param <T> the element type
  * @since 2.0
  */
+@JsType
 public interface ObservableSource<T> {
 
     /**
