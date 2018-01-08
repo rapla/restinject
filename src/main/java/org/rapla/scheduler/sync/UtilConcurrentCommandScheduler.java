@@ -1,10 +1,9 @@
 package org.rapla.scheduler.sync;
 
 import io.reactivex.functions.Action;
+import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
-import io.reactivex.subjects.Subject;
 import org.rapla.logger.Logger;
-import org.rapla.scheduler.Cancelable;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.CompletablePromise;
 import org.rapla.scheduler.Observable;
@@ -56,68 +55,29 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
         this.promiseExecuter = executor;
     }
 
+    @Override
+    public Observable<Long> intervall(long initialDelay,long periodMilliseconds) {
+        final io.reactivex.Observable<java.lang.Long> interval = io.reactivex.Observable.interval(initialDelay,periodMilliseconds, TimeUnit.MILLISECONDS, Schedulers.from(promiseExecuter));
+        return new JavaObservable(interval, promiseExecuter);
+    }
+
     public void execute(Runnable task)
     {
         scheduledExecutor.execute(task);
     }
 
-    @Override
-    public Cancelable schedule(Action command, long delay)
-    {
-        Runnable task = createTask(command);
-        return schedule(task, delay);
-    }
-
-    protected Runnable createTask(final Action command)
-    {
-        Runnable timerTask = new Runnable()
-        {
-            public void run()
-            {
-                try
-                {
-                    command.run();
-                }
-                catch (Exception e)
-                {
-                    error(e.getMessage(), e);
-                }
-            }
-
-            public String toString()
-            {
-                return command.toString();
-            }
-        };
-        return timerTask;
-    }
-
-    protected Cancelable schedule(Runnable task, long delay)
+    protected void schedule(Runnable task)
     {
         if (scheduledExecutor.isShutdown())
         {
             Exception ex = new Exception("Can't schedule command because executer is already shutdown " + task.toString());
             error(ex.getMessage(), ex);
-            return createCancable(null);
+            return;
         }
 
         TimeUnit unit = TimeUnit.MILLISECONDS;
+        long delay = 0;
         ScheduledFuture<?> schedule = scheduledExecutor.schedule(task, delay, unit);
-        return createCancable(schedule);
-    }
-
-    private Cancelable createCancable(final ScheduledFuture<?> schedule)
-    {
-        return new Cancelable()
-        {
-            public void cancel()
-            {
-                if (schedule != null)
-                {
-                    schedule.cancel(true);
-                }
-            }
-        };
     }
 
     protected void error(String message, Exception ex)
@@ -140,31 +100,16 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
         logger.warn(message);
     }
 
-    private Cancelable schedule(Runnable task, long delay, long period)
+    @Override
+    public  Promise<Void> scheduleSynchronized(Object synchronizationObject, Action task)
     {
-        if (scheduledExecutor.isShutdown())
-        {
-            Exception ex = new Exception("Can't schedule command because executer is already shutdown " + task.toString());
-            error(ex.getMessage(), ex);
-            return createCancable(null);
-        }
-        TimeUnit unit = TimeUnit.MILLISECONDS;
-        ScheduledFuture<?> schedule = scheduledExecutor.scheduleWithFixedDelay(task, delay, period, unit);
-        return createCancable(schedule);
+        final CompletablePromise<Void> completable = createCompletable();
+        scheduleSynchronized(synchronizationObject, task, completable);
+        return completable;
     }
 
-    @Override
-    public Cancelable schedule(Action command, long delay, long period)
-    {
-        Runnable task = createTask(command);
-        return schedule(task, delay, period);
-    }
-
-
-    @Override
-    public  Cancelable scheduleSynchronized(Object synchronizationObject, Runnable task, long delay)
-    {
-        CancableTask wrapper = new CancableTask(task, delay)
+    protected void scheduleSynchronized(Object synchronizationObject, Action task, CompletablePromise<Void> completable) {
+        CancableTask wrapper = new CancableTask(task, completable)
         {
             @Override
             protected void replaceWithNext(CancableTask next)
@@ -192,53 +137,57 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
             {
                 existing.pushToEndOfQueue(wrapper);
             }
-            return wrapper;
         }
     }
 
-    abstract class CancableTask implements Cancelable, Runnable
+    protected void execute(Action action ,CompletablePromise<Void> completablePromise) {
+        try
+        {
+            action.run();
+        }
+        catch (Exception ex )
+        {
+            completablePromise.completeExceptionally( ex );
+            return;
+        }
+        completablePromise.complete( null );
+    }
+
+
+    abstract class CancableTask implements  Runnable
     {
-        long delay;
-        private Runnable task;
+        private Action task;
 
         volatile Thread.State status = Thread.State.NEW;
-        Cancelable cancelable;
         CancableTask next;
+        CompletablePromise<Void> completablePromise;
 
-        public CancableTask(Runnable task, long delay)
+        public CancableTask(Action task,CompletablePromise<Void> completablePromise)
         {
             this.task = task;
-            this.delay = delay;
+            this.completablePromise = completablePromise;
         }
 
         @Override
         public void run()
         {
-            try
-            {
-                if (status == Thread.State.NEW)
+            if (status == Thread.State.NEW) {
+                status = Thread.State.RUNNABLE;
+                try {
+                    execute(task,completablePromise);
+                }
+                finally
                 {
-                    status = Thread.State.RUNNABLE;
-                    task.run();
+                    status = Thread.State.TERMINATED;
+                    scheduleNext();
                 }
             }
-            finally
-            {
-                status = Thread.State.TERMINATED;
-                scheduleNext();
-            }
+            
+            
         }
 
-        @Override
-        public void cancel()
-        {
-            if (cancelable != null && status == Thread.State.RUNNABLE)
-            {
-                // send interrupt if thread is running
-                cancelable.cancel();
-            }
-            status = Thread.State.TERMINATED;
-        }
+
+
 
         public void pushToEndOfQueue(CancableTask wrapper)
         {
@@ -254,7 +203,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
 
         public void scheduleThis()
         {
-            cancelable = schedule(this, delay);
+            schedule(this);
         }
 
         private void scheduleNext()
@@ -341,6 +290,14 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
         return supply(supplier, promiseExecuter);
     }
 
+    @Override
+    public Promise<Void> delay(long delay) {
+        CompletablePromise<Void> promise = createCompletable();
+        Runnable task = ()->promise.complete(null);
+        scheduledExecutor.schedule(task, delay, TimeUnit.MILLISECONDS);
+        return promise;
+    }
+
     private <T> Promise<T> supply(final Callable<T> supplier, Executor executor)
     {
         if (supplier == null)
@@ -413,7 +370,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
         if ( promise instanceof SynchronizedPromise)
         {
             SynchronizedPromise synchronizedPromise = (SynchronizedPromise) promise;
-            javaObservable = new JavaObservable(synchronizedPromise);
+            javaObservable = new JavaObservable(synchronizedPromise, promiseExecuter);
 
         }
         else
@@ -438,10 +395,18 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
                 }
 
             });
-            javaObservable = new JavaObservable<T>(publishSubject);
+            javaObservable = new JavaObservable<T>(publishSubject, promiseExecuter);
         }
         return javaObservable;
     }
+
+    @Override
+    public <T> org.rapla.scheduler.Subject<T> createPublisher()
+    {
+        PublishSubject<T> subject = PublishSubject.create();
+        return new JavaSubject<>(subject, promiseExecuter);
+    }
+
 
     /*
     public <T> Promise<T> synchronizeTo(Promise<T> promise)

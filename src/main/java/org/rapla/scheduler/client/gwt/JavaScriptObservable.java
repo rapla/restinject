@@ -14,7 +14,7 @@ import org.rapla.scheduler.Promise;
 
 public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T>
 {
-    Observable observable;
+    protected Observable observable;
 
     JavaScriptObservable(Observable observable)
     {
@@ -28,7 +28,7 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
             subject.next( t); subject.complete();
         });
         promise.exceptionally( (ex) -> { subject.error( ex);return null; });
-        this.observable = observable;
+        this.observable = subject;
     }
 
     @Override
@@ -168,6 +168,12 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
     public Observable toNativeObservable()
     {
         return observable;
+    }
+
+    @Override
+    public org.rapla.scheduler.Observable<T> debounce(long time) {
+        final Observable observable = this.observable.debounceTime((int) time);
+        return t(observable);
     }
 }
 

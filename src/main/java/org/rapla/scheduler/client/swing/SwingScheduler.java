@@ -1,14 +1,11 @@
 package org.rapla.scheduler.client.swing;
 
+import io.reactivex.functions.Action;
 import org.rapla.logger.Logger;
-import org.rapla.scheduler.Cancelable;
 import org.rapla.scheduler.CompletablePromise;
 import org.rapla.scheduler.Promise;
-import org.rapla.scheduler.UnsynchronizedCompletablePromise;
 import org.rapla.scheduler.sync.UtilConcurrentCommandScheduler;
 
-import javax.inject.Inject;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SwingScheduler extends UtilConcurrentCommandScheduler
@@ -82,18 +79,19 @@ public class SwingScheduler extends UtilConcurrentCommandScheduler
     */
 
     @Override
-    public Cancelable scheduleSynchronized(Object synchronizationObject, Runnable task, long delay)
-    {
-        Runnable swingTask = new Runnable()
-        {
+    protected void execute(Action action, CompletablePromise<Void> completablePromise) {
+        Runnable task = new Runnable() {
             @Override
-            public void run()
-            {
-                javax.swing.SwingUtilities.invokeLater(task);
+            public void run() {
+                try {
+                    action.run();
+                } catch (Exception e) {
+                    completablePromise.completeExceptionally(e);
+                    return;
+                }
+                completablePromise.complete( null );
             }
         };
-        return super.scheduleSynchronized(synchronizationObject, swingTask, delay);
+        javax.swing.SwingUtilities.invokeLater(task);
     }
-
-
 }

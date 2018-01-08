@@ -22,6 +22,11 @@ public class SynchronizedCompletablePromise<T> extends  SynchronizedPromise<T> i
         ((CompletableFuture<T>)f).complete( value );
     }
 
+    public boolean isCompletedExc()
+    {
+        return ((CompletableFuture<T>)f).isDone();
+    }
+
     @Override
     public void completeExceptionally(Throwable ex)
     {

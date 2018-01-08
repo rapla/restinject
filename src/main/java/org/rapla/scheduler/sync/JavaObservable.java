@@ -2,26 +2,36 @@ package org.rapla.scheduler.sync;
 
 import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
+import io.reactivex.Scheduler;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 import org.rapla.scheduler.Observable;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 public class JavaObservable<T> implements Observable<T>
 {
-    io.reactivex.Observable<T> observable;
+    protected io.reactivex.Observable<T> observable;
+    Scheduler scheduler =null;
 
-    public JavaObservable(SynchronizedPromise<T> promise)
+    public JavaObservable(SynchronizedPromise<T> promise, Executor executor)
     {
-        this(io.reactivex.Observable.fromFuture(promise.toFuture()));
+        this(io.reactivex.Observable.fromFuture(promise.toFuture()), executor);
     }
 
 
-    public JavaObservable(io.reactivex.Observable<T> observable)
+    public JavaObservable(io.reactivex.Observable<T> observable, Executor executor)
+    {
+        this(observable, Schedulers.from( executor));
+    }
+
+    public JavaObservable(io.reactivex.Observable<T> observable, Scheduler scheduler)
     {
         this.observable = observable;
+        this.scheduler = scheduler;
     }
 
 
@@ -31,7 +41,6 @@ public class JavaObservable<T> implements Observable<T>
         final io.reactivex.Observable<T> tFlowable = observable.doOnError(onError);
         return t(tFlowable);
     }
-
 
 
     @Override
@@ -50,13 +59,14 @@ public class JavaObservable<T> implements Observable<T>
     @Override
     public Observable<T> throttle(long milliseconds)
     {
-        final io.reactivex.Observable<T> tFlowable = observable.throttleLast(milliseconds, TimeUnit.MILLISECONDS);
+
+        final io.reactivex.Observable<T> tFlowable = observable.throttleLast(milliseconds, TimeUnit.MILLISECONDS, scheduler);
         return t(tFlowable);
     }
 
     private <R> Observable<R> t(final io.reactivex.Observable<R> tFlowable)
     {
-        return new JavaObservable<>(tFlowable);
+        return new JavaObservable<>(tFlowable, scheduler);
     }
 
     @Override
@@ -76,5 +86,11 @@ public class JavaObservable<T> implements Observable<T>
     public io.reactivex.Observable<T> toNativeObservable()
     {
         return observable;
+    }
+
+    @Override
+    public Observable<T> debounce(long time) {
+        final io.reactivex.Observable<T> debounce = observable.debounce(time, TimeUnit.MILLISECONDS, scheduler);
+        return t(debounce);
     }
 }
