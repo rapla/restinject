@@ -6,4 +6,5 @@
 <module rename-to='RestinjectExternal'>
     <source path='dagger' />
     <source path='javax/inject' />
+    <source path='org/reactivestreams' />
 </module>

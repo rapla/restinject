@@ -8,6 +8,7 @@ import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsType;
 import org.reactivestreams.Publisher;
 
@@ -22,6 +23,7 @@ public interface Observable<T> extends Publisher<T> {
     /**
      * @see Flowable#subscribe(Consumer)
      */
+    @JsMethod(name = "subscribeWithConsumer")
     Disposable subscribe(Consumer<? super T> consumer);
     /**
      * @see Flowable#throttleLast(long, TimeUnit)
