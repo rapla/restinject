@@ -39,30 +39,28 @@ public class GwtCommandScheduler implements CommandScheduler {
     }
 
 
-    @Override
-    public Promise<Void> delay(long periodLengthInMilliseconds) {
-        final int periodLengthInMilliseconds1 = (int) periodLengthInMilliseconds;
-        final com.github.timofeevda.gwt.rxjs.interop.observable.Observable<Integer> interval = com.github.timofeevda.gwt.rxjs.interop.observable.Observable.timer(periodLengthInMilliseconds1);
-        CompletablePromise<Void> promise = createCompletable();
-        final Action1 action1 = (time) -> promise.complete(null);
-        interval.subscribe(action1);
-        return promise;
-    }
-
-    @Override
-    public Observable<Long> intervall( long initialDelay,long periodMilliseconds) {
-        com.github.timofeevda.gwt.rxjs.interop.observable.Observable<Integer> interval = com.github.timofeevda.gwt.rxjs.interop.observable.Observable.interval((int)periodMilliseconds);
-        if ( initialDelay>0)
-        {
-            interval = interval.delay( (int)initialDelay);
-        }
-        final com.github.timofeevda.gwt.rxjs.interop.observable.Observable<Long> map = interval.map((intValue) -> Integer.toUnsignedLong(intValue));
-        return new JavaScriptObservable<Long>(map);
-    }
+//    public Promise<Void> delay(long periodLengthInMilliseconds) {
+//        final int periodLengthInMilliseconds1 = (int) periodLengthInMilliseconds;
+//        final com.github.timofeevda.gwt.rxjs.interop.observable.Observable<Integer> interval = com.github.timofeevda.gwt.rxjs.interop.observable.Observable.timer(periodLengthInMilliseconds1);
+//        CompletablePromise<Void> promise = createCompletable();
+//        final Action1 action1 = (time) -> promise.complete(null);
+//        interval.subscribe(action1);
+//        return promise;
+//    }
+//
+//    public Observable<Long> intervall( long initialDelay,long periodMilliseconds) {
+//        com.github.timofeevda.gwt.rxjs.interop.observable.Observable<Integer> interval = com.github.timofeevda.gwt.rxjs.interop.observable.Observable.interval((int)periodMilliseconds);
+//        if ( initialDelay>0)
+//        {
+//            interval = interval.delay( (int)initialDelay);
+//        }
+//        final com.github.timofeevda.gwt.rxjs.interop.observable.Observable<Long> map = interval.map((intValue) -> Integer.toUnsignedLong(intValue));
+//        return new JavaScriptObservable<Long>(map);
+//    }
 
     @Override
     public <T> Promise<T> supply(final Callable<T> supplier) {
-        final UnsynchronizedCompletablePromise<T> promise = new UnsynchronizedCompletablePromise<T>();
+        final UnsynchronizedPromise<T> promise = new UnsynchronizedPromise<T>();
         scheduleDeferred(() ->
         {
             try {
@@ -76,8 +74,14 @@ public class GwtCommandScheduler implements CommandScheduler {
     }
 
     @Override
+    public <T> Observable<T> just(T t) {
+        final com.github.timofeevda.gwt.rxjs.interop.observable.Observable<T> of = com.github.timofeevda.gwt.rxjs.interop.observable.Observable.of(t);
+        return new JavaScriptObservable<T>(of);
+    }
+
+    @Override
     public Promise<Void> run(final Action supplier) {
-        final UnsynchronizedCompletablePromise<Void> promise = new UnsynchronizedCompletablePromise<Void>();
+        final UnsynchronizedPromise<Void> promise = new UnsynchronizedPromise<Void>();
         scheduleDeferred(() ->
         {
             try {
@@ -94,11 +98,11 @@ public class GwtCommandScheduler implements CommandScheduler {
         SchedulerImpl.get(logger).scheduleDeferred(cmd);
     }
 
-
     @Override
     public Promise<Void> scheduleSynchronized(Object synchronizationObject, Action task) {
         return schedule(() -> task.run());
     }
+
 
     protected void warn(String message, Exception e) {
         logger.warn(message, e);
@@ -106,7 +110,7 @@ public class GwtCommandScheduler implements CommandScheduler {
 
     @Override
     public <T> CompletablePromise<T> createCompletable() {
-        return new UnsynchronizedCompletablePromise<>();
+        return new UnsynchronizedPromise<>();
     }
 
     @Override

@@ -93,7 +93,7 @@ public abstract class AbstractPromiseTest
         ExampleService test = createAnnotationProcessingProxy();
         final ExampleService.Parameter p = null;
         final Promise<Collection<ExampleService.Result>> supply = scheduler.supply(() -> test.sayHello(p));
-        supply.handle((resultList, ex) -> {
+        supply.whenComplete((resultList, ex) -> {
             if (ex != null)
             {
                 finishTest();
@@ -102,7 +102,6 @@ public abstract class AbstractPromiseTest
             {
                 fail_("Exception should have occured");
             }
-            return null;
         });
         waitForTest();
     }
@@ -113,7 +112,7 @@ public abstract class AbstractPromiseTest
         ExampleService.Parameter p2 = new ExampleService.Parameter();
         p2.setActionIds(Arrays.asList(new Integer[] { 3, 5 }));
         final Promise<Collection<ExampleService.Result>> successPromise = scheduler.supply(() -> test.sayHello(p2));
-        successPromise.handle((resultList, ex) -> {
+        successPromise.whenComplete((resultList, ex) -> {
             if (ex != null)
             {
                 fail_("No exception should have occured");
@@ -122,7 +121,6 @@ public abstract class AbstractPromiseTest
             {
                 finishTest();
             }
-            return null;
         });
         waitForTest();
     }
@@ -232,16 +230,4 @@ public abstract class AbstractPromiseTest
         waitForTest();
     }
 
-    @Test public void testApplyToEither() throws Exception
-    {
-        ExampleService test = createAnnotationProcessingProxy();
-        final Promise<String> promise = scheduler.supply(() -> test.longcall());
-        final Promise<String> promise2 = scheduler.supply(() -> test.shortcall());
-        promise.applyToEither(promise2, (first) -> {
-            assertEq("short",  first);
-            finishTest();
-            return null;
-        });
-        waitForTest();
-    }
 }

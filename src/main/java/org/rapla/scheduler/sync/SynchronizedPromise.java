@@ -5,6 +5,7 @@ import io.reactivex.functions.BiConsumer;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import org.rapla.scheduler.Observable;
 import org.rapla.scheduler.Promise;
 
 import java.util.concurrent.CompletableFuture;
@@ -125,13 +126,6 @@ class SynchronizedPromise<T> implements Promise<T>
         return w(f.thenAcceptBothAsync(v, biConsumer, promiseExecuter));
     }
 
-    @Override
-    public Promise<Void> runAfterBoth(Promise<?> other, Action command)
-    {
-        final Runnable action = wrapAction(command);
-        return w(f.runAfterBothAsync(v(other), action, promiseExecuter));
-    }
-
     private Runnable wrapAction(Action command)
     {
         return () ->
@@ -145,47 +139,6 @@ class SynchronizedPromise<T> implements Promise<T>
                 throw new PromiseRuntimeException(e);
             }
         };
-    }
-
-    @Override
-    public <U> Promise<U> applyToEither(Promise<? extends T> other, Function<? super T, U> fn)
-    {
-        final java.util.function.Function<? super T, ? extends U> fun = (t) ->
-        {
-            try
-            {
-                return fn.apply(t);
-            }
-            catch (Exception e)
-            {
-                throw new PromiseRuntimeException(e);
-            }
-        };
-        return w(f.applyToEitherAsync(v(other), fun, promiseExecuter));
-    }
-
-    @Override
-    public Promise<Void> acceptEither(Promise<? extends T> other, Consumer<? super T> fn)
-    {
-        final java.util.function.Consumer<? super T> action = (t) ->
-        {
-            try
-            {
-                fn.accept(t);
-            }
-            catch (Exception e)
-            {
-                throw new PromiseRuntimeException(e);
-            }
-        };
-        return w(f.acceptEitherAsync(v(other), action, promiseExecuter));
-    }
-
-    @Override
-    public Promise<Void> runAfterEither(Promise<?> other, Action command)
-    {
-        final Runnable action = wrapAction(command);
-        return w(f.runAfterEitherAsync(v(other), action, promiseExecuter));
     }
 
     @Override
@@ -250,24 +203,6 @@ class SynchronizedPromise<T> implements Promise<T>
         return w(f.whenCompleteAsync(bifn, promiseExecuter));
     }
 
-    @Override
-    public <U> Promise<U> handle(BiFunction<? super T, Throwable, ? extends U> fn)
-    {
-        final java.util.function.BiFunction<? super T, Throwable, ? extends U> bifn = (t, u) ->
-        {
-            try
-            {
-                u = getCause( u);
-                return fn.apply(t, u);
-            }
-            catch (Exception e)
-            {
-                throw new PromiseRuntimeException(e);
-            }
-        };
-        return w(f.handleAsync(bifn, promiseExecuter));
-    }
-
     static class PromiseRuntimeException extends RuntimeException
     {
         private static final long serialVersionUID = 1L;
@@ -284,10 +219,9 @@ class SynchronizedPromise<T> implements Promise<T>
         }
     }
 
-    public Future<T> toFuture()
+    public CompletableFuture<T> toFuture()
     {
         return this.f.toCompletableFuture();
     }
-
 
 }

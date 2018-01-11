@@ -7,10 +7,13 @@ import com.github.timofeevda.gwt.rxjs.interop.observable.Observer;
 import com.github.timofeevda.gwt.rxjs.interop.subject.Subject;
 import com.github.timofeevda.gwt.rxjs.interop.subscription.Subscription;
 import com.google.gwt.core.client.JavaScriptException;
+import io.reactivex.ObservableSource;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.sync.JavaObservable;
+import org.reactivestreams.Publisher;
 
 public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T>
 {
@@ -32,6 +35,15 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
     }
 
     @Override
+    public Disposable subscribe() {
+        Action1 action1 = (t) ->
+        {
+        };
+        final Subscription subscription = observable.subscribe(action1);
+        return subscribtionToDisposable( subscription);
+    }
+
+    @Override
     public Disposable subscribe(Consumer<? super T> consumer)
     {
         Action1 action1 = (t) ->
@@ -46,6 +58,10 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
             }
         };
         final Subscription subscription = observable.subscribe(action1);
+        return subscribtionToDisposable(subscription);
+    }
+
+    protected Disposable subscribtionToDisposable(Subscription subscription) {
         return new Disposable()
         {
             @Override
@@ -68,6 +84,27 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
         final int milliseconds1 = (int) milliseconds;
         final Observable observable = this.observable.throttleTime(milliseconds1);
         return t(observable);
+    }
+
+    @Override
+    public org.rapla.scheduler.Observable<T> delay(long milliseconds) {
+        final int milliseconds1 = (int) milliseconds;
+        final Observable observable = this.observable.delay(milliseconds1);
+        return t(observable);
+    }
+
+    @Override
+    public org.rapla.scheduler.Observable<T> repeat() {
+        final Observable observable = this.observable.repeat();
+        return t(observable);
+    }
+
+    @Override
+    public org.rapla.scheduler.Observable<T> concatWith(org.rapla.scheduler.Observable<? extends T> otherObservable)
+    {
+        final Observable observable = ((JavaScriptObservable) otherObservable).observable;
+        final Observable concat = this.observable.concat(observable);
+        return t(concat) ;
     }
 
     @Override
@@ -103,31 +140,43 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
     }
 
     @Override
-    public <R> org.rapla.scheduler.Observable<R> switchMap(Function<? super T, org.rapla.scheduler.Observable<R>> mapper)
-    {
+    public <R> org.rapla.scheduler.Observable<R> flatMap(Function<? super T, ? extends Publisher<? extends R>> mapper) {
+        Observable.Projector<T, R> projector = getMapProjector(mapper);
+        final Observable observable = this.observable.mergeMap(projector);
+        return new JavaScriptObservable<R>(observable);
+    }
 
-        Observable.Projector<T,R> projector = new Observable.Projector<T,R>()
-        {
-            @Override
-            public Observable<R> project(T item, int index)
+
+
+    @Override
+    public <R> org.rapla.scheduler.Observable<R> switchMap(Function<? super T,  ? extends Publisher<? extends R>> mapper)
+    {
+        Observable.Projector<T, R> projector = getMapProjector(mapper);
+        final Observable observable = this.observable.switchMap(projector);
+        return new JavaScriptObservable<R>(observable);
+    }
+
+    protected <R> Observable.Projector<T, R> getMapProjector(Function<? super T, ? extends Publisher<? extends R>> mapper) {
+        return new Observable.Projector<T,R>()
             {
-                try
+                @Override
+                public Observable<R> project(T item, int index)
                 {
-                    final org.rapla.scheduler.Observable<R> apply = mapper.apply(item);
-                    Observable<R> jsObservable = ((JavaScriptObservable<R>) apply).observable;
-                    return jsObservable;
-                } catch (Exception ex)
-                {
-                    return Observable._throw( ex);
+                    try
+                    {
+                        Publisher<? extends R> apply = mapper.apply(item);
+                        Observable<R> jsObservable = ((JavaScriptObservable<R>) apply).observable;
+                        return jsObservable;
+                    } catch (Exception ex)
+                    {
+                        return Observable._throw( ex);
+                    }
                 }
-            }
-        };
-        observable.switchMap(projector);
-        throw new UnsupportedOperationException();
+            };
     }
 
     @Override
-    public void subscribe(io.reactivex.Observer<? super T> observer)
+    public void subscribe(org.reactivestreams.Subscriber<? super T> observer)
     {
         Observer<T> jsObserver  = new Observer<T>()
         {

@@ -10,7 +10,7 @@ import io.reactivex.functions.Function;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UnsynchronizedPromise<T> implements Promise<T>
+public class UnsynchronizedPromise<T> implements CompletablePromise<T>
 {
     private enum State
     {
@@ -172,11 +172,6 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         return new UnsynchronizedPromise(this, other, fn);
     }
 
-    @Override public Promise<Void> runAfterBoth(Promise<?> other, Action fn)
-    {
-        return new UnsynchronizedPromise(this, other, fn);
-    }
-
     private static class BooleanContainer
     {
         boolean status = true;
@@ -189,55 +184,6 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         }
     }
 
-    @Override public <U> Promise<U> applyToEither(Promise<? extends T> other, Function<? super T, U> fn)
-    {
-        final UnsynchronizedCompletablePromise<U> resultPromise = new UnsynchronizedCompletablePromise<>();
-        final BooleanContainer resultIsPending = new BooleanContainer();
-        other.thenAccept((r) -> {
-            final U apply = fn.apply(r);
-            final boolean pending = resultIsPending.getAndSet(false);
-            if (pending)
-            {
-                resultPromise.complete(apply);
-            }
-        }).exceptionally((ex) -> {
-            final boolean pending = resultIsPending.getAndSet(false);
-            if (pending)
-            {
-                resultPromise.completeExceptionally(ex);
-            }
-            return null;
-        });
-        this.thenAccept((r) -> {
-            final U apply = fn.apply(r);
-            final boolean pending = resultIsPending.getAndSet(false);
-            if (pending)
-            {
-                resultPromise.complete(apply);
-            }
-        }).exceptionally((ex) -> {
-            final boolean pending = resultIsPending.getAndSet(false);
-            if (pending)
-            {
-                resultPromise.completeExceptionally(ex);
-            }
-            return null;
-        });
-        return resultPromise;
-    }
-
-    @Override public Promise<Void> acceptEither(Promise<? extends T> other, Consumer<? super T> fn)
-    {
-        return applyToEither(other, (a) -> {
-            fn.accept(a);
-            return null;
-        });
-    }
-
-    @Override public Promise<Void> runAfterEither(Promise<?> other, Action fn)
-    {
-        return acceptEither((Promise) other, (a) -> fn.run());
-    }
 
     @Override public Promise<T> whenComplete(BiConsumer<? super T, ? super Throwable> fn)
     {
@@ -252,16 +198,9 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         return exceptionallyPromise;
     }
 
-    @Override public <U> Promise<U> handle(BiFunction<? super T, Throwable, ? extends U> fn)
-    {
-        final Promise<U> applyPromise = thenApply((a) -> fn.apply(a, null));
-        final Promise<U> exceptionallyPromise = applyPromise.exceptionally((ex) -> fn.apply(null, ex));
-        return exceptionallyPromise;
-    }
-
     @Override public <U> Promise<U> thenCompose(Function<? super T, ? extends Promise<U>> fn)
     {
-        final UnsynchronizedCompletablePromise<U> resultPromise = new UnsynchronizedCompletablePromise<>();
+        final UnsynchronizedPromise<U> resultPromise = new UnsynchronizedPromise<>();
         this.thenAccept((r) -> {
             final Promise<U> apply = fn.apply(r);
             apply.thenAccept((r2) -> {
@@ -327,6 +266,16 @@ public class UnsynchronizedPromise<T> implements Promise<T>
         }
         state = exception == null ? State.fulfilled : State.rejected;
         fireComplete(this.result, exception);
+    }
+
+    public void complete(T result)
+    {
+        completed(result, null);
+    }
+
+    public void completeExceptionally(Throwable ex)
+    {
+        completed(null,ex);
     }
 
 }

@@ -3,6 +3,7 @@ package org.rapla.scheduler.client.gwt;
 import com.github.timofeevda.gwt.rxjs.interop.observable.Observable;
 import io.reactivex.disposables.Disposable;
 import org.rapla.scheduler.Subject;
+import org.reactivestreams.Subscription;
 
 public class JavaScriptSubject<T> extends JavaScriptObservable<T> implements Subject<T> {
 
@@ -10,9 +11,10 @@ public class JavaScriptSubject<T> extends JavaScriptObservable<T> implements Sub
         super(observable);
     }
 
+
     @Override
-    public void onSubscribe(Disposable d) {
-        // TODO is there a js implementation for that?
+    public void onSubscribe(Subscription subscription) {
+        throw new IllegalStateException("onSubscribe not handled by JS-Subject");
     }
 
     @Override

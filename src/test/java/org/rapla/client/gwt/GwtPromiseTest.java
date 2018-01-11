@@ -120,11 +120,6 @@ public class GwtPromiseTest extends GWTTestCase
         genericTest.testExceptionally();
     }
 
-    @Test public void testApplyToEither() throws Exception
-    {
-        genericTest.testApplyToEither();
-    }
-
     @Test public void testAccept() throws Exception
     {
         genericTest.testAccept();

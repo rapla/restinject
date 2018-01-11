@@ -31,18 +31,6 @@ public interface Promise<T>
     /** same as {@link java.util.concurrent.CompletionStage#thenAcceptBoth(CompletionStage, java.util.function.BiConsumer)}   but usable in gwt */
     <U> Promise<Void> thenAcceptBoth(Promise<? extends U> other, BiConsumer<? super T, ? super U> fn);
 
-    /** same as {@link java.util.concurrent.CompletionStage#runAfterBoth(CompletionStage, Runnable)}    but usable in gwt */
-    Promise<Void> runAfterBoth(Promise<?> other, Action fn);
-
-    /** same as {@link java.util.concurrent.CompletionStage#applyToEither(CompletionStage, java.util.function.Function)}     but usable in gwt */
-    <U> Promise<U> applyToEither(Promise<? extends T> other, Function<? super T, U> fn);
-
-    /** same as {@link java.util.concurrent.CompletionStage#acceptEither(CompletionStage, java.util.function.Consumer)}      but usable in gwt */
-    Promise<Void> acceptEither(Promise<? extends T> other, Consumer<? super T> fn);
-
-    /** same as {@link java.util.concurrent.CompletionStage#runAfterEither(CompletionStage, Runnable)}      but usable in gwt */
-    Promise<Void> runAfterEither(Promise<?> other, Action fn);
-
     /** same as {@link java.util.concurrent.CompletionStage#thenCompose(java.util.function.Function)}       but usable in gwt */
     <U> Promise<U> thenCompose(Function<? super T, ? extends Promise<U>> fn);
 
@@ -51,8 +39,5 @@ public interface Promise<T>
 
     /** same as {@link java.util.concurrent.CompletionStage#whenComplete(java.util.function.BiConsumer)}         but usable in gwt */
     Promise<T> whenComplete(BiConsumer<? super T, ? super Throwable> fn);
-
-    /** same as {@link java.util.concurrent.CompletionStage#handle(java.util.function.BiFunction)}          but usable in gwt */
-    <U> Promise<U> handle(BiFunction<? super T, Throwable, ? extends U> fn);
 }
 

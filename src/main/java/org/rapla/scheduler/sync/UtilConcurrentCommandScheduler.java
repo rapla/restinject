@@ -1,6 +1,7 @@
 package org.rapla.scheduler.sync;
 
 import io.reactivex.functions.Action;
+import io.reactivex.processors.PublishProcessor;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 import org.rapla.logger.Logger;
@@ -8,6 +9,7 @@ import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.CompletablePromise;
 import org.rapla.scheduler.Observable;
 import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.client.gwt.JavaScriptObservable;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -53,12 +55,6 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
         });
         this.scheduledExecutor = executor;
         this.promiseExecuter = executor;
-    }
-
-    @Override
-    public Observable<Long> intervall(long initialDelay,long periodMilliseconds) {
-        final io.reactivex.Observable<java.lang.Long> interval = io.reactivex.Observable.interval(initialDelay,periodMilliseconds, TimeUnit.MILLISECONDS, Schedulers.from(promiseExecuter));
-        return new JavaObservable(interval, promiseExecuter);
     }
 
     public void execute(Runnable task)
@@ -290,12 +286,18 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
         return supply(supplier, promiseExecuter);
     }
 
-    @Override
+//    @Override
     public Promise<Void> delay(long delay) {
         CompletablePromise<Void> promise = createCompletable();
         Runnable task = ()->promise.complete(null);
         scheduledExecutor.schedule(task, delay, TimeUnit.MILLISECONDS);
         return promise;
+    }
+
+    @Override
+    public <T> Observable<T> just(T t) {
+        final io.reactivex.Flowable<T> just = io.reactivex.Flowable.just(t);
+        return new JavaObservable<T>(just, promiseExecuter);
     }
 
     private <T> Promise<T> supply(final Callable<T> supplier, Executor executor)
@@ -371,11 +373,10 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
         {
             SynchronizedPromise synchronizedPromise = (SynchronizedPromise) promise;
             javaObservable = new JavaObservable(synchronizedPromise, promiseExecuter);
-
         }
         else
         {
-            final PublishSubject<T> publishSubject = PublishSubject.create();
+            final PublishProcessor<T> publishSubject = PublishProcessor.create();
             promise.whenComplete((arg, throwable) ->
             {
                 try
@@ -403,7 +404,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
     @Override
     public <T> org.rapla.scheduler.Subject<T> createPublisher()
     {
-        PublishSubject<T> subject = PublishSubject.create();
+        PublishProcessor<T> subject = PublishProcessor.create();
         return new JavaSubject<>(subject, promiseExecuter);
     }
 
