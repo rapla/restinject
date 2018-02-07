@@ -81,10 +81,13 @@ public class ConsoleLogger extends AbstractLogger {
                 
             }
         }
-        System.out.println(buf.toString());
+        final String line = buf.toString();
+        writeln(line);
     }
 
-
-    
+    protected void writeln(String message)
+    {
+        System.out.println(message);
+    }
 
 }
