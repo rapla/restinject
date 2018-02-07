@@ -31,7 +31,9 @@ public class JavaObservable<T> implements Observable<T>
                     if (error != null) {
                         subscriber.onError(error);
                     } else {
-                        subscriber.onNext(result);
+                        if ( result != null) {
+                            subscriber.onNext(result);
+                        }
                         subscriber.onComplete();
                     }
                 }), strategy);

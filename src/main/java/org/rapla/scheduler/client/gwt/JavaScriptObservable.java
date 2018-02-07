@@ -28,7 +28,10 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
     {
         Subject<T> subject = new Subject<T>();
         promise.thenAccept( (t) ->{
-            subject.next( t); subject.complete();
+            if ( t!= null) {
+                subject.next(t);
+            }
+            subject.complete();
         });
         promise.exceptionally( (ex) -> { subject.error( ex);return null; });
         this.observable = subject;

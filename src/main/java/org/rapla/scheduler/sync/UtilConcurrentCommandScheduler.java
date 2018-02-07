@@ -379,21 +379,30 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
             final PublishProcessor<T> publishSubject = PublishProcessor.create();
             promise.whenComplete((arg, throwable) ->
             {
-                try
+                if (throwable != null)
                 {
-                    if (throwable != null)
+                    try
                     {
                         publishSubject.onError(throwable);
                     }
-                    else
+                    finally
                     {
-                        publishSubject.onNext(arg);
+                        publishSubject.onComplete();
                     }
                 }
-                finally
+                else
                 {
-                    publishSubject.onComplete();
+                    if ( arg != null) {
+                        try {
+                            publishSubject.onNext(arg);
+                        } finally {
+                            publishSubject.onComplete();
+                        }
+                    } else {
+                        publishSubject.onComplete();
+                    }
                 }
+
 
             });
             javaObservable = new JavaObservable<T>(publishSubject, promiseExecuter);
