@@ -78,39 +78,43 @@ public class GwtDaggerGenerator extends Generator
                 sourceWriter.print("public " + qualifiedSourceName+ " " + methodName+"(");
                 final JParameter[] parameters = jMethod.getParameters();
                 final JType[] parameterTypes = jMethod.getParameterTypes();
-                boolean first = true;
-                for(int i = 0; i < parameters.length; i++)
                 {
-                    if(first)
+                    boolean first = true;
+                    for (int i = 0; i < parameters.length; i++)
                     {
-                        first = false;
+                        if (first)
+                        {
+                            first = false;
+                        }
+                        else
+                        {
+                            sourceWriter.print(", ");
+                        }
+                        sourceWriter.print(parameterTypes[i].getQualifiedSourceName());
+                        sourceWriter.print(" ");
+                        sourceWriter.print(parameters[i].getName());
                     }
-                    else
-                    {
-                        sourceWriter.print(", ");
-                    }
-                    sourceWriter.print(parameterTypes[i].getQualifiedSourceName());
-                    sourceWriter.print(" ");
-                    sourceWriter.print(parameters[i].getName());
                 }
                 sourceWriter.println("){");
                 sourceWriter.indent();
-                if(!isVoid)
-                    sourceWriter.print("return ");
-                sourceWriter.print("dagger."+methodName+"(");
-                for(int i = 0; i < parameters.length; i++)
                 {
-                    if(first)
+                    if(!isVoid)
+                        sourceWriter.print("return ");
+                    sourceWriter.print("dagger."+methodName+"(");    boolean first = true;
+                    for (int i = 0; i < parameters.length; i++)
                     {
-                        first = false;
+                        if (first)
+                        {
+                            first = false;
+                        }
+                        else
+                        {
+                            sourceWriter.print(", ");
+                        }
+                        sourceWriter.print(parameters[i].getName());
                     }
-                    else
-                    {
-                        sourceWriter.print(", ");
-                    }
-                    sourceWriter.print(parameters[i].getName());
+                    sourceWriter.println(");");
                 }
-                sourceWriter.println(");");
                 sourceWriter.outdent();
                 sourceWriter.println("}");
             }
