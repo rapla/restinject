@@ -229,6 +229,10 @@ public class SerializerCreator implements SerializerClasses
         {
             return;
         }
+        if ( isVoid( type))
+        {
+            return;
+        }
 
         if (isJsonPrimitive(type) || isBoxedPrimitive(type))
         {
@@ -856,6 +860,10 @@ public class SerializerCreator implements SerializerClasses
     {
         final Element element = processingEnvironment.getTypeUtils().asElement(t);
         return element != null && element.getKind() == ElementKind.ENUM;
+    }
+    static public boolean isVoid(final TypeMirror t)
+    {
+        return  t.toString().equals("java.lang.Void");
     }
 
     static boolean isJsonPrimitive(final TypeElement t)

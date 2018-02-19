@@ -200,12 +200,15 @@ public abstract class AbstractClientProxyCreator
                 {
                     continue;
                 }
-
                 final TreeLogger branch = logger;//.branch(TreeLogger.DEBUG, m.getName() + ", result " + resultType.getQualifiedSourceName());
                 final boolean isPromise = isPromise(returnType);
                 if (isPromise)
                 {
                     returnType = getPromiseTypeArgument(m, returnType);
+                }
+                if ( SerializerCreator.isVoid(returnType))
+                {
+                    continue;
                 }
                 serializerCreator.checkCanSerialize(branch, returnType);
                 if (SerializerCreator.isArray(returnType))

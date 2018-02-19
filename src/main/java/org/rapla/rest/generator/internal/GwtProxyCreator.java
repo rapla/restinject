@@ -98,7 +98,7 @@ public class GwtProxyCreator extends AbstractClientProxyCreator implements Seria
         w.print(" ");
         w.print(fieldName);
         w.print(" = ");
-        if (resultType.getKind() == TypeKind.VOID)
+        if (resultType.getKind() == TypeKind.VOID || resultType.toString().equals("java.lang.Void"))
         {
             w.print("null");
         }
