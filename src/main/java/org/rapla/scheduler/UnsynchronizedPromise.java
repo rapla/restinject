@@ -65,17 +65,15 @@ public class UnsynchronizedPromise<T> implements CompletablePromise<T>
         parent.initState(this, null);
     }
 
+    private UnsynchronizedPromise(Consumer<Throwable> exceptionFn, UnsynchronizedPromise parent)
+    {
+        this.exceptionFn = (t) -> {try {exceptionFn.accept( t);}finally { return null;}};
+        parent.initState(this, null);
+    }
+
     private UnsynchronizedPromise(UnsynchronizedPromise parent, Function<Object, T> fn)
     {
         this(parent, (a1, a2) -> fn.apply(a1), null);
-    }
-
-    private UnsynchronizedPromise(UnsynchronizedPromise parent, Promise other, Action fn)
-    {
-        this(parent, (a, b) -> {
-            fn.run();
-            return null;
-        }, other);
     }
 
     private UnsynchronizedPromise(UnsynchronizedPromise parent, Promise other, BiConsumer<Object, Object> fn)
@@ -100,7 +98,6 @@ public class UnsynchronizedPromise<T> implements CompletablePromise<T>
             final Promise<Object> promise = other.thenAccept((result2) -> changeState(result, result2, null));
             promise.exceptionally((ex2) -> {
                 changeState(null, null, ex2);
-                return null;
             });
         }
         else
@@ -129,7 +126,6 @@ public class UnsynchronizedPromise<T> implements CompletablePromise<T>
                 final Promise<Object> promise = other.thenAccept((result2) -> nextPromise.changeState(result, result2, null));
                 promise.exceptionally((ex2) -> {
                     nextPromise.changeState(null, null, ex2);
-                    return null;
                 });
             }
             else
@@ -172,6 +168,11 @@ public class UnsynchronizedPromise<T> implements CompletablePromise<T>
         return new UnsynchronizedPromise(this, other, fn);
     }
 
+    @Override
+    public Promise<Void> finally_(Action action) {
+        return handle( ( ex, t)-> {action.run(); return null;}).thenApply( (t)->null);
+    }
+
     private static class BooleanContainer
     {
         boolean status = true;
@@ -185,16 +186,13 @@ public class UnsynchronizedPromise<T> implements CompletablePromise<T>
     }
 
 
-    @Override public Promise<T> whenComplete(BiConsumer<? super T, ? super Throwable> fn)
-    {
-        final Promise<T> applyPromise = thenApply((a) -> {
-            fn.accept(a, null);
-            return a;
-        });
-        final Promise<T> exceptionallyPromise = applyPromise.exceptionally((ex) -> {
-            fn.accept(null, ex);
-            return null;
-        });
+    @Override
+    public  Promise<T> handle(BiFunction<? super T, Throwable, ? super T> fn) {
+        final UnsynchronizedPromise<T> applyPromise = (UnsynchronizedPromise)thenApply((a) -> fn.apply(a, null));
+        final Promise<T> exceptionallyPromise = new UnsynchronizedPromise<T>((ex) -> {
+            final T apply = (T) fn.apply(null, ex);
+            return apply;
+        }, applyPromise);
         return exceptionallyPromise;
     }
 
@@ -207,18 +205,16 @@ public class UnsynchronizedPromise<T> implements CompletablePromise<T>
                 resultPromise.complete(r2);
             }).exceptionally((ex) -> {
                 resultPromise.completeExceptionally(ex);
-                return null;
             });
         }).exceptionally((ex) -> {
             resultPromise.completeExceptionally(ex);
-            return null;
         });
         return resultPromise;
     }
 
-    @Override public Promise<T> exceptionally(Function<Throwable, ? extends T> fn)
+    @Override public Promise<Void> exceptionally(Consumer<Throwable> fn)
     {
-        return new UnsynchronizedPromise<T>(fn, this);
+        return new UnsynchronizedPromise<>(fn, this);
     }
 
     protected void changeState(T result, Object result2, Throwable ex)

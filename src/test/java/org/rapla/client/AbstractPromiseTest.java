@@ -52,10 +52,10 @@ public abstract class AbstractPromiseTest
     {
     }
 
-    @Test public void testCatch() throws Exception
+    @Test public void testCatch()
     {
         Promise<String> async4 = scheduler.supply(() -> {return 0/0+"Hello";});
-        async4.thenAccept((string)->System.out.println(string)).exceptionally( (ex)->{ex.printStackTrace();return null;});
+        async4.thenAccept((string)->System.out.println(string)).exceptionally( (ex)->ex.printStackTrace());
         try
         {
             String asd;
@@ -70,7 +70,7 @@ public abstract class AbstractPromiseTest
 
     }
 
-    @Test public void testAccept() throws Exception
+    @Test public void testAccept()
     {
         ExampleService test = createAnnotationProcessingProxy();
         ExampleService.Parameter p = new ExampleService.Parameter();
@@ -88,12 +88,12 @@ public abstract class AbstractPromiseTest
         waitForTest();
     }
 
-    @Test public void testHandle1() throws Exception
+    @Test public void testHandle1()
     {
         ExampleService test = createAnnotationProcessingProxy();
         final ExampleService.Parameter p = null;
         final Promise<Collection<ExampleService.Result>> supply = scheduler.supply(() -> test.sayHello(p));
-        supply.whenComplete((resultList, ex) -> {
+        supply.handle((resultList, ex) -> {
             if (ex != null)
             {
                 finishTest();
@@ -102,6 +102,7 @@ public abstract class AbstractPromiseTest
             {
                 fail_("Exception should have occured");
             }
+            return resultList;
         });
         waitForTest();
     }
@@ -112,7 +113,7 @@ public abstract class AbstractPromiseTest
         ExampleService.Parameter p2 = new ExampleService.Parameter();
         p2.setActionIds(Arrays.asList(new Integer[] { 3, 5 }));
         final Promise<Collection<ExampleService.Result>> successPromise = scheduler.supply(() -> test.sayHello(p2));
-        successPromise.whenComplete((resultList, ex) -> {
+        successPromise.handle((resultList, ex) -> {
             if (ex != null)
             {
                 fail_("No exception should have occured");
@@ -121,6 +122,7 @@ public abstract class AbstractPromiseTest
             {
                 finishTest();
             }
+            return resultList;
         });
         waitForTest();
     }
@@ -225,7 +227,6 @@ public abstract class AbstractPromiseTest
             assertEq(NullPointerException.class,ex.getClass());
             logger.error("Client Nullpointer expected", ex);
             finishTest();
-            return null;
         });
         waitForTest();
     }

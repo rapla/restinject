@@ -39,11 +39,12 @@ public class SynchronisedPromiseTest
         Semaphore semaphore = new Semaphore(0);
         AtomicReference<T> atomicReference = new AtomicReference<>();
         AtomicReference<Throwable> atomicReferenceE = new AtomicReference<>();
-        promise.whenComplete((t, ex) ->
+        promise.handle((t, ex) ->
         {
             atomicReferenceE.set(ex);
             atomicReference.set(t);
             semaphore.release();
+            return t;
         });
         semaphore.tryAcquire(timeout, TimeUnit.MILLISECONDS);
         final Throwable throwable = atomicReferenceE.get();
@@ -93,10 +94,11 @@ public class SynchronisedPromiseTest
         {
             Thread.sleep(500);
             return text;
-        }).whenComplete((string, ex) ->
+        }).handle((string, ex) ->
         {
             acceptedText.set(text);
-        }).whenComplete((s,e) -> System.out.println(s + " " + e));
+            return null;
+        }).handle((s,e) -> {System.out.println(s + " " + e); return s;});
         waitFor(promise, 1000);
         TestCase.assertEquals(text, acceptedText.get());
     }
@@ -158,12 +160,14 @@ public class SynchronisedPromiseTest
             return "";
             
         });
-        final Promise<String> promise = innerPromise.whenComplete((string, ex) ->
+        final Promise<String> promise = innerPromise.handle((string, ex) ->
         {
             result.set(ex);
-        }).whenComplete((string,ex)->
+            return  string;
+        }).handle((string,ex)->
         {
 			result2.set(ex);
+            return string;
 		});
         try
         {
@@ -183,13 +187,12 @@ public class SynchronisedPromiseTest
         UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
         AtomicReference<Throwable> result = new AtomicReference<Throwable>();
         Exception expectedException = new RuntimeException("Bla");
-        promise.whenComplete((string, ex) ->
+        promise.handle((string, ex) ->
         {
             throw expectedException;
         }).exceptionally((ex) ->
         {
             result.set(ex);
-            return null;
         });
         promise.complete("Test");
         TestCase.assertEquals(expectedException, result.get());

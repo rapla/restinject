@@ -377,7 +377,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
         else
         {
             final PublishProcessor<T> publishSubject = PublishProcessor.create();
-            promise.whenComplete((arg, throwable) ->
+            promise.handle((arg, throwable) ->
             {
                 if (throwable != null)
                 {
@@ -402,8 +402,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
                         publishSubject.onComplete();
                     }
                 }
-
-
+                return arg;
             });
             javaObservable = new JavaObservable<T>(publishSubject, promiseExecuter);
         }

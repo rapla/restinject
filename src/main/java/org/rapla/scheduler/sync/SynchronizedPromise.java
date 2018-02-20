@@ -43,7 +43,6 @@ class SynchronizedPromise<T> implements Promise<T>
             promise.thenAccept((t) -> future.complete(t)).exceptionally((ex) ->
             {
                 future.completeExceptionally(ex);
-                return null;
             });
             return future;
         }
@@ -159,21 +158,22 @@ class SynchronizedPromise<T> implements Promise<T>
     }
 
     @Override
-    public Promise<T> exceptionally(Function<Throwable, ? extends T> fn)
+    public Promise<Void> exceptionally(Consumer<Throwable> fn)
     {
         final java.util.function.Function<Throwable, ? extends T> fun = (t) ->
         {
             try
             {
                 t = getCause(t);
-                return fn.apply(t);
+                fn.accept(t);
+                return null;
             }
             catch (Exception e)
             {
                 throw new PromiseRuntimeException(e);
             }
         };
-        return w(f.exceptionally(fun));
+        return w(f.exceptionally(fun).thenApply( (dummy)->null));
     }
 
     private Throwable getCause(Throwable t)
@@ -186,14 +186,30 @@ class SynchronizedPromise<T> implements Promise<T>
     }
 
     @Override
-    public Promise<T> whenComplete(final BiConsumer<? super T, ? super Throwable> fn)
-    {
-        final java.util.function.BiConsumer<? super T, ? super Throwable> bifn = (t, u) ->
+    public  Promise<T> handle(BiFunction<? super T, Throwable, ? super T> fn) {
+        final java.util.function.BiFunction<? super T, Throwable, ? super T> bifn = (t, u) ->
         {
             try
             {
                 u = getCause(u);
-                fn.accept(t, u);
+                final T apply = (T) fn.apply(t, u);
+                return apply;
+            }
+            catch (Exception e)
+            {
+                throw new PromiseRuntimeException(e);
+            }
+        };
+        return w(f.handleAsync(bifn, promiseExecuter));
+    }
+
+    @Override
+    public Promise<Void> finally_(Action fn) {
+        final java.util.function.BiConsumer<? super T, ? super Throwable> bifn = (t, u) ->
+        {
+            try
+            {
+                fn.run();
             }
             catch (Exception e)
             {

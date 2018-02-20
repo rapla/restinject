@@ -33,7 +33,7 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
             }
             subject.complete();
         });
-        promise.exceptionally( (ex) -> { subject.error( ex);return null; });
+        promise.exceptionally( (ex) -> subject.error( ex));
         this.observable = subject;
     }
 

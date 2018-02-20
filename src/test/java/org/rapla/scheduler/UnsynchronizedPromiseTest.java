@@ -54,8 +54,9 @@ import java.util.concurrent.atomic.AtomicReference;
         String text = "Hello World";
         UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
         AtomicReference<String> acceptedText = new AtomicReference<String>();
-        promise.whenComplete((string,ex) -> {
+        promise.handle((string,ex) -> {
             acceptedText.set( string);
+            return string;
         });
         promise.complete(text);
         TestCase.assertEquals(text, acceptedText.get());
@@ -66,8 +67,9 @@ import java.util.concurrent.atomic.AtomicReference;
         UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
         AtomicReference<Throwable> result = new AtomicReference<Throwable>();
         Exception expectedException = new RuntimeException("Bla");
-        promise.whenComplete((string,ex) -> {
+        promise.handle((string,ex) -> {
             result.set( ex);
+            return "fallback";
         });
         promise.completeExceptionally(expectedException);
         TestCase.assertEquals(expectedException, result.get());
@@ -79,12 +81,11 @@ import java.util.concurrent.atomic.AtomicReference;
         UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
         AtomicReference<Throwable> result = new AtomicReference<Throwable>();
         Exception expectedException = new RuntimeException("Bla");
-        promise.whenComplete((string,ex) -> {
+        promise.handle((string,ex) -> {
             throw expectedException;
         }).exceptionally((ex)->
         {
             result.set( ex);
-            return null;
         }
         );
         promise.complete("Test");
@@ -132,7 +133,6 @@ import java.util.concurrent.atomic.AtomicReference;
         promise.exceptionally((ex) -> {
             acceptedText.set(ex);
             semaphore.release();
-            return null;
         });
         promise.completeExceptionally(new RuntimeException(text));
         TestCase.assertTrue(semaphore.tryAcquire(1000, TimeUnit.MILLISECONDS));
@@ -149,7 +149,6 @@ import java.util.concurrent.atomic.AtomicReference;
         promise.exceptionally((ex) -> {
             acceptedText.set(ex);
             semaphore.release();
-            return null;
         });
         TestCase.assertTrue(semaphore.tryAcquire(1000, TimeUnit.MILLISECONDS));
         TestCase.assertEquals(text, acceptedText.get().getMessage());
@@ -158,11 +157,12 @@ import java.util.concurrent.atomic.AtomicReference;
     @Test public void testExceptionaly3() throws Exception
     {
         UnsynchronizedPromise<String> promise = new UnsynchronizedPromise<String>();
-        String text = "Fallback";
+        final String text = "Fallback";
         AtomicReference<String> acceptedText = new AtomicReference<String>();
         Semaphore semaphore = new Semaphore(0);
         promise.completeExceptionally(new RuntimeException(text));
-        promise.exceptionally((ex) -> text).thenAccept((fallback) -> {
+        final Promise<String> stringPromise = promise.handle((dummy, ex) -> (ex != null) ? ex.getMessage() : dummy);
+        stringPromise.thenAccept((fallback) -> {
             acceptedText.set(fallback);
             semaphore.release();
         });
@@ -233,7 +233,7 @@ import java.util.concurrent.atomic.AtomicReference;
         promise2.completeExceptionally(new RuntimeException("gone"));
         promise.thenCombine(promise2, (t1, t2) -> t1 +" "+ t2).thenAccept((t) -> {
             acceptedText.set(t);
-        }).exceptionally((ex)-> {acceptedException.set( ex);semaphore.release();return null;});
+        }).exceptionally((ex)-> {acceptedException.set( ex);semaphore.release();});
         TestCase.assertTrue(semaphore.tryAcquire(1000, TimeUnit.MILLISECONDS));
         TestCase.assertNull(acceptedText.get());
         TestCase.assertEquals("gone", acceptedException.get().getMessage());
@@ -250,7 +250,7 @@ import java.util.concurrent.atomic.AtomicReference;
         promise.completeExceptionally(new RuntimeException("gone"));
         promise.thenCombine(promise2, (t1, t2) -> t1 +" "+ t2).thenAccept((t) -> {
             acceptedText.set(t);
-        }).exceptionally((ex)-> {acceptedException.set( ex);semaphore.release();return null;});
+        }).exceptionally((ex)-> {acceptedException.set( ex);semaphore.release();});
         TestCase.assertTrue(semaphore.tryAcquire(1000, TimeUnit.MILLISECONDS));
         TestCase.assertNull(acceptedText.get());
         TestCase.assertEquals("gone", acceptedException.get().getMessage());

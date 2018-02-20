@@ -39,7 +39,7 @@ public class SynchronizedCompletablePromise<T> extends  SynchronizedPromise<T> i
         final boolean isDebugEnabled = logger.isDebugEnabled();
         long index = isDebugEnabled ? System.currentTimeMillis(): 0;
         final CompletableFuture<T> future = new CompletableFuture<>();
-        promise.whenComplete((t, ex) ->
+        promise.handle((t, ex) ->
         {
             if (isDebugEnabled)
             {
@@ -57,6 +57,7 @@ public class SynchronizedCompletablePromise<T> extends  SynchronizedPromise<T> i
             {
                 logger.debug("Release lock  " + index);
             }
+            return t;
         });
         try
         {

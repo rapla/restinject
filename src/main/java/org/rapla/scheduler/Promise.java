@@ -35,9 +35,11 @@ public interface Promise<T>
     <U> Promise<U> thenCompose(Function<? super T, ? extends Promise<U>> fn);
 
     /** same as {@link java.util.concurrent.CompletionStage#exceptionally(java.util.function.Function)}        but usable in gwt */
-    Promise<T> exceptionally(Function<Throwable, ? extends T> fn);
+    Promise<Void> exceptionally(Consumer<Throwable> fn);
 
-    /** same as {@link java.util.concurrent.CompletionStage#whenComplete(java.util.function.BiConsumer)}         but usable in gwt */
-    Promise<T> whenComplete(BiConsumer<? super T, ? super Throwable> fn);
+    Promise<Void> finally_(Action run);
+
+    /** same as {@link java.util.concurrent.CompletionStage#handle(java.util.function.BiFunction)}          but usable in gwt */
+    Promise<T> handle(BiFunction<? super T, Throwable, ? super T> fn);
 }
 

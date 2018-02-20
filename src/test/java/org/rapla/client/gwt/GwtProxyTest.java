@@ -202,7 +202,6 @@ public class GwtProxyTest extends GWTTestCase
         {
             ex.printStackTrace();
             fail(ex.getMessage());
-            return null;
         });
     }
 
