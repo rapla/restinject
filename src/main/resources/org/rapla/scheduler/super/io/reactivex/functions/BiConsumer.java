@@ -14,18 +14,23 @@
 package io.reactivex.functions;
 
 import jsinterop.annotations.JsFunction;
+import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsType;
 
 /**
- * A functional interface similar to Runnable but allows throwing a checked exception.
+ * A functional interface (callback) that accepts two values (of possibly different types).
+ * @param <T1> the first value type
+ * @param <T2> the second value type
  */
 @FunctionalInterface
 @JsFunction
-@JsType
-public interface Action {
+public interface BiConsumer<T1, T2> {
+
     /**
-     * Runs the action and optionally throws a checked exception.
-     * @throws Exception if the implementation wishes to throw a checked exception
+     * Performs an operation on the given values.
+     * @param t1 the first value
+     * @param t2 the second value
+     * @throws Exception on error
      */
-    void run() throws Exception;
+    void accept(T1 t1, T2 t2) throws Exception;
 }

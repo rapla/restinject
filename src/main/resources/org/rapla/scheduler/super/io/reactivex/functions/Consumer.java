@@ -10,25 +10,25 @@
  * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See
  * the License for the specific language governing permissions and limitations under the License.
  */
-package io.reactivex;
 
-import io.reactivex.annotations.*;
+package io.reactivex.functions;
+
+import io.reactivex.annotations.NonNull;
+import jsinterop.annotations.JsFunction;
+import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsType;
 
 /**
- * Represents a basic, non-backpressured {@link Observable} source base interface,
- * consumable via an {@link Observer}.
- *
- * @param <T> the element type
- * @since 2.0
+ * A functional interface (callback) that accepts a single value.
+ * @param <T> the value type
  */
-@JsType
-public interface ObservableSource<T> {
-
+@FunctionalInterface
+@JsFunction
+public interface Consumer<T> {
     /**
-     * Subscribes the given Observer to this ObservableSource instance.
-     * @param observer the Observer, not null
-     * @throws NullPointerException if {@code observer} is null
+     * Consume the given value.
+     * @param t the value
+     * @throws Exception on error
      */
-    void subscribe(@NonNull Observer<? super T> observer);
+    void accept(@NonNull T t) throws Exception;
 }

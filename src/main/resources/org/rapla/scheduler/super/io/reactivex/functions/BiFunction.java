@@ -26,7 +26,6 @@ import jsinterop.annotations.JsType;
  */
 @FunctionalInterface
 @JsFunction
-@JsType
 public interface BiFunction<T1, T2, R> {
 
     /**

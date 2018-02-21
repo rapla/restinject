@@ -13,23 +13,18 @@
 
 package io.reactivex.functions;
 
-import io.reactivex.annotations.NonNull;
 import jsinterop.annotations.JsFunction;
-import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsType;
 
 /**
- * A functional interface (callback) that accepts a single value.
- * @param <T> the value type
+ * A functional interface similar to Runnable but allows throwing a checked exception.
  */
 @FunctionalInterface
 @JsFunction
-@JsType
-public interface Consumer<T> {
+public interface Action {
     /**
-     * Consume the given value.
-     * @param t the value
-     * @throws Exception on error
+     * Runs the action and optionally throws a checked exception.
+     * @throws Exception if the implementation wishes to throw a checked exception
      */
-    void accept(@NonNull T t) throws Exception;
+    void run() throws Exception;
 }
