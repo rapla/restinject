@@ -17,6 +17,7 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
 import com.google.gson.internal.ConstructorConstructor;
 import com.google.gson.internal.Excluder;
+import com.google.gson.internal.bind.JsonAdapterAnnotationTypeAdapterFactory;
 import com.google.gson.internal.bind.MapTypeAdapterFactory;
 import com.google.gson.internal.bind.ReflectiveTypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
@@ -68,7 +69,8 @@ public class JsonParserWrapper
         ConstructorConstructor constructorConstructor = new ConstructorConstructor(instanceCreators);
         FieldNamingStrategy fieldNamingPolicy = FieldNamingPolicy.IDENTITY;
         Excluder excluder = Excluder.DEFAULT;
-        final ReflectiveTypeAdapterFactory reflectiveTypeAdapterFactory = new ReflectiveTypeAdapterFactory(constructorConstructor, fieldNamingPolicy, excluder);
+        JsonAdapterAnnotationTypeAdapterFactory jsonAdapterFactory= new JsonAdapterAnnotationTypeAdapterFactory(constructorConstructor);
+        final ReflectiveTypeAdapterFactory reflectiveTypeAdapterFactory = new ReflectiveTypeAdapterFactory(constructorConstructor, fieldNamingPolicy, excluder, jsonAdapterFactory);
 
         gb.registerTypeAdapterFactory(new MapTypeAdapterFactory(constructorConstructor, false));
         gb.registerTypeAdapterFactory(new MyAdaptorFactory(reflectiveTypeAdapterFactory));
