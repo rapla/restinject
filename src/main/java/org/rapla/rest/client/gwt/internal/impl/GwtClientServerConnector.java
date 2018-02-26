@@ -259,7 +259,7 @@ public class GwtClientServerConnector<T>
             }
             catch (RuntimeException e)
             {
-                callback.onFailure(new RemoteConnectException("Bad JSON response: " + e));
+                callback.onFailure(new RemoteConnectException("Bad JSON response: " + e.getClass() + " " + e.getMessage()));
                 return;
             }
             log("Checking error.");
@@ -286,6 +286,11 @@ public class GwtClientServerConnector<T>
                     }
                     log("Parsed to " + deserialzedResult);
 
+                }
+                catch (ClassCastException e)
+                {
+                    callback.onFailure(new RemoteConnectException("Bad JSON. Could not cast to " +  resultType + " :" + parsedResult));
+                    return;
                 }
                 catch (RuntimeException e)
                 {

@@ -29,7 +29,11 @@ public final class JavaLangInteger_JsonSerializer extends
 
   @Override
   public Integer fromJson(final Object o) {
-    return (Integer) o;
+    if ( o == null)
+    {
+      return null;
+    }
+    return Integer.parseInt( o.toString());
   }
 
   @Override
