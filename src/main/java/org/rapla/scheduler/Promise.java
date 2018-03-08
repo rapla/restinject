@@ -9,6 +9,7 @@ import io.reactivex.functions.Function;
 import jsinterop.annotations.JsType;
 
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 
 /** same as {@link java.util.concurrent.CompletionStage} but usable in gwt */
 @JsType
@@ -41,5 +42,7 @@ public interface Promise<T>
 
     /** same as {@link java.util.concurrent.CompletionStage#handle(java.util.function.BiFunction)}          but usable in gwt */
     Promise<T> handle(BiFunction<? super T, Throwable, ? super T> fn);
+
+    Promise<T> execOn(Executor executor);
 }
 

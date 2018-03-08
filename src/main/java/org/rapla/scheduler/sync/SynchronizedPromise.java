@@ -240,4 +240,9 @@ class SynchronizedPromise<T> implements Promise<T>
         return this.f.toCompletableFuture();
     }
 
+    @Override
+    public Promise<T> execOn(Executor executor)
+    {
+        return new SynchronizedPromise<T>(executor,f);
+    }
 }

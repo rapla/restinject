@@ -9,6 +9,7 @@ import io.reactivex.functions.Function;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 public class UnsynchronizedPromise<T> implements CompletablePromise<T>
 {
@@ -274,4 +275,9 @@ public class UnsynchronizedPromise<T> implements CompletablePromise<T>
         completed(null,ex);
     }
 
+    @Override
+    public Promise<T> execOn(Executor executor)
+    {
+        return this;
+    }
 }

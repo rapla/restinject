@@ -44,10 +44,7 @@ public class ConsoleLogger extends AbstractLogger {
     }
     protected void write(int logLevel, String message, Throwable cause) 
     {
-        String logLevelString = getLogLevelString( logLevel );
         StringBuffer buf = new StringBuffer();
-        buf.append( logLevelString );
-        buf.append( " " );
         if ( prefix != null)
         {
             buf.append( prefix);
@@ -81,12 +78,15 @@ public class ConsoleLogger extends AbstractLogger {
                 
             }
         }
-        final String line = buf.toString();
-        writeln(line);
+        writeln(logLevel,buf);
     }
 
-    protected void writeln(String message)
+    protected void writeln(int logLevel,StringBuffer buffer)
     {
+        String logLevelString = getLogLevelString( logLevel );
+        buffer.insert(0, " " );
+        buffer.insert(0, logLevelString );
+        String message= buffer.toString();
         System.out.println(message);
     }
 
