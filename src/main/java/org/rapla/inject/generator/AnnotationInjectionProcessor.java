@@ -769,11 +769,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return new SourceWriter(packageName, componentName, processingEnv);
     }
 
-    void appendLineToMetaInf(String filename, String line) throws IOException
-    {
-        appendToFile(filename, line);
-    }
-
     private void createSourceWriter(ModuleInfo moduleInfo, Scopes scope) throws IOException
     {
         String originalPackageName = moduleInfo.getGroupId();

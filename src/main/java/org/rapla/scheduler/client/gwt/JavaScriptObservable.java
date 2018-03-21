@@ -1,18 +1,18 @@
 package org.rapla.scheduler.client.gwt;
 
+import com.github.timofeevda.gwt.rxjs.interop.functions.Action0;
 import com.github.timofeevda.gwt.rxjs.interop.functions.Action1;
 import com.github.timofeevda.gwt.rxjs.interop.functions.Func1;
+import com.github.timofeevda.gwt.rxjs.interop.functions.Func2;
 import com.github.timofeevda.gwt.rxjs.interop.observable.Observable;
 import com.github.timofeevda.gwt.rxjs.interop.observable.Observer;
 import com.github.timofeevda.gwt.rxjs.interop.subject.Subject;
 import com.github.timofeevda.gwt.rxjs.interop.subscription.Subscription;
 import com.google.gwt.core.client.JavaScriptException;
-import io.reactivex.ObservableSource;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import org.rapla.scheduler.Promise;
-import org.rapla.scheduler.sync.JavaObservable;
 import org.reactivestreams.Publisher;
 
 public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T>
@@ -113,7 +113,42 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
     @Override
     public org.rapla.scheduler.Observable<T> doOnError(Consumer<? super Throwable> onError)
     {
-        throw new UnsupportedOperationException();
+        Action1 a1 = (next)-> {};
+        Action1<Object> a2 = (ex ->
+        {
+            Throwable casted;
+            if ( ex instanceof Throwable)
+            {
+                casted =(Throwable)ex;
+            }
+            else
+            {
+                casted = new RuntimeException( "Exception in observable: "  + ex);
+            }
+            try {
+                onError.accept( casted);
+            } catch (Exception e) {
+                throw new RuntimeException((e));
+            }
+        });
+        Action0 a3 = ()->{};
+        final Observable observable = this.observable._do(a1, a2, a3);
+        return t(observable);
+    }
+
+    @Override
+    public org.rapla.scheduler.Observable<T> doOnNext(Consumer<? super T> next)
+    {
+        final Observable<T> tFlowable = observable._do((obj)->
+                {
+                    try {
+                        next.accept( (T) obj);
+                    } catch (Exception e) {
+                        throw new RuntimeException( e );
+                    }
+                }
+        );
+        return t(tFlowable);
     }
 
     private <R> org.rapla.scheduler.Observable<R> t(Observable observable)
@@ -138,7 +173,7 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
             return apply;
         };
         final Observable<R> map = observable.map(mapper2);
-        final org.rapla.scheduler.Observable<R> t = t(observable);
+        final org.rapla.scheduler.Observable<R> t = t(map);
         return t;
     }
 

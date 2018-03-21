@@ -39,8 +39,18 @@ public interface Observable<T> extends Publisher<T> {
     Observable<T> repeat();
     /**
      * @see Flowable#concatWith(Publisher)
-     */    Observable<T> concatWith(Observable<? extends T> otherObservable);
-    Observable<T> doOnError(Consumer<? super Throwable> onError);
+     */
+    Observable<T> concatWith(Observable<? extends T> otherObservable);
+
+    /**
+     * @see Flowable#doOnError(Consumer)
+     */
+    Observable<T> doOnError(Consumer<? super Throwable> error);
+
+    /**
+     * @see Flowable#doOnNext(Consumer)
+     */
+    Observable<T> doOnNext(Consumer<? super T> next);
     /**
      * @see Flowable#map(Function)
      */

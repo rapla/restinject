@@ -58,6 +58,14 @@ public class JavaObservable<T> implements Observable<T>
     }
 
     @Override
+    public Observable<T> doOnNext(Consumer<? super T> next)
+    {
+        final io.reactivex.Flowable<T> tFlowable = observable.doOnNext(next);
+        return t(tFlowable);
+    }
+
+
+    @Override
     public <R> Observable<R> map(Function<? super T, ? extends R> mapper)
     {
         final io.reactivex.Flowable<R> tFlowable = observable.map(mapper);
