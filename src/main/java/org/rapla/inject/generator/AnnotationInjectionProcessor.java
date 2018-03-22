@@ -17,6 +17,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -29,6 +30,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
@@ -403,7 +405,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                     AnnotationInjectionProcessor.class.getCanonicalName());
             final String swingproxyClassName = swingProxyCreator.create(proxyLogger);
             {
-                final String qualifiedName = interfaceElement.getQualifiedName().toString();
+                final String qualifiedName = getClassname(interfaceElement,false);
                 appendToServiceList(qualifiedName);
                 appendToFile("services/" + qualifiedName, proxyClassName);
                 appendToFile("services/" + qualifiedName, swingproxyClassName);
@@ -426,7 +428,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 
     private void addServiceFile(TypeElement interfaceElement, TypeElement implementationElement) throws IOException, UnableToCompleteException
     {
-        final String serviceFileName = getClassname(interfaceElement);
+        final String serviceFileName = getClassname(interfaceElement, false);
         addServiceFile(serviceFileName, implementationElement);
 
     }
@@ -439,10 +441,28 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 
     private String getClassname(TypeElement element) throws UnableToCompleteException
     {
+        return getClassname( element, true);
+    }
+
+    private String getClassname(TypeElement element, boolean addGenerics) throws UnableToCompleteException
+    {
         final NestingKind nestingKind = element.getNestingKind();
+        // FIXME enable generics later
+        addGenerics = false;
         if (nestingKind.equals(NestingKind.TOP_LEVEL))
         {
-            return element.getQualifiedName().toString();
+            final List<? extends TypeParameterElement> typeParameters = element.getTypeParameters();
+            final String s = element.getQualifiedName().toString();
+            if ( typeParameters.isEmpty() || !addGenerics)
+            {
+                return s;
+            }
+            else
+            {
+                List<String> types = typeParameters.stream().map(( param) -> param.asType().toString()).collect(Collectors.toList());
+                return s + "<" + String.join(",", types)+">";
+            }
+
         }
         else if (nestingKind.equals(NestingKind.MEMBER))
         {
@@ -607,7 +627,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         File f = getModulesFileInLocation(META_INF_LOCATION);
         List<String> interfaces = readLines(f);
         Set<String> allInterfaces = new LinkedHashSet<>(interfaces);
-        allInterfaces.addAll(processedAnnotations.getExtensionPoints());
         for (String interfaceName : allInterfaces)
         {
             createMethods(interfaceName, processedAnnotations);
@@ -818,20 +837,23 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     void createMethods(String interfaceName, ProcessedAnnotations processedAnnotations) throws Exception
     {
         BitSet exportedInterface = new BitSet();
-        final List<String> implementingClasses = readLines(getFile(getModulesFileInLocation(META_INF_LOCATION).getParentFile(), "services/" + interfaceName));
-        interfaceName = interfaceName.replaceAll("\\$", ".");
-        final TypeElement interfaceClassTypeElement = processingEnv.getElementUtils().getTypeElement(interfaceName);
+        final String interfaceNameWithoutTypeParams = stripTypeParameters(interfaceName);
+        final File file = getFile(getModulesFileInLocation(META_INF_LOCATION).getParentFile(), "services/" + interfaceNameWithoutTypeParams);
+        final List<String> implementingClasses = readLines(file);
+        interfaceName = convertFileToJavaName(interfaceName);
+
+        final TypeElement interfaceClassTypeElement = processingEnv.getElementUtils().getTypeElement(interfaceNameWithoutTypeParams);
 
         LinkedHashSet<String> allImplementingClasses = new LinkedHashSet<>(implementingClasses);
-        final Collection<String> processedImplementingClasses = processedAnnotations.getImplementations(interfaceName);
+        final Collection<String> processedImplementingClasses = processedAnnotations.getImplementations(interfaceNameWithoutTypeParams);
         if (processedImplementingClasses != null)
         {
             allImplementingClasses.addAll(processedImplementingClasses);
         }
         for (String implementingClass : allImplementingClasses)
         {
-            implementingClass = implementingClass.replaceAll("\\$", ".");
-            final TypeElement implementingClassTypeElement = processingEnv.getElementUtils().getTypeElement(implementingClass);
+            implementingClass = convertFileToJavaName(implementingClass);
+            final TypeElement implementingClassTypeElement = processingEnv.getElementUtils().getTypeElement(stripTypeParameters(implementingClass));
             final Path path = implementingClassTypeElement != null ? implementingClassTypeElement.getAnnotation(Path.class) : null;
             if (interfaceClassTypeElement == null && path == null)
             {
@@ -886,6 +908,21 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 set.add(interfaceName);
             }
         }
+    }
+
+    private String convertFileToJavaName(String interfaceName)
+    {
+        return interfaceName.replaceAll("\\$", ".");
+    }
+
+    private String stripTypeParameters(String interfaceName)
+    {
+        int indexOfType = interfaceName.indexOf("<");
+        if (indexOfType >0)
+        {
+            return interfaceName.substring(0, indexOfType);
+        }
+        return interfaceName;
     }
 
     private Collection<DefaultImplementation> getDefaultImplementations(TypeElement typeElement)
@@ -1051,7 +1088,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     }
 
     private BitSet generateDefaultImplementation(final TypeElement implementingClassTypeElement, final TypeElement interfaceTypeElement,
-            final DefaultImplementation defaultImplementation)
+            final DefaultImplementation defaultImplementation) throws UnableToCompleteException
     {
         final String id = "DefaultImplementation";
         if (!getDefaultImplementationOf(defaultImplementation).equals(interfaceTypeElement))
@@ -1135,14 +1172,17 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return scopes;
     }
 
-    private void generateDefaultImplementation(TypeElement implementingClassTypeElement, TypeElement interfaceName, SourceWriter moduleWriter)
+    private void generateDefaultImplementation(TypeElement implementingClassTypeElement, TypeElement interfaceType, SourceWriter moduleWriter) throws UnableToCompleteException
     {
         moduleWriter.println();
         moduleWriter.println("@Provides");
 
-        String implementingName = implementingClassTypeElement.getQualifiedName().toString();
+        //final String implName = convertFileToJavaName(getClassname(implementingClassTypeElement, true));
+        //final String interfaceName = convertFileToJavaName(getClassname(interfaceType, true));
+        String implName = implementingClassTypeElement.getQualifiedName().toString();
+        String interfaceName = interfaceType.getQualifiedName().toString();
         moduleWriter.println(
-                "public " + interfaceName + " " + createMethodName(moduleWriter, implementingClassTypeElement) + "(" + implementingName + " result) {");
+                "public " + interfaceName + " " + createMethodName(moduleWriter, implementingClassTypeElement) + "(" + implName + " result) {");
         moduleWriter.indent();
         moduleWriter.println("return result;");
         moduleWriter.outdent();

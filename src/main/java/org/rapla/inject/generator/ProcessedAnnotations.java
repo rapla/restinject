@@ -12,16 +12,10 @@ public class ProcessedAnnotations
     private Set<String> paths = new LinkedHashSet<>();
     public boolean daggerModuleRebuildNeeded;
     private Map<String, Set<String>> implementingClasses = new LinkedHashMap<>();
-    private Collection<String> extensionPoints = new LinkedHashSet<>();
 
     public Collection<String> getPaths()
     {
         return paths;
-    }
-
-    public Collection<String> getExtensionPoints()
-    {
-        return extensionPoints;
     }
 
     public Collection<String> getImplementations(String interfaceName)
@@ -43,11 +37,6 @@ public class ProcessedAnnotations
             implementingClasses.put(interfaceName, set);
         }
         set.add(implementingClass);
-    }
-
-    public void addExtensionPoint(String extensionPoint)
-    {
-        extensionPoints.add(extensionPoint);
     }
 
     public void addPath(String path)
