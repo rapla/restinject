@@ -3,6 +3,7 @@ package org.rapla.scheduler.sync;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Scheduler;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
@@ -61,6 +62,13 @@ public class JavaObservable<T> implements Observable<T>
     public Observable<T> doOnNext(Consumer<? super T> next)
     {
         final io.reactivex.Flowable<T> tFlowable = observable.doOnNext(next);
+        return t(tFlowable);
+    }
+
+    @Override
+    public Observable<T> doOnComplete(Action action)
+    {
+        final io.reactivex.Flowable<T> tFlowable = observable.doOnComplete(action);
         return t(tFlowable);
     }
 

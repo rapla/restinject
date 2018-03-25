@@ -6,6 +6,7 @@ import io.reactivex.Observer;
 import io.reactivex.SingleSource;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import jsinterop.annotations.JsMethod;
@@ -46,6 +47,11 @@ public interface Observable<T> extends Publisher<T> {
      * @see Flowable#doOnError(Consumer)
      */
     Observable<T> doOnError(Consumer<? super Throwable> error);
+
+    /**
+     * @see Flowable#doOnComplete(Action)
+     */
+    Observable<T> doOnComplete(Action action);
 
     /**
      * @see Flowable#doOnNext(Consumer)

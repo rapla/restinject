@@ -10,6 +10,7 @@ import com.github.timofeevda.gwt.rxjs.interop.subject.Subject;
 import com.github.timofeevda.gwt.rxjs.interop.subscription.Subscription;
 import com.google.gwt.core.client.JavaScriptException;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import org.rapla.scheduler.Promise;
@@ -113,7 +114,7 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
     @Override
     public org.rapla.scheduler.Observable<T> doOnError(Consumer<? super Throwable> onError)
     {
-        Action1 a1 = (next)-> {};
+        Action1 a1 = null;
         Action1<Object> a2 = (ex ->
         {
             Throwable casted;
@@ -131,7 +132,7 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
                 throw new RuntimeException((e));
             }
         });
-        Action0 a3 = ()->{};
+        Action0 a3 = null;
         final Observable observable = this.observable._do(a1, a2, a3);
         return t(observable);
     }
@@ -150,6 +151,22 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
         );
         return t(tFlowable);
     }
+
+    @Override
+    public org.rapla.scheduler.Observable<T> doOnComplete(Action action)
+    {
+        final Observable<T> tFlowable = observable._do(null, null,()->
+                {
+                    try {
+                        action.run();;
+                    } catch (Exception e) {
+                        throw new RuntimeException( e );
+                    }
+                }
+        );
+        return t(tFlowable);
+    }
+
 
     private <R> org.rapla.scheduler.Observable<R> t(Observable observable)
     {
