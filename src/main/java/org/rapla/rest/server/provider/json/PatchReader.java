@@ -1,12 +1,7 @@
 package org.rapla.rest.server.provider.json;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import org.rapla.rest.JsonParserWrapper;
 import org.rapla.rest.PATCH;
-import org.rapla.rest.server.jsonpatch.JsonMergePatch;
-import org.rapla.rest.server.jsonpatch.JsonPatchException;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -149,16 +144,12 @@ import java.util.Set;
         }
         try
         {
-            final Gson gs = JsonParserWrapper.defaultGsonBuilder().create();
-            JsonElement unpatchedObjectJson = gs.toJsonTree(unpatchedObject);
-            JsonElement patchElement = new JsonParser().parse(new InputStreamReader(readerInterceptorContext.getInputStream()));
-            final JsonMergePatch patch = JsonMergePatch.fromJson(patchElement);
-            final JsonElement patchedObjectJson = patch.apply(unpatchedObjectJson);
-            final String s = gs.toJson(patchedObjectJson);
+            final InputStreamReader json = new InputStreamReader(readerInterceptorContext.getInputStream());
+            final String s = JsonParserWrapper.defaultJson().get().patch(unpatchedObject, json);
             readerInterceptorContext.setInputStream(new ByteArrayInputStream(s.getBytes()));
             return readerInterceptorContext.proceed();
         }
-        catch (JsonPatchException e)
+        catch (Exception e)
         {
             throw new WebApplicationException(Response.status(500).type("text/plain").entity(e.getMessage()).build());
         }

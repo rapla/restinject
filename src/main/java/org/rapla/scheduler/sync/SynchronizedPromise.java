@@ -14,7 +14,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 
-class SynchronizedPromise<T> implements Promise<T>
+public class SynchronizedPromise<T> implements Promise<T>
 {
 
     final Executor promiseExecuter;
@@ -46,6 +46,10 @@ class SynchronizedPromise<T> implements Promise<T>
             });
             return future;
         }
+    }
+
+    public CompletionStage getCompletionStage() {
+        return f;
     }
 
     @Override

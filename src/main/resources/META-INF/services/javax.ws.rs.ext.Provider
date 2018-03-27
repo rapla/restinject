@@ -1,10 +1,12 @@
 org.rapla.rest.server.provider.resteasy.ResteasyMembersInjector
+org.rapla.rest.server.provider.resteasy.PromiseProvider
 org.rapla.rest.server.provider.json.JsonReader
 org.rapla.rest.server.provider.json.JsonStringReader
 org.rapla.rest.server.provider.json.JsonWriter
 org.rapla.rest.server.provider.json.JsonStringWriter
 org.rapla.rest.server.provider.json.PatchReader
+org.rapla.rest.server.provider.json.PatchReader
 org.rapla.rest.server.provider.json.JsonParamConverterProvider
-org.rapla.rest.server.provider.xml.XmlReader
+org.rapla.rest.server.provider.xml.XmlMessageBodyHandler
 org.rapla.rest.server.provider.xml.XmlWriter
 org.rapla.rest.server.provider.filter.HttpMethodOverride

@@ -20,7 +20,7 @@ import java.lang.reflect.Type;
 public class JsonReader<T> implements MessageBodyReader<T>
 {
 
-    final Gson gson = JsonParserWrapper.defaultGsonBuilder().create();
+    final JsonParserWrapper.JsonParser gson = JsonParserWrapper.defaultJson().get();
 
     @Override
     public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType)

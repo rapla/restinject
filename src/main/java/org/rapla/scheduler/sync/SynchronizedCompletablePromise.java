@@ -36,29 +36,9 @@ public class SynchronizedCompletablePromise<T> extends  SynchronizedPromise<T> i
     /** waits until the promise completes or the timeout has Passed. Pass -1 if you want to wait without timeout*/
     public static  <T> T waitFor(Promise<T> promise, int timeout,Logger logger) throws Exception
     {
+        final CompletableFuture<T> future = getCompletableFuture(promise, logger);
         final boolean isDebugEnabled = logger.isDebugEnabled();
-        long index = isDebugEnabled ? System.currentTimeMillis(): 0;
-        final CompletableFuture<T> future = new CompletableFuture<>();
-        promise.handle((t, ex) ->
-        {
-            if (isDebugEnabled)
-            {
-                logger.debug("promise complete " + index);
-            }
-            if (ex != null)
-            {
-                future.completeExceptionally(ex);
-            }
-            else
-            {
-                future.complete(t);
-            }
-            if (isDebugEnabled)
-            {
-                logger.debug("Release lock  " + index);
-            }
-            return t;
-        });
+        long index = isDebugEnabled ? System.currentTimeMillis() : 0;
         try
         {
             if (isDebugEnabled)
@@ -94,6 +74,29 @@ public class SynchronizedCompletablePromise<T> extends  SynchronizedPromise<T> i
             }
             throw ex;
         }
+    }
+
+    public static <T> CompletableFuture<T> getCompletableFuture(Promise<T> promise, Logger logger) {
+        CompletableFuture<T> future;
+        final boolean isDebugEnabled = logger.isDebugEnabled();
+        long index = isDebugEnabled ? System.currentTimeMillis() : 0;
+        future = new CompletableFuture<>();
+        promise.handle((t, ex) ->
+        {
+            if (isDebugEnabled) {
+                logger.debug("promise complete " + index);
+            }
+            if (ex != null) {
+                future.completeExceptionally(ex);
+            } else {
+                future.complete(t);
+            }
+            if (isDebugEnabled) {
+                logger.debug("Release lock  " + index);
+            }
+            return t;
+        });
+        return future;
     }
 
 }

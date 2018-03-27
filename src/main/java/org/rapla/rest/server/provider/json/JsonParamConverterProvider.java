@@ -1,6 +1,5 @@
 package org.rapla.rest.server.provider.json;
 
-import com.google.gson.Gson;
 import org.rapla.rest.JsonParserWrapper;
 import org.rapla.rest.client.internal.isodate.ISODateTimeFormat;
 
@@ -19,7 +18,7 @@ import java.util.Set;
     private static final class JsonParamConverter<T> implements ParamConverter<T>
     {
 
-        private Gson gson = JsonParserWrapper.defaultGsonBuilder().create();
+        private JsonParserWrapper.JsonParser gson = JsonParserWrapper.defaultJson().get();
         private Type genericType;
 
         public JsonParamConverter(Type genericType)
@@ -63,7 +62,8 @@ import java.util.Set;
 
     static
     {
-        supportedClassed.add(String.class);supportedClassed.add(Integer.class);
+        supportedClassed.add(String.class);
+        supportedClassed.add(Integer.class);
         supportedClassed.add(Double.class);
         supportedClassed.add(Float.class);
         supportedClassed.add(Character.class);

@@ -3,16 +3,15 @@ package org.rapla.server.rest.jsonpatch;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import junit.framework.TestCase;
-import org.rapla.rest.server.jsonpatch.JsonMergePatch;
-import org.rapla.rest.server.jsonpatch.JsonPatchException;
+import org.rapla.rest.gson.JsonMergePatch;
 
 public class JsonPatchTest extends TestCase {
-    public void test() throws JsonPatchException
+    public void test()
     {
-        JsonParser parser = new JsonParser();
         String jsonOrig = new String("{'classification': {'type' :  'MyResourceTypeKey',   'data':   {'name' : ['New ResourceName'] } } }");
         String newName = "Room A1234";
         String jsonPatch = new String("{'classification': { 'data':   {'name' : ['"+newName+"'] } } }");
+        JsonParser parser = new JsonParser();
         JsonElement patchElement = parser.parse(jsonPatch);
         JsonElement orig = parser.parse(jsonOrig);
         final JsonMergePatch patch = JsonMergePatch.fromJson(patchElement);
