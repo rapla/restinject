@@ -8,6 +8,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 public class SynchronizedCompletablePromise<T> extends  SynchronizedPromise<T> implements CompletablePromise<T>
 {
@@ -36,7 +37,7 @@ public class SynchronizedCompletablePromise<T> extends  SynchronizedPromise<T> i
     /** waits until the promise completes or the timeout has Passed. Pass -1 if you want to wait without timeout*/
     public static  <T> T waitFor(Promise<T> promise, int timeout,Logger logger) throws Exception
     {
-        final CompletableFuture<T> future = getCompletableFuture(promise, logger);
+        final CompletableFuture<T> future = getCompletableFuture(promise, logger, null);
         final boolean isDebugEnabled = logger.isDebugEnabled();
         long index = isDebugEnabled ? System.currentTimeMillis() : 0;
         try
@@ -76,7 +77,7 @@ public class SynchronizedCompletablePromise<T> extends  SynchronizedPromise<T> i
         }
     }
 
-    public static <T> CompletableFuture<T> getCompletableFuture(Promise<T> promise, Logger logger) {
+    public static <T> CompletableFuture<T> getCompletableFuture(Promise<T> promise, Logger logger, Function<Throwable,Throwable> exceptionMapper) {
         CompletableFuture<T> future;
         final boolean isDebugEnabled = logger.isDebugEnabled();
         long index = isDebugEnabled ? System.currentTimeMillis() : 0;
@@ -87,6 +88,10 @@ public class SynchronizedCompletablePromise<T> extends  SynchronizedPromise<T> i
                 logger.debug("promise complete " + index);
             }
             if (ex != null) {
+                if ( exceptionMapper != null)
+                {
+                    ex = exceptionMapper.apply( ex );
+                }
                 future.completeExceptionally(ex);
             } else {
                 future.complete(t);

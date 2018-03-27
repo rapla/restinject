@@ -9,6 +9,7 @@ public interface JsonRemoteConnector
     CallResult sendCallWithString(String requestMethod, URL methodURL, String body, String authenticationToken, String contentType,
             Map<String, String> additionalHeaders) throws IOException;
 
+
     class CallResult
     {
         private final String result;
