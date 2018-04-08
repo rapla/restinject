@@ -1,5 +1,4 @@
 org.rapla.rest.server.provider.resteasy.ResteasyMembersInjector
-org.rapla.rest.server.provider.resteasy.PromiseProvider
 org.rapla.rest.server.provider.json.JsonReader
 org.rapla.rest.server.provider.json.JsonStringReader
 org.rapla.rest.server.provider.json.JsonWriter

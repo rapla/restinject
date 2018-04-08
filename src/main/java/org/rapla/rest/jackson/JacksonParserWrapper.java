@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.gson.*;
+import org.rapla.logger.ConsoleLogger;
 import org.rapla.logger.NullLogger;
 import org.rapla.rest.JsonParserWrapper;
 import org.rapla.rest.client.RemoteConnectException;
@@ -28,6 +30,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class JacksonParserWrapper  implements Provider<JsonParserWrapper.JsonParser> {
+    static ConsoleLogger logger = new ConsoleLogger();
     @Override
     public JsonParserWrapper.JsonParser get() {
         return new JsonParserWrapper.JsonParser() {
@@ -89,6 +92,23 @@ public class JacksonParserWrapper  implements Provider<JsonParserWrapper.JsonPar
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE);
         objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
         SimpleModule module = new SimpleModule();
+//        module.addSerializer(Promise.class, new JsonSerializer<Promise>()
+//        {
+//            @Override
+//            public void serialize(Promise promise, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException
+//            {
+//                try
+//                {
+//                    final Object result = SynchronizedCompletablePromise.waitFor(promise, 1000, logger);
+//                    //JsonSerializer<Object> serializer = serializerProvider.serializerFor(cc);
+//                    //serializerProvider.ser
+//                }
+//                catch (Exception e)
+//                {
+//                    throw new IOException( e);
+//                }
+//            }
+//        });
         objectMapper.registerModule( module);
         return objectMapper;
     }

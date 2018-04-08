@@ -9,7 +9,7 @@ import java.lang.reflect.Type;
 
 public class JsonParserWrapper
 {
-    static Provider<JsonParser> factory = new JacksonParserWrapper();
+    static Provider<JsonParser> factory = new GsonParserWrapper();
     public interface JsonParser
     {
         String toJson(Object object);
