@@ -56,6 +56,10 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
             {
                 consumer.accept((T) t);
             }
+            catch (RuntimeException ex)
+            {
+                throw ex;
+            }
             catch (Exception ex)
             {
                 throw new RuntimeException(ex);
