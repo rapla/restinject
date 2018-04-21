@@ -32,6 +32,6 @@ public class JsonReader<T> implements MessageBodyReader<T>
     public T readFrom(Class<T> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, String> httpHeaders,
             InputStream entityStream) throws IOException, WebApplicationException
     {
-        return gson.fromJson(new InputStreamReader(entityStream), type);
+        return gson.fromJson(new InputStreamReader(entityStream,"UTF-8"), type);
     }
 }
