@@ -1,5 +1,6 @@
 package org.rapla.scheduler.sync;
 
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.processors.PublishProcessor;
 import io.reactivex.schedulers.Schedulers;
@@ -11,6 +12,10 @@ import org.rapla.scheduler.Observable;
 import org.rapla.scheduler.Promise;
 import org.rapla.scheduler.client.gwt.JavaScriptObservable;
 
+import java.time.Clock;
+import java.time.LocalTime;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalField;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,6 +25,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+
+import static java.time.temporal.ChronoUnit.HOURS;
 
 public class UtilConcurrentCommandScheduler implements CommandScheduler, Executor
 {
@@ -53,6 +60,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
                 return thread;
             }
         });
+
         this.scheduledExecutor = executor;
         this.promiseExecuter = executor;
     }
@@ -416,6 +424,13 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
         return new JavaSubject<>(subject, promiseExecuter);
     }
 
+
+//    Disposable schedule(Action task, int hourOfDay, int minute)
+//    {
+//        Clock clock = Clock.systemDefaultZone();
+//        LocalTime time = LocalTime.of(hourOfDay,minute);
+//        HOURS.between( clock.instant(), time);
+//    }
 
     /*
     public <T> Promise<T> synchronizeTo(Promise<T> promise)

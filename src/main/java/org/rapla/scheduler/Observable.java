@@ -49,6 +49,11 @@ public interface Observable<T> extends Publisher<T> {
     Observable<T> doOnError(Consumer<? super Throwable> error);
 
     /**
+     * @see Flowable#onErrorResumeNext(Function)
+     */
+    Observable<T> onErrorResumeNext(Consumer<? super Throwable> onError);
+
+    /**
      * @see Flowable#doOnComplete(Action)
      */
     Observable<T> doOnComplete(Action action);

@@ -142,6 +142,11 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
     }
 
     @Override
+    public org.rapla.scheduler.Observable<T> onErrorResumeNext(Consumer<? super Throwable> onError) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
     public org.rapla.scheduler.Observable<T> doOnNext(Consumer<? super T> next)
     {
         final Observable<T> tFlowable = observable._do((obj)->

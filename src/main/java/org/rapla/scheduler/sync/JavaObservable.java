@@ -59,6 +59,19 @@ public class JavaObservable<T> implements Observable<T>
     }
 
     @Override
+    public Observable<T> onErrorResumeNext(Consumer<? super Throwable> onError)
+    {
+        Function<? super Throwable, ? extends Publisher<T>> handler = (ex)->
+        {
+            onError.accept( ex);
+            return this;
+        };
+        final io.reactivex.Flowable<T> tFlowable = observable.onErrorResumeNext(handler);
+        return t(tFlowable);
+    }
+
+
+    @Override
     public Observable<T> doOnNext(Consumer<? super T> next)
     {
         final io.reactivex.Flowable<T> tFlowable = observable.doOnNext(next);
