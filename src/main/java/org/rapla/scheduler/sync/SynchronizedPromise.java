@@ -5,30 +5,28 @@ import io.reactivex.functions.BiConsumer;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
-import org.rapla.scheduler.Observable;
 import org.rapla.scheduler.Promise;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 
 public class SynchronizedPromise<T> implements Promise<T>
 {
 
-    final Executor promiseExecuter;
+    final Executor promiseExecutor;
     final CompletionStage f;
 
     SynchronizedPromise(Executor executor, CompletionStage f)
     {
-        this.promiseExecuter = executor;
+        this.promiseExecutor = executor;
         this.f = f;
     }
 
     protected <U> Promise<U> w(CompletionStage<U> stage)
     {
-        return new SynchronizedPromise<U>(promiseExecuter, stage);
+        return new SynchronizedPromise<U>(promiseExecutor, stage);
     }
 
     protected <T> CompletionStage<T> v(final Promise<T> promise)
@@ -61,12 +59,16 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 return fn.apply(t);
             }
+            catch (CompletionException e)
+            {
+                throw e;
+            }
             catch (Exception e)
             {
-                throw new PromiseRuntimeException(e);
+                throw new CompletionException(e);
             }
         };
-        return w(f.thenApplyAsync(fun, promiseExecuter));
+        return w(f.thenApplyAsync(fun, promiseExecutor));
     }
 
     @Override
@@ -78,19 +80,23 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 fn.accept(a);
             }
+            catch (CompletionException e)
+            {
+                throw e;
+            }
             catch (Exception e)
             {
-                throw new PromiseRuntimeException(e);
+                throw new CompletionException(e);
             }
         };
-        return w(f.thenAcceptAsync(consumer, promiseExecuter));
+        return w(f.thenAcceptAsync(consumer, promiseExecutor));
     }
 
     @Override
     public Promise<Void> thenRun(Action command)
     {
         final Runnable action = wrapAction(command);
-        return w(f.thenRunAsync(action, promiseExecuter));
+        return w(f.thenRunAsync(action, promiseExecutor));
     }
 
     @Override
@@ -102,13 +108,17 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 return fn.apply(t, u);
             }
+            catch (CompletionException e)
+            {
+                throw e;
+            }
             catch (Exception e)
             {
-                throw new PromiseRuntimeException(e);
+                throw new CompletionException(e);
             }
         };
         final CompletionStage<? extends U> v = v(other);
-        return w(f.thenCombineAsync(v, bifn, promiseExecuter));
+        return w(f.thenCombineAsync(v, bifn, promiseExecutor));
     }
 
     @Override
@@ -120,13 +130,17 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 fn.accept(t, u);
             }
+            catch (CompletionException e)
+            {
+                throw e;
+            }
             catch (Exception e)
             {
-                throw new PromiseRuntimeException(e);
+                throw new CompletionException(e);
             }
         };
         final CompletionStage<? extends U> v = v(other);
-        return w(f.thenAcceptBothAsync(v, biConsumer, promiseExecuter));
+        return w(f.thenAcceptBothAsync(v, biConsumer, promiseExecutor));
     }
 
     private Runnable wrapAction(Action command)
@@ -137,9 +151,13 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 command.run();
             }
+            catch (CompletionException e)
+            {
+                throw e;
+            }
             catch (Exception e)
             {
-                throw new PromiseRuntimeException(e);
+                throw new CompletionException(e);
             }
         };
     }
@@ -153,12 +171,16 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 return v(fn.apply(t));
             }
+            catch (CompletionException e)
+            {
+                throw e;
+            }
             catch (Exception e)
             {
-                throw new PromiseRuntimeException(e);
+                throw new CompletionException(e);
             }
         };
-        return w(f.thenComposeAsync(fun, promiseExecuter));
+        return w(f.thenComposeAsync(fun, promiseExecutor));
     }
 
     @Override
@@ -172,9 +194,13 @@ public class SynchronizedPromise<T> implements Promise<T>
                 fn.accept(t);
                 return null;
             }
+            catch (CompletionException e)
+            {
+                throw e;
+            }
             catch (Exception e)
             {
-                throw new PromiseRuntimeException(e);
+                throw new CompletionException(e);
             }
         };
         return w(f.exceptionally(fun).thenApply( (dummy)->null));
@@ -182,7 +208,7 @@ public class SynchronizedPromise<T> implements Promise<T>
 
     private Throwable getCause(Throwable t)
     {
-        while (t instanceof CompletionException || t instanceof SynchronizedPromise.PromiseRuntimeException)
+        while (t instanceof CompletionException )
         {
             t = t.getCause();
         }
@@ -199,12 +225,16 @@ public class SynchronizedPromise<T> implements Promise<T>
                 final T apply = (T) fn.apply(t, u);
                 return apply;
             }
+            catch (CompletionException e)
+            {
+                throw e;
+            }
             catch (Exception e)
             {
-                throw new PromiseRuntimeException(e);
+                throw new CompletionException(e);
             }
         };
-        return w(f.handleAsync(bifn, promiseExecuter));
+        return w(f.handleAsync(bifn, promiseExecutor));
     }
 
     @Override
@@ -215,29 +245,18 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 fn.run();
             }
+            catch (CompletionException e)
+            {
+                throw e;
+            }
             catch (Exception e)
             {
-                throw new PromiseRuntimeException(e);
+                throw new CompletionException(e);
             }
         };
-        return w(f.whenCompleteAsync(bifn, promiseExecuter));
+        return w(f.whenCompleteAsync(bifn, promiseExecutor));
     }
 
-    static class PromiseRuntimeException extends RuntimeException
-    {
-        private static final long serialVersionUID = 1L;
-
-        public PromiseRuntimeException(Throwable cause)
-        {
-            super(cause);
-        }
-
-        @Override
-        public synchronized Throwable getCause()
-        {
-            return super.getCause();
-        }
-    }
 
     public CompletableFuture<T> toFuture()
     {
