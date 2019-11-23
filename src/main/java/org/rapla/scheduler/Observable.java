@@ -38,6 +38,11 @@ public interface Observable<T> extends Publisher<T> {
      * @see Flowable#repeat()
      */
     Observable<T> repeat();
+
+    /**
+     * @see Flowable#share()
+     */
+    Observable<T> share();
     /**
      * @see Flowable#concatWith(Publisher)
      */

@@ -9,6 +9,7 @@ import com.github.timofeevda.gwt.rxjs.interop.observable.Observer;
 import com.github.timofeevda.gwt.rxjs.interop.subject.Subject;
 import com.github.timofeevda.gwt.rxjs.interop.subscription.Subscription;
 import com.google.gwt.core.client.JavaScriptException;
+import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
@@ -106,6 +107,16 @@ public class JavaScriptObservable<T> implements org.rapla.scheduler.Observable<T
         final Observable observable = this.observable.repeat();
         return t(observable);
     }
+
+
+    @Override
+    public org.rapla.scheduler.Observable<T> share()
+    {
+        final Observable observable = this.observable.share();
+        return t(observable);
+    }
+
+
 
     @Override
     public org.rapla.scheduler.Observable<T> concatWith(org.rapla.scheduler.Observable<? extends T> otherObservable)

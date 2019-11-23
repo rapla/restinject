@@ -276,6 +276,11 @@ public class UnsynchronizedPromise<T> implements CompletablePromise<T>
     }
 
     @Override
+    public boolean isDone() {
+        return state != State.pending;
+    }
+
+    @Override
     public Promise<T> execOn(Executor executor)
     {
         return this;

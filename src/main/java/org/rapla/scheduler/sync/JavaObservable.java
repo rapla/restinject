@@ -118,10 +118,18 @@ public class JavaObservable<T> implements Observable<T>
     }
 
     @Override
+    public org.rapla.scheduler.Observable<T> share()
+    {
+        final io.reactivex.Flowable<T> tFlowable = this.observable.share();
+        return t(tFlowable);
+    }
+
+    @Override
     public Observable<T> repeat() {
         final io.reactivex.Flowable<T> tFlowable = observable.repeat();
         return t(tFlowable);
     }
+
 
     @Override
     public Observable<T> concatWith(Observable<? extends T> otherObservable) {
@@ -137,7 +145,7 @@ public class JavaObservable<T> implements Observable<T>
     @Override
     public <R> Observable<R> switchMap(Function<? super T, ? extends Publisher<? extends R>> mapper)
     {
-        final io.reactivex.Flowable<R> rFlowable = observable.switchMap(mapper);
+        final io.reactivex.Flowable<R> rFlowable = observable.switchMap(mapper).share();
         return t(rFlowable);
     }
 
