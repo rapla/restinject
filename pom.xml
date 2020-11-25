@@ -56,7 +56,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <scannotation.version>1.0.4</scannotation.version>
         <resteasy.version>3.5.1.Final</resteasy.version>
-        <jetty.version>9.4.24.v20191120</jetty.version>
+        <jetty.version>9.4.35.v20201120</jetty.version>
         <!--
         <jetty.version>9.3.7.v20160115</jetty.version>
         -->
