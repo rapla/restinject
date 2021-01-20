@@ -50,7 +50,7 @@
         <gwt.plugin.version>2.8.2</gwt.plugin.version>
         <dagger.version>2.10</dagger.version>
         <gson.version>2.8.2</gson.version>
-        <jackson.version>2.9.10.1</jackson.version>
+        <jackson.version>2.9.10.7</jackson.version>
         <javax.inject.version>1</javax.inject.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
