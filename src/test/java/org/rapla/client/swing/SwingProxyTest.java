@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import org.eclipse.jetty.server.Server;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -23,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 
 @RunWith(JUnit4.class)
+@Ignore
 public class SwingProxyTest extends AbstractProxyTest
 {
     Server server;

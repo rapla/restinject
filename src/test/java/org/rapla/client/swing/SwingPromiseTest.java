@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import org.eclipse.jetty.server.Server;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.rapla.client.AbstractPromiseTest;
@@ -19,6 +20,7 @@ import org.rapla.server.ServletTestContainer;
 
 import junit.framework.TestCase;
 
+@Ignore
 @RunWith(JUnit4.class) public class SwingPromiseTest extends AbstractPromiseTest
 {
 

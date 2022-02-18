@@ -178,7 +178,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             if (processingEnv.getElementUtils().getTypeElement(fullModuleStarterName) == null && daggerModuleRebuildNeeded)
             {
                 // Dagger
-                processDagger(moduleInfo, processedAnnotations);
+                // processDagger(moduleInfo, processedAnnotations);
             }
         }
         catch (Exception ioe)

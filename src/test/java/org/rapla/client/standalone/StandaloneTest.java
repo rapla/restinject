@@ -7,6 +7,7 @@ import org.eclipse.jetty.webapp.WebAppContext;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.rapla.client.AbstractProxyTest;
@@ -24,7 +25,7 @@ import org.rapla.server.TestServlet;
 import java.io.File;
 
 @RunWith(JUnit4.class)
-//@Ignore
+@Ignore
 public class StandaloneTest extends AbstractProxyTest
 {
 
