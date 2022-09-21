@@ -1,7 +1,7 @@
 package org.rapla.scheduler;
 
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Action;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.functions.Action;
 
 import java.util.concurrent.TimeUnit;
 

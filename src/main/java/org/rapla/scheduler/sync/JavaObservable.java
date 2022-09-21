@@ -1,12 +1,12 @@
 package org.rapla.scheduler.sync;
 
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Scheduler;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Action;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
-import io.reactivex.schedulers.Schedulers;
+import io.reactivex.rxjava3.core.BackpressureStrategy;
+import io.reactivex.rxjava3.core.Scheduler;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.functions.Action;
+import io.reactivex.rxjava3.functions.Consumer;
+import io.reactivex.rxjava3.functions.Function;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import org.rapla.scheduler.Observable;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 public class JavaObservable<T> implements Observable<T>
 {
-    protected io.reactivex.Flowable<T> observable;
+    protected io.reactivex.rxjava3.core.Flowable<T> observable;
     Scheduler scheduler =null;
 
     public JavaObservable(SynchronizedPromise<T> promise, Executor executor)
@@ -25,9 +25,9 @@ public class JavaObservable<T> implements Observable<T>
         this(toObservable(promise.toFuture()), executor);
     }
 
-    private static <T> io.reactivex.Flowable<T> toObservable(CompletableFuture<T> future) {
+    private static <T> io.reactivex.rxjava3.core.Flowable<T> toObservable(CompletableFuture<T> future) {
         BackpressureStrategy strategy = BackpressureStrategy.BUFFER;
-        return io.reactivex.Flowable.create(subscriber ->
+        return io.reactivex.rxjava3.core.Flowable.create(subscriber ->
                 future.whenComplete((result, error) -> {
                     if (error != null) {
                         subscriber.onError(error);
@@ -40,12 +40,12 @@ public class JavaObservable<T> implements Observable<T>
                 }), strategy);
     }
 
-    public JavaObservable(io.reactivex.Flowable<T> observable, Executor executor)
+    public JavaObservable(io.reactivex.rxjava3.core.Flowable<T> observable, Executor executor)
     {
         this(observable, Schedulers.from( executor));
     }
 
-    public JavaObservable(io.reactivex.Flowable<T> observable, Scheduler scheduler)
+    public JavaObservable(io.reactivex.rxjava3.core.Flowable<T> observable, Scheduler scheduler)
     {
         this.observable = observable;
         this.scheduler = scheduler;
@@ -54,7 +54,7 @@ public class JavaObservable<T> implements Observable<T>
     @Override
     public Observable<T> doOnError(Consumer<? super Throwable> onError)
     {
-        final io.reactivex.Flowable<T> tFlowable = observable.doOnError(onError);
+        final io.reactivex.rxjava3.core.Flowable<T> tFlowable = observable.doOnError(onError);
         return t(tFlowable);
     }
 
@@ -66,7 +66,7 @@ public class JavaObservable<T> implements Observable<T>
             onError.accept( ex);
             return this;
         };
-        final io.reactivex.Flowable<T> tFlowable = observable.onErrorResumeNext(handler);
+        final io.reactivex.rxjava3.core.Flowable<T> tFlowable = observable.onErrorResumeNext(handler);
         return t(tFlowable);
     }
 
@@ -74,14 +74,14 @@ public class JavaObservable<T> implements Observable<T>
     @Override
     public Observable<T> doOnNext(Consumer<? super T> next)
     {
-        final io.reactivex.Flowable<T> tFlowable = observable.doOnNext(next);
+        final io.reactivex.rxjava3.core.Flowable<T> tFlowable = observable.doOnNext(next);
         return t(tFlowable);
     }
 
     @Override
     public Observable<T> doOnComplete(Action action)
     {
-        final io.reactivex.Flowable<T> tFlowable = observable.doOnComplete(action);
+        final io.reactivex.rxjava3.core.Flowable<T> tFlowable = observable.doOnComplete(action);
         return t(tFlowable);
     }
 
@@ -89,7 +89,7 @@ public class JavaObservable<T> implements Observable<T>
     @Override
     public <R> Observable<R> map(Function<? super T, ? extends R> mapper)
     {
-        final io.reactivex.Flowable<R> tFlowable = observable.map(mapper);
+        final io.reactivex.rxjava3.core.Flowable<R> tFlowable = observable.map(mapper);
         return t(tFlowable);
     }
 
@@ -107,37 +107,37 @@ public class JavaObservable<T> implements Observable<T>
     @Override
     public Observable<T> throttle(long milliseconds)
     {
-        final io.reactivex.Flowable<T> tFlowable = observable.throttleLast(milliseconds, TimeUnit.MILLISECONDS, scheduler);
+        final io.reactivex.rxjava3.core.Flowable<T> tFlowable = observable.throttleLast(milliseconds, TimeUnit.MILLISECONDS, scheduler);
         return t(tFlowable);
     }
 
     @Override
     public Observable<T> delay(long milliseconds) {
-        final io.reactivex.Flowable<T> tFlowable = observable.delay(milliseconds,TimeUnit.MILLISECONDS);
+        final io.reactivex.rxjava3.core.Flowable<T> tFlowable = observable.delay(milliseconds,TimeUnit.MILLISECONDS);
         return t(tFlowable);
     }
 
     @Override
     public org.rapla.scheduler.Observable<T> share()
     {
-        final io.reactivex.Flowable<T> tFlowable = this.observable.share();
+        final io.reactivex.rxjava3.core.Flowable<T> tFlowable = this.observable.share();
         return t(tFlowable);
     }
 
     @Override
     public Observable<T> repeat() {
-        final io.reactivex.Flowable<T> tFlowable = observable.repeat();
+        final io.reactivex.rxjava3.core.Flowable<T> tFlowable = observable.repeat();
         return t(tFlowable);
     }
 
 
     @Override
     public Observable<T> concatWith(Observable<? extends T> otherObservable) {
-        final io.reactivex.Flowable<T> tFlowable = observable.concatWith(otherObservable);
+        final io.reactivex.rxjava3.core.Flowable<T> tFlowable = observable.concatWith(otherObservable);
         return t(tFlowable);
     }
 
-    private <R> Observable<R> t(final io.reactivex.Flowable<R> tFlowable)
+    private <R> Observable<R> t(final io.reactivex.rxjava3.core.Flowable<R> tFlowable)
     {
         return new JavaObservable<>(tFlowable, scheduler);
     }
@@ -145,7 +145,7 @@ public class JavaObservable<T> implements Observable<T>
     @Override
     public <R> Observable<R> switchMap(Function<? super T, ? extends Publisher<? extends R>> mapper)
     {
-        final io.reactivex.Flowable<R> rFlowable = observable.switchMap(mapper).share();
+        final io.reactivex.rxjava3.core.Flowable<R> rFlowable = observable.switchMap(mapper).share();
         return t(rFlowable);
     }
 
@@ -153,7 +153,7 @@ public class JavaObservable<T> implements Observable<T>
     @Override
     public <R> Observable<R> flatMap(Function<? super T, ? extends Publisher<? extends R>> mapper)
     {
-        final io.reactivex.Flowable<R> rFlowable = observable.flatMap(mapper);
+        final io.reactivex.rxjava3.core.Flowable<R> rFlowable = observable.flatMap(mapper);
         return t(rFlowable);
     }
 
@@ -164,14 +164,14 @@ public class JavaObservable<T> implements Observable<T>
     }
 
     @Override
-    public io.reactivex.Flowable<T> toNativeObservable()
+    public io.reactivex.rxjava3.core.Flowable<T> toNativeObservable()
     {
         return observable;
     }
 
     @Override
     public Observable<T> debounce(long time) {
-        final io.reactivex.Flowable<T> debounce = observable.debounce(time, TimeUnit.MILLISECONDS, scheduler);
+        final io.reactivex.rxjava3.core.Flowable<T> debounce = observable.debounce(time, TimeUnit.MILLISECONDS, scheduler);
         return t(debounce);
     }
 }

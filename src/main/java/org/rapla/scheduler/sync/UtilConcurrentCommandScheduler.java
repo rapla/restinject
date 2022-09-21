@@ -1,16 +1,15 @@
 package org.rapla.scheduler.sync;
 
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Action;
-import io.reactivex.processors.PublishProcessor;
-import io.reactivex.schedulers.Schedulers;
-import io.reactivex.subjects.PublishSubject;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.functions.Action;
+import io.reactivex.rxjava3.processors.PublishProcessor;
+import io.reactivex.rxjava3.schedulers.Schedulers;
+import io.reactivex.rxjava3.subjects.PublishSubject;
 import org.rapla.logger.Logger;
 import org.rapla.scheduler.CommandScheduler;
 import org.rapla.scheduler.CompletablePromise;
 import org.rapla.scheduler.Observable;
 import org.rapla.scheduler.Promise;
-import org.rapla.scheduler.client.gwt.JavaScriptObservable;
 
 import java.time.Clock;
 import java.time.LocalTime;
@@ -149,7 +148,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
         {
             action.run();
         }
-        catch (Exception ex )
+        catch (Throwable ex )
         {
             completablePromise.completeExceptionally( ex );
             return;
@@ -304,7 +303,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
 
     @Override
     public <T> Observable<T> just(T t) {
-        final io.reactivex.Flowable<T> just = io.reactivex.Flowable.just(t);
+        final io.reactivex.rxjava3.core.Flowable<T> just = io.reactivex.rxjava3.core.Flowable.just(t);
         return new JavaObservable<T>(just, promiseExecuter);
     }
 
@@ -350,7 +349,7 @@ public class UtilConcurrentCommandScheduler implements CommandScheduler, Executo
                     command.run();
                     future.complete(Promise.VOID);
                 }
-                catch (Exception ex)
+                catch (Throwable ex)
                 {
                     future.completeExceptionally(ex);
                 }

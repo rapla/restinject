@@ -246,7 +246,7 @@ public class SerializerCreator implements SerializerClasses
             if (isPrimitive(leafType) || isBoxedPrimitive(leafType))
             {
                 ArrayType arrayType = ((ArrayType) type);
-                if (GwtProxyCreator.getRank(arrayType) != 1)
+                if (AbstractClientProxyCreator.getRank(arrayType) != 1)
                 {
                     logger.error("restinject does not support " + "(de)serializing of multi-dimensional arrays of primitves");
                     // To work around this, we would need to generate serializers for
@@ -1064,14 +1064,14 @@ public class SerializerCreator implements SerializerClasses
     private String getSerializerQualifiedName(final TypeElement targetType)
     {
         final String[] name;
-        name = GwtProxyCreator.synthesizeTopLevelClassName(targetType, SER_SUFFIX, processingEnvironment);
+        name = AbstractClientProxyCreator.synthesizeTopLevelClassName(targetType, SER_SUFFIX, processingEnvironment);
         return name[0].length() == 0 ? name[1] : name[0] + "." + name[1];
     }
 
     private String getSerializerSimpleName(TypeElement targetType)
     {
 
-        return GwtProxyCreator.synthesizeTopLevelClassName(targetType, SER_SUFFIX, processingEnvironment)[1];
+        return AbstractClientProxyCreator.synthesizeTopLevelClassName(targetType, SER_SUFFIX, processingEnvironment)[1];
     }
 
     boolean needsTypeParameter(final TypeMirror ft, ProcessingEnvironment processingEnvironment)

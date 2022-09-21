@@ -4,13 +4,9 @@ import org.rapla.common.ComponentStarter;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.InjectionContext;
 
-import dagger.MembersInjector;
-
-import java.util.Map;
-
 import javax.inject.Inject;
 
-@DefaultImplementation(context=InjectionContext.server, of=ComponentStarter.class,export = true)
+@DefaultImplementation(context=InjectionContext.server, of= ComponentStarter.class,export = true)
 public class ServerStarter implements ComponentStarter
 {
 

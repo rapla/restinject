@@ -1,18 +1,15 @@
 package org.rapla.scheduler;
 
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Action;
-import io.reactivex.functions.BiConsumer;
-import io.reactivex.functions.BiFunction;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
-import jsinterop.annotations.JsType;
+import io.reactivex.rxjava3.functions.Action;
+import io.reactivex.rxjava3.functions.BiConsumer;
+import io.reactivex.rxjava3.functions.BiFunction;
+import io.reactivex.rxjava3.functions.Consumer;
+import io.reactivex.rxjava3.functions.Function;
 
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 
 /** same as {@link java.util.concurrent.CompletionStage} but usable in gwt */
-@JsType
 public interface Promise<T>
 {
     Void VOID = null;

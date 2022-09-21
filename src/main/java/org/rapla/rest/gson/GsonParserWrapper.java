@@ -1,11 +1,6 @@
 package org.rapla.rest.gson;
 
 import com.google.gson.*;
-import com.google.gson.internal.ConstructorConstructor;
-import com.google.gson.internal.Excluder;
-import com.google.gson.internal.bind.JsonAdapterAnnotationTypeAdapterFactory;
-import com.google.gson.internal.bind.MapTypeAdapterFactory;
-import com.google.gson.internal.bind.ReflectiveTypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
 import org.rapla.logger.NullLogger;
 import org.rapla.rest.GenericObjectSerializable;
@@ -83,14 +78,14 @@ public class GsonParserWrapper implements Provider<JsonParserWrapper.JsonParser>
                 return new LinkedHashSet();
             }
         });
-        ConstructorConstructor constructorConstructor = new ConstructorConstructor(instanceCreators);
-        FieldNamingStrategy fieldNamingPolicy = FieldNamingPolicy.IDENTITY;
-        Excluder excluder = Excluder.DEFAULT;
-        JsonAdapterAnnotationTypeAdapterFactory jsonAdapterFactory= new JsonAdapterAnnotationTypeAdapterFactory(constructorConstructor);
-        final ReflectiveTypeAdapterFactory reflectiveTypeAdapterFactory = new ReflectiveTypeAdapterFactory(constructorConstructor, fieldNamingPolicy, excluder, jsonAdapterFactory);
-
-        gb.registerTypeAdapterFactory(new MapTypeAdapterFactory(constructorConstructor, false));
-        gb.registerTypeAdapterFactory(new MyAdaptorFactory(reflectiveTypeAdapterFactory));
+//        ConstructorConstructor constructorConstructor = new ConstructorConstructor(instanceCreators);
+//        FieldNamingStrategy fieldNamingPolicy = FieldNamingPolicy.IDENTITY;
+//        Excluder excluder = Excluder.DEFAULT;
+//        JsonAdapterAnnotationTypeAdapterFactory jsonAdapterFactory= new JsonAdapterAnnotationTypeAdapterFactory(constructorConstructor);
+//        final ReflectiveTypeAdapterFactory reflectiveTypeAdapterFactory = new ReflectiveTypeAdapterFactory(constructorConstructor, fieldNamingPolicy, excluder, jsonAdapterFactory);
+//
+//        gb.registerTypeAdapterFactory(new MapTypeAdapterFactory(constructorConstructor, false));
+        //gb.registerTypeAdapterFactory(new MyAdaptorFactory(reflectiveTypeAdapterFactory));
         gb.registerTypeAdapter(Date.class, new GmtDateTypeAdapter());
         GsonBuilder configured = gb.disableHtmlEscaping();
         return configured;
@@ -224,7 +219,7 @@ public class GsonParserWrapper implements Provider<JsonParserWrapper.JsonParser>
         }
     }
 
-    private static class MyAdaptorFactory implements TypeAdapterFactory
+   /* private static class MyAdaptorFactory implements TypeAdapterFactory
     {
         ReflectiveTypeAdapterFactory reflectiveTypeAdapterFactory;
 
@@ -245,5 +240,5 @@ public class GsonParserWrapper implements Provider<JsonParserWrapper.JsonParser>
                 return null;
             }
         }
-    }
+    }*/
 }

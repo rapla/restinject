@@ -160,7 +160,7 @@ public class ResultDeserializerCreator
     private static String getDeserializerSimpleName(TypeMirror targetType, ProcessingEnvironment processingEnvironment)
     {
         final TypeElement typeElement = (TypeElement) processingEnvironment.getTypeUtils().asElement(targetType);
-        return GwtProxyCreator.synthesizeTopLevelClassName(typeElement, DSER_SUFFIX, processingEnvironment)[1];
+        return AbstractClientProxyCreator.synthesizeTopLevelClassName(typeElement, DSER_SUFFIX, processingEnvironment)[1];
     }
 
     private SourceWriter getSourceWriter(TreeLogger logger)

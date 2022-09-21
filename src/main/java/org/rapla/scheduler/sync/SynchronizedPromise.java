@@ -1,10 +1,10 @@
 package org.rapla.scheduler.sync;
 
-import io.reactivex.functions.Action;
-import io.reactivex.functions.BiConsumer;
-import io.reactivex.functions.BiFunction;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
+import io.reactivex.rxjava3.functions.Action;
+import io.reactivex.rxjava3.functions.BiConsumer;
+import io.reactivex.rxjava3.functions.BiFunction;
+import io.reactivex.rxjava3.functions.Consumer;
+import io.reactivex.rxjava3.functions.Function;
 import org.rapla.scheduler.Promise;
 
 import java.util.concurrent.CompletableFuture;
@@ -63,7 +63,7 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 throw e;
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
                 throw new CompletionException(e);
             }
@@ -84,7 +84,7 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 throw e;
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
                 throw new CompletionException(e);
             }
@@ -112,7 +112,7 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 throw e;
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
                 throw new CompletionException(e);
             }
@@ -134,7 +134,7 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 throw e;
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
                 throw new CompletionException(e);
             }
@@ -155,7 +155,7 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 throw e;
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
                 throw new CompletionException(e);
             }
@@ -175,7 +175,7 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 throw e;
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
                 throw new CompletionException(e);
             }
@@ -198,7 +198,7 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 throw e;
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
                 throw new CompletionException(e);
             }
@@ -229,7 +229,7 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 throw e;
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
                 throw new CompletionException(e);
             }
@@ -249,7 +249,7 @@ public class SynchronizedPromise<T> implements Promise<T>
             {
                 throw e;
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
                 throw new CompletionException(e);
             }

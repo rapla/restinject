@@ -1,6 +1,6 @@
 package org.rapla.scheduler;
 
-import io.reactivex.functions.Action;
+import io.reactivex.rxjava3.functions.Action;
 import org.junit.Assert;
 import org.junit.Test;
 import org.rapla.logger.ConsoleLogger;

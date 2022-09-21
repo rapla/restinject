@@ -3,10 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.rapla</groupId>
     <artifactId>restinject</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <!--
-    <version>1.0-alpha9</version>
-    -->
+    <version>2.0-RC1</version>
     <url>https://github.com/rapla/restinject</url>
     <description>Provides abstraction for dependency injection JSR 330. Also supports json rest services that work on java and gwt clients. The rpc part was
         orignally from https://gerrit.googlesource.com/gwtjsonrpc/
@@ -42,21 +39,22 @@
         <url>https://github.com/rapla/restinject.git</url>
     </scm>
     <properties>
-        <slf4j.version>1.7.25</slf4j.version>
+        <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.5</log4j.version>
         <logback.version>1.2.3</logback.version>
         <gwt.plugin.productionmode>true</gwt.plugin.productionmode>
         <gwt.version>2.8.2</gwt.version>
         <gwt.plugin.version>2.8.2</gwt.plugin.version>
-        <dagger.version>2.10</dagger.version>
-        <gson.version>2.8.2</gson.version>
-        <jackson.version>2.9.10.1</jackson.version>
+        <gson.version>2.9.1</gson.version>
+        <jackson.version>2.13.3</jackson.version>
         <javax.inject.version>1</javax.inject.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <scannotation.version>1.0.4</scannotation.version>
-        <resteasy.version>3.5.1.Final</resteasy.version>
+        <resteasy.version>3.15.3.Final</resteasy.version>
         <jetty.version>9.4.24.v20191120</jetty.version>
+        <java9.sourceDirectory>${project.basedir}/src/main/java9</java9.sourceDirectory>
+        <java9.build.outputDirectory>${project.build.directory}/classes-java9</java9.build.outputDirectory>
         <!--
         <jetty.version>9.3.7.v20160115</jetty.version>
         -->
@@ -100,41 +98,43 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.5.5</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <finalName>${project.build.finalName}</finalName>
-                            <descriptor>${basedir}/src/assembly/restinject.jar.xml</descriptor>
-                            <appendAssemblyId>false</appendAssemblyId>
-                            <attach>true</attach>
-                        </configuration>
-                    </execution>
-
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.1</version>
+                <version>3.10.1</version>
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
                     <proc>none</proc>
-                    <!--
                     <annotationProcessors>
                         <annotationProcessor>org.rapla.inject.generator.AnnotationInjectionProcessor</annotationProcessor>
-                        <annotationProcessor>dagger.internal.codegen.ComponentProcessor</annotationProcessor>
                     </annotationProcessors>
-                    -->
                 </configuration>
 
+                <executions>
+                    <execution>
+                        <id>compile-java-8</id>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <source>1.8</source>
+                            <target>1.8</target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>compile-java-9</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <release>9</release>
+                            <compileSourceRoots>
+                                <compileSourceRoot>${project.basedir}/src/main/java9</compileSourceRoot>
+                            </compileSourceRoots>
+                            <multiReleaseOutput>true</multiReleaseOutput>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.bsc.maven</groupId>
@@ -151,24 +151,35 @@
                             <defaultOutputDirectory>${project.build.directory}/generated-test-sources/apt-test</defaultOutputDirectory>
                             <processors>
                                 <processor>org.rapla.inject.generator.AnnotationInjectionProcessor</processor>
-                                <processor>dagger.internal.codegen.ComponentProcessor</processor>
                             </processors>
-                            <compilerArguments>-AmoduleName=org.rapla.rapla</compilerArguments>
                             <failOnError>true</failOnError>
                             <outputDiagnostics>true</outputDiagnostics>
                         </configuration>
                     </execution>
                 </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.google.dagger</groupId>
-                        <artifactId>dagger-compiler</artifactId>
-                        <version>${dagger.version}</version>
-                    </dependency>
-
-                </dependencies>
             </plugin>
-
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/META-INF/versions/9</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${java9.build.outputDirectory}</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+<!--
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>gwt-maven-plugin</artifactId>
@@ -182,9 +193,6 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <!--
-                    <extraJvmArgs>-agentlib:jdwp=transport=dt_socket,server=n,address=localhost:5050,suspend=y</extraJvmArgs>
-                    -->
                     <includes>**/*Gwt*Test.java,**/*GWT*Test.java</includes>
                     <productionMode>${gwt.plugin.productionmode}</productionMode>
                     <testTimeOut>12360</testTimeOut>
@@ -195,6 +203,7 @@
                     <detail>false</detail>
                 </configuration>
             </plugin>
+            -->
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -231,6 +240,7 @@
                     </execution>
                 </executions>
             </plugin>
+            <!--
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
@@ -244,11 +254,17 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.4</version>
+                <version>3.2.2</version>
                 <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Multi-Release>true</Multi-Release>
+                        </manifestEntries>
+                    </archive>
                     <excludes>
                         <exclude>${project.build.directory}/generated-test-sources/**</exclude>
                     </excludes>
@@ -283,9 +299,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.reactivex.rxjava2</groupId>
+            <groupId>io.reactivex.rxjava3</groupId>
             <artifactId>rxjava</artifactId>
-            <version>2.1.0</version>
+            <version>3.1.5</version>
         </dependency>
         <dependency>
             <groupId>org.reactivestreams</groupId>
@@ -294,12 +310,13 @@
             <version>1.0.0</version>
             <scope>provided</scope>
         </dependency>
-
+<!--
         <dependency>
             <groupId>com.github.timofeevda</groupId>
             <artifactId>gwt-rxjs-jsinterop</artifactId>
             <version>1.1.4</version>
         </dependency>
+    -->
         <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>javax.ws.rs-api</artifactId>
@@ -318,6 +335,18 @@
                     <artifactId>scannotation</artifactId>
                     <groupId>org.scannotation</groupId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>jboss-annotations-api_1.2_spec</artifactId>
+                    <groupId>org.jboss.spec.javax.annotation</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+                    <groupId>org.jboss.spec.javax.ws.rs</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jboss-annotations-api_1.2_spec</artifactId>
+                    <groupId>org.jboss.spec.javax.annotation</groupId>
+                </exclusion>
             </exclusions>
             <scope>provided</scope>
         </dependency>
@@ -334,6 +363,15 @@
                 <exclusion>
                     <artifactId>scannotation</artifactId>
                     <groupId>org.scannotation</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+                    <groupId>org.jboss.spec.javax.ws.rs</groupId>
+                </exclusion>
+
+                <exclusion>
+                    <artifactId>jboss-annotations-api_1.2_spec</artifactId>
+                    <groupId>org.jboss.spec.javax.annotation</groupId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -374,22 +412,10 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>${log4j.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>${log4j.version}</version>
-            <scope>test</scope>
         </dependency>
         <!--
 
@@ -419,6 +445,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.3.2</version>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
@@ -438,7 +469,7 @@
             <scope>test</scope>
         </dependency>
         -->
-        <!-- GWT -->
+        <!-- GWT
         <dependency>
             <groupId>com.google.gwt</groupId>
             <artifactId>gwt-dev</artifactId>
@@ -451,29 +482,19 @@
             <version>${gwt.version}</version>
             <scope>provided</scope>
         </dependency>
+        -->
         <dependency>
             <groupId>com.google.jsinterop</groupId>
             <artifactId>jsinterop-annotations</artifactId>
-            <version>1.0.1</version>
+            <version>2.0.0</version>
         </dependency>
+        <!--
         <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
             <version>1.0.0.GA</version>
         </dependency>
-        <dependency>
-            <groupId>com.google.dagger</groupId>
-            <artifactId>dagger</artifactId>
-            <version>${dagger.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.dagger</groupId>
-            <artifactId>dagger</artifactId>
-            <version>${dagger.version}</version>
-            <classifier>sources</classifier>
-            <scope>compile</scope>
-        </dependency>
+        -->
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>

@@ -1,17 +1,11 @@
 package org.rapla.rest;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
 
-@XmlRootElement
-@XmlAccessorType(XmlAccessType.FIELD)
 public class SerializableExceptionInformation
 {
 
-    @XmlAccessorType(XmlAccessType.FIELD)
     public static class SerializableExceptionStacktraceInformation
     {
         private String className;

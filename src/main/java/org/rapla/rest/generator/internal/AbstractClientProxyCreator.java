@@ -30,12 +30,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public abstract class AbstractClientProxyCreator
 {
@@ -155,10 +150,8 @@ public abstract class AbstractClientProxyCreator
 
     public String create(final TreeLogger logger) throws UnableToCompleteException, IOException
     {
-        TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
-        String interfaceName = SerializerCreator.erasedTypeString(erasedType);
+        String interfaceName = getInterfaceName();
         checkMethods(logger, interfaceName, processingEnvironment);
-
         final SourceWriter srcWriter = getSourceWriter(interfaceName);
         if (srcWriter == null)
         {
@@ -172,6 +165,12 @@ public abstract class AbstractClientProxyCreator
         srcWriter.close();
 
         return getProxyQualifiedName();
+    }
+
+    protected String getInterfaceName() {
+        TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
+        String interfaceName = SerializerCreator.erasedTypeString(erasedType);
+        return interfaceName;
     }
 
     private void checkMethods(final TreeLogger logger, String interfaceName, final ProcessingEnvironment processingEnvironment) throws UnableToCompleteException
@@ -605,7 +604,7 @@ public abstract class AbstractClientProxyCreator
         return typeUtils.getDeclaredType(typeElement);
     }
 
-    private String getProxyQualifiedName()
+    protected String getProxyQualifiedName()
     {
         final String[] name = synthesizeTopLevelClassName(svcInf, getProxySuffix(), processingEnvironment);
         return name[0].length() == 0 ? name[1] : name[0] + "." + name[1];

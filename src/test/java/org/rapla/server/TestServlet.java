@@ -10,8 +10,6 @@ import org.rapla.inject.scanning.ServiceInfLoader;
 import org.rapla.logger.ConsoleLogger;
 import org.rapla.logger.Logger;
 import org.rapla.rest.server.provider.resteasy.ResteasyMembersInjector;
-import org.rapla.server.dagger.DaggerRaplaServerStartupModule;
-import org.rapla.server.dagger.RaplaServerComponent;
 import org.rapla.server.rest.RestTestApplication;
 
 import javax.servlet.ServletConfig;
@@ -84,8 +82,6 @@ public class TestServlet extends HttpServlet
         StartupParams params  = new StartupParams();
 
         // We could either use dagger for depenedency injection
-        final DaggerRaplaServerStartupModule startupModule = new DaggerRaplaServerStartupModule(params);
-        final RaplaServerComponent mod = org.rapla.server.dagger.DaggerRaplaServerComponent.builder().daggerRaplaServerStartupModule(startupModule).build();
         //membersInjector = new ReflectionMembersInjector( RaplaServerComponent.class, mod);
 
         Logger logger = new ConsoleLogger();

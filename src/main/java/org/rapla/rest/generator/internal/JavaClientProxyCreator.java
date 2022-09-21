@@ -10,16 +10,31 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 
 public class JavaClientProxyCreator extends AbstractClientProxyCreator
 {
+    private static HashSet<String> generatedProxies = new HashSet<>();
+
     public static final String PROXY_SUFFIX = "_JavaJsonProxy";
     public static final String JavaJsonSerializer = "org.rapla.rest.client.swing.JavaJsonSerializer";
 
     public JavaClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, SerializerCreator serializerCreator, ResultDeserializerCreator deserializerCreator, String generatorName)
     {
         super(remoteService, processingEnvironment, serializerCreator, deserializerCreator, generatorName, InjectionContext.swing, "JavaClientServerConnector");
+    }
+
+    @Override
+    public String create(TreeLogger logger) throws UnableToCompleteException, IOException {
+        String name = getProxyQualifiedName();
+        if ( generatedProxies.contains( name)) {
+            return name;
+        }
+        name = super.create(logger);
+        generatedProxies.add(name);
+        return name;
     }
 
     @Override

@@ -12,7 +12,7 @@
  *--------------------------------------------------------------------------*/
 package org.rapla.inject.raplainject;
 
-import io.reactivex.disposables.Disposable;
+import io.reactivex.rxjava3.disposables.Disposable;
 import org.rapla.inject.DefaultImplementation;
 import org.rapla.inject.DefaultImplementationRepeatable;
 import org.rapla.inject.Extension;

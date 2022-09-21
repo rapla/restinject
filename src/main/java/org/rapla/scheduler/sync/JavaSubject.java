@@ -1,7 +1,6 @@
 package org.rapla.scheduler.sync;
 
-import io.reactivex.disposables.Disposable;
-import io.reactivex.processors.FlowableProcessor;
+import io.reactivex.rxjava3.processors.FlowableProcessor;
 import org.rapla.scheduler.Subject;
 import org.reactivestreams.Subscription;
 
