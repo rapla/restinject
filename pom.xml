@@ -52,7 +52,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <scannotation.version>1.0.4</scannotation.version>
         <resteasy.version>3.15.3.Final</resteasy.version>
-        <jetty.version>9.4.24.v20191120</jetty.version>
+        <jetty.version>9.4.41.v20210516</jetty.version>
         <java9.sourceDirectory>${project.basedir}/src/main/java9</java9.sourceDirectory>
         <java9.build.outputDirectory>${project.build.directory}/classes-java9</java9.build.outputDirectory>
         <!--
