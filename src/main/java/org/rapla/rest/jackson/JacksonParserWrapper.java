@@ -2,24 +2,16 @@ package org.rapla.rest.jackson;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import com.google.gson.*;
 import org.rapla.logger.ConsoleLogger;
-import org.rapla.logger.NullLogger;
 import org.rapla.rest.JsonParserWrapper;
 import org.rapla.rest.client.RemoteConnectException;
-import org.rapla.scheduler.Promise;
-import org.rapla.scheduler.sync.SynchronizedCompletablePromise;
 
 import javax.inject.Provider;
 import java.io.IOException;

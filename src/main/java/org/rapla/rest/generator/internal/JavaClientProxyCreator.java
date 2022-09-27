@@ -21,18 +21,18 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
     public static final String PROXY_SUFFIX = "_JavaJsonProxy";
     public static final String JavaJsonSerializer = "org.rapla.rest.client.swing.JavaJsonSerializer";
 
-    public JavaClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, SerializerCreator serializerCreator, ResultDeserializerCreator deserializerCreator, String generatorName)
+    public JavaClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName)
     {
-        super(remoteService, processingEnvironment, serializerCreator, deserializerCreator, generatorName, InjectionContext.swing, "JavaClientServerConnector");
+        super(remoteService, processingEnvironment,  generatorName, InjectionContext.swing, "JavaClientServerConnector");
     }
 
     @Override
-    public String create(TreeLogger logger) throws UnableToCompleteException, IOException {
+    public String create() throws UnableToCompleteException, IOException {
         String name = getProxyQualifiedName();
         if ( generatedProxies.contains( name)) {
             return name;
         }
-        name = super.create(logger);
+        name = super.create();
         generatedProxies.add(name);
         return name;
     }
@@ -64,14 +64,14 @@ public class JavaClientProxyCreator extends AbstractClientProxyCreator
             {
                 TypeMirror typeMirror = resultType;
                 {
-                    TypeMirror erasedType = SerializerCreator.getErasedType(typeMirror, processingEnvironment);
-                    containerClass = SerializerCreator.erasedTypeString(erasedType, processingEnvironment) + ".class";
+                    TypeMirror erasedType = SerializeCheck.getErasedType(typeMirror, processingEnvironment);
+                    containerClass = SerializeCheck.erasedTypeString(erasedType, processingEnvironment) + ".class";
                 }
                 {
                     final List<? extends TypeMirror> typeArguments1 = ((DeclaredType) typeMirror).getTypeArguments();
                     final TypeMirror innerType = typeArguments1.get(typeArguments1.size() - 1);
-                    final TypeMirror erasedType = SerializerCreator.getErasedType(innerType, processingEnvironment);
-                    resultClassname = SerializerCreator.erasedTypeString(erasedType, processingEnvironment);
+                    final TypeMirror erasedType = SerializeCheck.getErasedType(innerType, processingEnvironment);
+                    resultClassname = SerializeCheck.erasedTypeString(erasedType, processingEnvironment);
                 }
             }
             else

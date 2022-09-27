@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -42,9 +41,7 @@ import org.rapla.inject.ExtensionPoint;
 import org.rapla.inject.ExtensionRepeatable;
 import org.rapla.inject.InjectionContext;
 import org.rapla.rest.generator.internal.JavaClientProxyCreator;
-import org.rapla.rest.generator.internal.ResultDeserializerCreator;
-import org.rapla.rest.generator.internal.SerializerCreator;
-import org.rapla.rest.generator.internal.TreeLogger;
+import org.rapla.rest.generator.internal.SerializeCheck;
 import org.rapla.rest.generator.internal.UnableToCompleteException;
 
 
@@ -62,8 +59,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
 
     public static final JavaFileManager.Location META_INF_LOCATION_FOR_ECLIPSE = StandardLocation.SOURCE_OUTPUT;
     public final static JavaFileManager.Location META_INF_LOCATION = StandardLocation.CLASS_OUTPUT;
-    private SerializerCreator serializerCreator;
-    private ResultDeserializerCreator deserializerCreator;
 
     enum Scopes
     {
@@ -109,8 +104,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     public synchronized void init(ProcessingEnvironment processingEnv)
     {
         super.init(processingEnv);
-        serializerCreator = new SerializerCreator(processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
-        deserializerCreator = new ResultDeserializerCreator(serializerCreator, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
     }
 
     @Override
@@ -144,7 +137,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 final Set<? extends Element> element = roundEnv.getElementsAnnotatedWith(annotation);
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Got " + element.toString());
             }
-            ProcessedAnnotations processedAnnotations = preProcessAnnotationsAndCreateProxies(roundEnv);
+            preProcessAnnotationsAndCreateProxies(roundEnv);
         }
         catch (Exception ioe)
         {
@@ -157,23 +150,17 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         return true;
     }
 
-    private ProcessedAnnotations preProcessAnnotationsAndCreateProxies(RoundEnvironment roundEnv) throws Exception
+    private void preProcessAnnotationsAndCreateProxies(RoundEnvironment roundEnv) throws Exception
     {
-        ProcessedAnnotations processedAnnotations = new ProcessedAnnotations();
-        boolean daggerModuleRebuildNeeded = false;
-        TreeLogger proxyLogger = new TreeLogger();
         boolean pathAnnotationFound = false;
 
         //        List<InjectionContext> gwtContexts = Arrays.asList(new InjectionContext[] { InjectionContext.gwt, InjectionContext.gwt });
         for (final Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementation.class))
         {
             final DefaultImplementation defaultImplementationAnnotation = elem.getAnnotation(DefaultImplementation.class);
-            boolean pathAnnotationFoundInHandle = handleDefaultImplementationForType(proxyLogger, elem,
-                    defaultImplementationAnnotation, processedAnnotations);
+            boolean pathAnnotationFoundInHandle = handleDefaultImplementationForType( elem,
+                    defaultImplementationAnnotation);
             pathAnnotationFound |= pathAnnotationFoundInHandle;
-            // we also created proxies for gwt and java, so rebuild is needed
-            if (!isGeneratedByAnnotationInjectionProcessor(elem))
-                daggerModuleRebuildNeeded = true;
         }
 
         for (final Element elem : roundEnv.getElementsAnnotatedWith(DefaultImplementationRepeatable.class))
@@ -181,12 +168,9 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             final DefaultImplementationRepeatable annotation = elem.getAnnotation(DefaultImplementationRepeatable.class);
             for (final DefaultImplementation defaultImplementation : annotation.value())
             {
-                boolean pathAnnotationFoundInHandle = handleDefaultImplementationForType(proxyLogger, elem,
-                        defaultImplementation, processedAnnotations);
+                boolean pathAnnotationFoundInHandle = handleDefaultImplementationForType(elem,
+                        defaultImplementation);
                 pathAnnotationFound |= pathAnnotationFoundInHandle;
-                // we also created proxies for gwt and java, so rebuild is needed
-                if (!isGeneratedByAnnotationInjectionProcessor(elem))
-                    daggerModuleRebuildNeeded = true;
             }
         }
 
@@ -196,14 +180,12 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             final String qualifiedName = typeElement.getQualifiedName().toString();
             appendToServiceList(qualifiedName);
             addServiceFile(typeElement, null);
-            daggerModuleRebuildNeeded = true;
         }
 
         for (final Element elem : roundEnv.getElementsAnnotatedWith(Extension.class))
         {
             final Extension annotation = elem.getAnnotation(Extension.class);
-            handleExtension(elem, annotation, processedAnnotations);
-            daggerModuleRebuildNeeded = true;
+            handleExtension(elem, annotation);
         }
 
         for (final Element elem : roundEnv.getElementsAnnotatedWith(ExtensionRepeatable.class))
@@ -212,11 +194,12 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
             final Extension[] value = annotation.value();
             for (final Extension extension : value)
             {
-                handleExtension(elem, extension, processedAnnotations);
+                handleExtension(elem, extension);
             }
         }
 
         // Path
+        // Create Proxies
         for (Element elem : roundEnv.getElementsAnnotatedWith(Path.class))
         {
             if (elem instanceof TypeElement)
@@ -228,14 +211,12 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                     addServiceFile(Path.class.getCanonicalName(), typeElement);
                     pathAnnotationFound = true;
                     final String string = typeElement.getQualifiedName().toString();
-                    processedAnnotations.addPath(string);
                 }
             }
         }
         if (pathAnnotationFound)
         {
             appendToServiceList(Path.class.getCanonicalName());
-            daggerModuleRebuildNeeded = true;
         }
         for (Element elem : roundEnv.getElementsAnnotatedWith(Provider.class))
         {
@@ -244,12 +225,9 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
                 addServiceFile(Provider.class.getCanonicalName(), (TypeElement) elem);
             }
         }
-        processedAnnotations.daggerModuleRebuildNeeded = daggerModuleRebuildNeeded;
-        return processedAnnotations;
     }
 
-    private void handleExtension(final Element elem, final Extension annotation,
-            ProcessedAnnotations processedAnnotations) throws IOException, UnableToCompleteException
+    private void handleExtension(final Element elem, final Extension annotation) throws IOException, UnableToCompleteException
     {
         final TypeElement typeElement = (TypeElement) elem;
         final TypeElement extensionPoint = getProvides(annotation);
@@ -257,7 +235,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         final String interfaceQualifiedName = extensionPoint.getQualifiedName().toString();
         appendToServiceList(interfaceQualifiedName);
         addServiceFile(extensionPoint, typeElement);
-        processedAnnotations.addImplementation(interfaceQualifiedName, typeElement.getQualifiedName().toString());
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding extension " + typeElement);
     }
 
@@ -275,11 +252,11 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
     private boolean isImplementing(TypeElement implementingElement, TypeElement interfaceToImplement)
     {
         final DeclaredType providedInterface = processingEnv.getTypeUtils().getDeclaredType(interfaceToImplement);
-        String providedTypeString = SerializerCreator.erasedTypeString(providedInterface, processingEnv);
+        String providedTypeString = SerializeCheck.erasedTypeString(providedInterface, processingEnv);
         final List<? extends TypeMirror> implementedInterfaces = implementingElement.getInterfaces();
         for (TypeMirror implementedInterface : implementedInterfaces)
         {
-            String typeString = SerializerCreator.erasedTypeString(implementedInterface, processingEnv);
+            String typeString = SerializeCheck.erasedTypeString(implementedInterface, processingEnv);
             if (providedTypeString.equals(typeString))
             {
                 return true;
@@ -297,7 +274,7 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         final TypeMirror superclass = implementingElement.getSuperclass();
         if (superclass != null)
         {
-            String typeString = SerializerCreator.erasedTypeString(superclass, processingEnv);
+            String typeString = SerializeCheck.erasedTypeString(superclass, processingEnv);
             if (providedTypeString.equals(typeString))
             {
                 return true;
@@ -346,8 +323,8 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         }
     }
 
-    private boolean handleDefaultImplementationForType(TreeLogger proxyLogger,
-            final Element defaultImplementationElement, DefaultImplementation defaultImplementationAnnotation, ProcessedAnnotations processedAnnotations)
+    private boolean handleDefaultImplementationForType(
+            final Element defaultImplementationElement, DefaultImplementation defaultImplementationAnnotation)
             throws UnableToCompleteException, IOException
     {
         if (isGeneratedByAnnotationInjectionProcessor(defaultImplementationElement))
@@ -358,12 +335,11 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         final TypeElement interfaceElement = getDefaultImplementationOf(defaultImplementationAnnotation);
         checkImplements(implementationElement, interfaceElement, DefaultImplementation.class.getCanonicalName());
         boolean pathAnnotationFound = false;
-        // Check if we need to generate proxies for java or gwt 
+        // Check if we need to generate proxies for java
         if (interfaceElement.getAnnotation(Path.class) != null && interfaceElement.getKind() == ElementKind.INTERFACE)
         {
-            final JavaClientProxyCreator swingProxyCreator = new JavaClientProxyCreator(interfaceElement, processingEnv, serializerCreator, deserializerCreator,
-                    AnnotationInjectionProcessor.class.getCanonicalName());
-            final String swingproxyClassName = swingProxyCreator.create(proxyLogger);
+            final JavaClientProxyCreator swingProxyCreator = new JavaClientProxyCreator(interfaceElement, processingEnv, AnnotationInjectionProcessor.class.getCanonicalName());
+            final String swingproxyClassName = swingProxyCreator.create();
             {
                 final String qualifiedName = getClassname(interfaceElement,false);
                 appendToServiceList(qualifiedName);
@@ -379,7 +355,6 @@ public class AnnotationInjectionProcessor extends AbstractProcessor
         final String qualifiedName = getClassname(interfaceElement);
         appendToServiceList(qualifiedName);
         addServiceFile(interfaceElement, implementationElement);
-        processedAnnotations.addImplementation(qualifiedName, getClassname(implementationElement));
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Adding DefaultImplemenation " + implementationElement);
         return pathAnnotationFound;
     }

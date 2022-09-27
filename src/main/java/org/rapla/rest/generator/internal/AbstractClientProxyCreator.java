@@ -36,24 +36,21 @@ public abstract class AbstractClientProxyCreator
 {
     protected final ProcessingEnvironment processingEnvironment;
     protected TypeElement svcInf;
-    protected SerializerCreator serializerCreator;
-    protected ResultDeserializerCreator deserializerCreator;
     protected String generatorName;
     protected int instanceField;
     private final InjectionContext context;
 
     public static final String AbstractJsonProxy = "org.rapla.rest.client.AbstractJsonProxy";
     private String connectorName;
+    private SerializeCheck serializerCreator;
 
-    protected AbstractClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, SerializerCreator serializerCreator,
-            ResultDeserializerCreator deserializerCreator, String generatorName, InjectionContext context, String connectorName)
+    protected AbstractClientProxyCreator(final TypeElement remoteService, ProcessingEnvironment processingEnvironment, String generatorName, InjectionContext context, String connectorName)
     {
         this.context = context;
-        this.serializerCreator = serializerCreator;
-        this.deserializerCreator = deserializerCreator;
         this.processingEnvironment = processingEnvironment;
         this.generatorName = generatorName;
         svcInf = remoteService;
+        this.serializerCreator = new SerializeCheck(processingEnvironment,generatorName);
         this.connectorName = connectorName;
     }
 
@@ -71,7 +68,7 @@ public abstract class AbstractClientProxyCreator
             w.println("for(" + typeMirror.toString() + " innerParam : " + pName + ") {");
             w.indent();
             w.println("if(" + targetName + ".length() > 0) " + targetName + ".append(\"&" + annotationKey + "=\");");
-            final boolean primitive = SerializerCreator.isPrimitive(typeMirror);
+            final boolean primitive = SerializeCheck.isPrimitive(typeMirror);
             if (!primitive)
             {
                 w.println("if(innerParam != null) {");
@@ -90,7 +87,7 @@ public abstract class AbstractClientProxyCreator
         }
         else
         {
-            final boolean primitive = SerializerCreator.isPrimitive(paramType);
+            final boolean primitive = SerializeCheck.isPrimitive(paramType);
             if (!primitive)
             {
                 w.println("if (" + pName + " != null) {");
@@ -108,14 +105,14 @@ public abstract class AbstractClientProxyCreator
 
     private void serializeArg(SourceWriter w, String targetName, String serializerField, String pName, TypeMirror paramType, boolean encode, boolean forceJson)
     {
-        if (((SerializerCreator.isJsonPrimitive(paramType) || SerializerCreator.isBoxedPrimitive(paramType))) && !(forceJson && SerializerCreator
+        if (((SerializeCheck.isJsonPrimitive(paramType) || SerializeCheck.isBoxedPrimitive(paramType))) && !(forceJson && SerializeCheck
                 .isJsonString(paramType)))
         {
-            if (SerializerCreator.isJsonString(paramType) && encode)
+            if (SerializeCheck.isJsonString(paramType) && encode)
             {
                 w.println(targetName + ".append(" + encode(pName) + ");");
             }
-            else if ((SerializerCreator.isBoxedCharacter(paramType) || TypeKind.CHAR == paramType.getKind()) && encode)
+            else if ((SerializeCheck.isBoxedCharacter(paramType) || TypeKind.CHAR == paramType.getKind()) && encode)
             {
                 w.println(targetName + ".append(" + encode("\"\"+" + pName) + ");");
             }
@@ -148,18 +145,18 @@ public abstract class AbstractClientProxyCreator
         return "@javax.annotation.Generated(value=\"" + generatorName + "\", comments=\"" + comments + "\")";
     }
 
-    public String create(final TreeLogger logger) throws UnableToCompleteException, IOException
+    public String create() throws UnableToCompleteException, IOException
     {
         String interfaceName = getInterfaceName();
-        checkMethods(logger, interfaceName, processingEnvironment);
+        checkMethods( interfaceName, processingEnvironment);
         final SourceWriter srcWriter = getSourceWriter(interfaceName);
         if (srcWriter == null)
         {
             return getProxyQualifiedName();
         }
 
-        generateProxyConstructor(logger, srcWriter, interfaceName);
-        generateProxyMethods(logger, srcWriter);
+        generateProxyConstructor( srcWriter, interfaceName);
+        generateProxyMethods( srcWriter);
         srcWriter.outdent();
         srcWriter.println("};");
         srcWriter.close();
@@ -168,12 +165,12 @@ public abstract class AbstractClientProxyCreator
     }
 
     protected String getInterfaceName() {
-        TypeElement erasedType = SerializerCreator.getErasedType(svcInf, processingEnvironment);
-        String interfaceName = SerializerCreator.erasedTypeString(erasedType);
+        TypeElement erasedType = SerializeCheck.getErasedType(svcInf, processingEnvironment);
+        String interfaceName = SerializeCheck.erasedTypeString(erasedType);
         return interfaceName;
     }
 
-    private void checkMethods(final TreeLogger logger, String interfaceName, final ProcessingEnvironment processingEnvironment) throws UnableToCompleteException
+    private void checkMethods(String interfaceName, final ProcessingEnvironment processingEnvironment) throws UnableToCompleteException
     {
 
         final List<ExecutableElement> methods = getMethods(processingEnvironment);
@@ -185,44 +182,38 @@ public abstract class AbstractClientProxyCreator
 
                 for (VariableElement p : params)
                 {
-                    final TreeLogger branch = logger;//logger.branch(TreeLogger.DEBUG, m.getName() + ", parameter " + p.getName());
+                    //logger.branch(TreeLogger.DEBUG, m.getName() + ", parameter " + p.getName());
                     //final TypeElement typeP = (TypeElement) processingEnvironment.getTypeUtils().asElement(p.asType());
                     TypeMirror typeP = p.asType();
-                    serializerCreator.checkCanSerialize(branch, typeP);
-                    if (!SerializerCreator.isPrimitive(typeP) && !SerializerCreator.isBoxedPrimitive(typeP))
-                    {
-                        serializerCreator.create(typeP, branch);
-                    }
+                    serializerCreator.checkCanSerialize(typeP);
                 }
                 TypeMirror returnType = m.getReturnType();
-                if (SerializerCreator.isPrimitive(returnType))
+                if (SerializeCheck.isPrimitive(returnType))
                 {
                     continue;
                 }
-                final TreeLogger branch = logger;//.branch(TreeLogger.DEBUG, m.getName() + ", result " + resultType.getQualifiedSourceName());
+                //.branch(TreeLogger.DEBUG, m.getName() + ", result " + resultType.getQualifiedSourceName());
                 final boolean isPromise = isPromise(returnType);
                 if (isPromise)
                 {
                     returnType = getPromiseTypeArgument(m, returnType);
                 }
-                if ( SerializerCreator.isVoid(returnType))
+                if ( SerializeCheck.isVoid(returnType))
                 {
                     continue;
                 }
-                serializerCreator.checkCanSerialize(branch, returnType);
-                if (SerializerCreator.isArray(returnType))
+                serializerCreator.checkCanSerialize(returnType);
+                if (SerializeCheck.isArray(returnType))
                 {
                     // Arrays need a special deserializer
-                    deserializerCreator.create(logger, returnType);
                 }
-                else if (!SerializerCreator.isPrimitive(returnType) && !SerializerCreator.isBoxedPrimitive(returnType) && returnType.getKind() != TypeKind.VOID)
+                else if (!SerializeCheck.isPrimitive(returnType) && !SerializeCheck.isBoxedPrimitive(returnType) && returnType.getKind() != TypeKind.VOID)
                 {
                     // Non primitives get deserialized by their normal serializer
-                    serializerCreator.create(returnType, branch);
                 }
                 // (Boxed)Primitives are left, they are handled specially
             }
-            catch (IOException | UnableToCompleteException ex)
+            catch ( UnableToCompleteException ex)
             {
                 throw new UnableToCompleteException("Can't generate method " + interfaceName + "." + m.getSimpleName().toString() + " cause " + ex.getMessage(),
                         ex);
@@ -278,7 +269,7 @@ public abstract class AbstractClientProxyCreator
 
     abstract protected void writeImports(SourceWriter pw);
 
-    private void generateProxyConstructor(@SuppressWarnings("unused") final TreeLogger logger, final SourceWriter w, String interfaceName)
+    private void generateProxyConstructor(@SuppressWarnings("unused") final SourceWriter w, String interfaceName)
             throws UnableToCompleteException
     {
         final Path relPath = svcInf.getAnnotation(Path.class);
@@ -301,12 +292,12 @@ public abstract class AbstractClientProxyCreator
 
     }
 
-    private void generateProxyMethods(final TreeLogger logger, final SourceWriter srcWriter) throws UnableToCompleteException
+    private void generateProxyMethods( final SourceWriter srcWriter) throws UnableToCompleteException
     {
         final List<ExecutableElement> methods = getMethods(processingEnvironment);
         for (final ExecutableElement m : methods)
         {
-            generateProxyMethod(logger, m, srcWriter);
+            generateProxyMethod( m, srcWriter);
         }
     }
 
@@ -343,7 +334,7 @@ public abstract class AbstractClientProxyCreator
         return isPromise;
     }
 
-    protected void generateProxyMethod(@SuppressWarnings("unused") final TreeLogger logger, final ExecutableElement method, final SourceWriter w)
+    protected void generateProxyMethod(@SuppressWarnings("unused")  final ExecutableElement method, final SourceWriter w)
             throws UnableToCompleteException
     {
         w.println();
@@ -435,10 +426,10 @@ public abstract class AbstractClientProxyCreator
             if (queryAnnotation != null || pathAnnotation != null || headerAnnotation != null)
             {
                 final String annotationKey = queryAnnotation != null ? queryAnnotation.value() : headerAnnotation != null ? headerAnnotation.value() : null;
-                final boolean boxedCharacter = SerializerCreator.isBoxedCharacter(paramType);
-                final boolean boxedPrimitive = SerializerCreator.isBoxedPrimitive(paramType);
-                final boolean jsonPrimitive = SerializerCreator.isJsonPrimitive(paramType) || boxedPrimitive;
-                final boolean jsonString = SerializerCreator.isJsonString(paramType);
+                final boolean boxedCharacter = SerializeCheck.isBoxedCharacter(paramType);
+                final boolean boxedPrimitive = SerializeCheck.isBoxedPrimitive(paramType);
+                final boolean jsonPrimitive = SerializeCheck.isJsonPrimitive(paramType) || boxedPrimitive;
+                final boolean jsonString = SerializeCheck.isJsonString(paramType);
                 if (jsonPrimitive && !jsonString)
                 {
                     w.println("{");
@@ -574,7 +565,7 @@ public abstract class AbstractClientProxyCreator
     private TypeMirror getPromiseTypeArgument(ExecutableElement method, TypeMirror returnType) throws UnableToCompleteException
     {
         TypeMirror resultType;
-        boolean isGeneric = SerializerCreator.isParameterized(returnType);
+        boolean isGeneric = SerializeCheck.isParameterized(returnType);
         if (isGeneric)
         {
             final List<? extends TypeMirror> typeArguments = ((DeclaredType) returnType).getTypeArguments();
@@ -625,7 +616,7 @@ public abstract class AbstractClientProxyCreator
 
         TypeMirror typeMirror = getLeafType(type.asType());
         TypeElement leafType = (TypeElement) processingEnvironment.getTypeUtils().asElement(typeMirror);
-        if (SerializerCreator.isPrimitive(typeMirror))
+        if (SerializeCheck.isPrimitive(typeMirror))
         {
             className = leafType.getSimpleName().toString();
             packageName = "";
@@ -639,7 +630,7 @@ public abstract class AbstractClientProxyCreator
 
         }
 
-        boolean isGeneric = SerializerCreator.isParameterized(typeMirror);
+        boolean isGeneric = SerializeCheck.isParameterized(typeMirror);
         if (isGeneric)
         {
             final List<? extends TypeMirror> typeArguments = ((DeclaredType) typeMirror).getTypeArguments();
@@ -650,7 +641,7 @@ public abstract class AbstractClientProxyCreator
             }
         }
 
-        boolean isArray = SerializerCreator.isArray(typeMirror);
+        boolean isArray = SerializeCheck.isArray(typeMirror);
         if (isArray)
         {
             int rank = getRank((ArrayType) typeMirror);
