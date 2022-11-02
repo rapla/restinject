@@ -4,7 +4,6 @@ import org.rapla.scheduler.Promise;
 
 import java.util.Collection;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,41 +53,36 @@ public interface ExampleService
     @Path("sayHello3")
     List<Result> sayHello3(Parameter param);
 
-    @GET
+    @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Path("complex")
-    Promise<Map<String, Set<String>>> complex(@QueryParam("param") Map<String,String> test);
+    Promise<Map<String, Set<String>>> complex(Map<String,String> test);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("collections")
-    String collections(@QueryParam("param") Collection<String> test, @QueryParam("complex") Collection<Parameter> complex);
+    String collections(@QueryParam("param") Collection<String> test);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("list")
-    String list(@QueryParam("param") List<String> test, @QueryParam("complex") List<Parameter> complex);
+    String list(@QueryParam("param") List<String> test);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("set")
-    String set(@QueryParam("param") Set<String> test, @QueryParam("complex") Set<Parameter> complex);
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("arrays")
-    String arrays( @QueryParam("int")int[] integer,@QueryParam("doubleArray") Double[] test, @QueryParam("stringArray") String[] strings,@QueryParam("complexArray") Parameter[] complex);
+    String set(@QueryParam("param") Set<String> test);
 
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("list")
-    String list(@QueryParam("param") List<String> test, @QueryParam("complex") List<Parameter> complex, List<Parameter> postBody);
+    @Path("listWithBody")
+    String listWithBody(@QueryParam("param") String test, List<Parameter> postBody);
     
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("set")
-    String set(@QueryParam("param") Set<String> test, @QueryParam("complex") Set<Parameter> complex, Set<Parameter> postBody);
+    @Path("setWithBody")
+    String setWithBody(Set<Parameter> postBody);
     
     @GET
     @Produces(MediaType.APPLICATION_JSON)

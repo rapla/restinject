@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.List;
 
 @RunWith(JUnit4.class)
-@Ignore
 public class SwingProxyTest extends AbstractProxyTest
 {
     Server server;

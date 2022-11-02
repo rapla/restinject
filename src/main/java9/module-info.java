@@ -15,8 +15,6 @@ module org.rapla.restinject {
     exports org.rapla.rest.server.provider.resteasy;
     exports org.rapla.scheduler;
     exports org.rapla.scheduler.sync;
-    exports org.rapla.rest.client.gwt.internal.impl;
-    exports org.rapla.rest.client.gwt.internal.impl.ser;
     requires javax.inject;
     requires java.ws.rs;
     requires io.reactivex.rxjava3;

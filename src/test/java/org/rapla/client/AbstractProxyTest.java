@@ -7,7 +7,6 @@ import org.rapla.common.ExampleSimpleService;
 import org.rapla.logger.ConsoleLogger;
 import org.rapla.logger.Logger;
 import org.rapla.rest.client.CustomConnector;
-import org.rapla.scheduler.Promise;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -135,12 +134,9 @@ public abstract class AbstractProxyTest
         Collection<String> primiteCollection = Arrays.asList(new String[] { "Hello", "World" });
         Collection<ExampleService.Parameter> complectCollection = new LinkedHashSet<>();
         complectCollection.add(new ExampleService.Parameter());
-        final ExampleService.Parameter param2 = new ExampleService.Parameter();
-        param2.setCasts(primiteCollection);
-        complectCollection.add(param2);
-        final String greeting = test.collections(primiteCollection, complectCollection);
+        final String greeting = test.collections(primiteCollection);
         assertEq(
-                "Made[Hello, World],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=null}, Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello, World]}]",
+                "Made[Hello, World]",
                 greeting);
     }
 
@@ -161,14 +157,13 @@ public abstract class AbstractProxyTest
         ExampleService test = createExampleServiceProxy();
         List<String> primiteCollection = Arrays.asList(new String[] { "Hello", "World" });
         List<ExampleService.Parameter> complectCollection = new LinkedList<>();
-        complectCollection.add(new ExampleService.Parameter());
         final ExampleService.Parameter param2 = new ExampleService.Parameter();
         param2.setCasts(primiteCollection);
         complectCollection.add(param2);
         List<ExampleService.Parameter> body = new ArrayList<>(complectCollection);
-        final String greeting = test.list(primiteCollection, complectCollection, body);
+        final String greeting = test.listWithBody("Hello", body);
         assertEq(
-                "Made[Hello, World],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=null}, Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello, World]}],[{}, {casts=[Hello, World]}]",
+                "Made[{casts=[Hello, World]}]",
                 greeting);
     }
 
@@ -183,27 +178,12 @@ public abstract class AbstractProxyTest
         param2.setCasts(primiteCollection);
         complectCollection.add(param2);
         Set<ExampleService.Parameter> body = new LinkedHashSet<>(complectCollection);
-        final String greeting = test.set(primiteCollection, complectCollection, body);
+        final String greeting = test.setWithBody( body);
         assertEq(
-                "Made[Hello, World],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello, World]}],[{casts=[Hello, World]}]",
+                "Made[{casts=[Hello, World]}]",
                 greeting);
     }
 
-
-    @Test public void testArrays() throws Exception
-    {
-        ExampleService test = createExampleServiceProxy();
-        int[] intCollection = new int[] {1,2,3};
-        Double[] primiteCollection = new Double[] { 0.5, 1.0, 3.0, 0. };
-        String[] stringCollection = new String[] { "Hello", null, "","World"};
-        final ExampleService.Parameter param2 = new ExampleService.Parameter();
-        ExampleService.Parameter[] complectCollection = new ExampleService.Parameter[] { new ExampleService.Parameter(), param2 };
-        param2.setCasts(Collections.singletonList("Hello"));
-        final String greeting = test.arrays(intCollection,primiteCollection,stringCollection, complectCollection);
-        assertEq(
-                "Made[1, 2, 3],[0.5, 1.0, 3.0, 0.0],[Hello, , , World],[Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=null}, Parameter{requestedIds=null, actionIds=null, lastRequestTime=null, casts=[Hello]}]"
-                ,greeting);
-    }
 
 
     @Test public void testEncoding() throws Exception

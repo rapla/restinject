@@ -2,16 +2,21 @@ package org.rapla.rest.jackson;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.rapla.logger.ConsoleLogger;
+import org.rapla.logger.NullLogger;
 import org.rapla.rest.JsonParserWrapper;
 import org.rapla.rest.client.RemoteConnectException;
+import org.rapla.rest.client.internal.isodate.ISODateTimeFormat;
+import org.rapla.rest.gson.JsonMergePatch;
+import org.rapla.scheduler.Promise;
+import org.rapla.scheduler.sync.SynchronizedCompletablePromise;
 
 import javax.inject.Provider;
 import java.io.IOException;
@@ -69,7 +74,11 @@ public class JacksonParserWrapper  implements Provider<JsonParserWrapper.JsonPar
 
             @Override
             public String patch(Object unpatchedObject, Reader json) {
-                return patchGson(unpatchedObject, json);
+                try {
+                    return patchGson(unpatchedObject, json);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         };
     }
@@ -81,35 +90,43 @@ public class JacksonParserWrapper  implements Provider<JsonParserWrapper.JsonPar
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
         objectMapper.setTimeZone( TimeZone.getTimeZone("UTC"));
         objectMapper.setDateFormat(df);
+        objectMapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE);
         objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
         SimpleModule module = new SimpleModule();
-//        module.addSerializer(Promise.class, new JsonSerializer<Promise>()
-//        {
-//            @Override
-//            public void serialize(Promise promise, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException
-//            {
-//                try
-//                {
-//                    final Object result = SynchronizedCompletablePromise.waitFor(promise, 1000, logger);
-//                    //JsonSerializer<Object> serializer = serializerProvider.serializerFor(cc);
-//                    //serializerProvider.ser
-//                }
-//                catch (Exception e)
-//                {
-//                    throw new IOException( e);
-//                }
-//            }
-//        });
+        module.addSerializer(Promise.class, new JsonSerializer<Promise>()
+        {
+            @Override
+            public void serialize(Promise promise, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException
+            {
+                try
+                {
+                    final Object result = SynchronizedCompletablePromise.waitFor(promise, 1000, logger);
+                    JsonSerializer<Object> serializer = serializerProvider.getUnknownTypeSerializer(result.getClass());
+                    serializer.serialize(result,jsonGenerator,serializerProvider);
+                    //serializerProvider.ser
+                }
+                catch (Exception e)
+                {
+                    throw new IOException( e);
+                }
+            }
+        });
         objectMapper.registerModule( module);
         return objectMapper;
     }
 
 
 
-    private static String patchGson(Object unpatchedObject, Reader json) {
-        throw new UnsupportedOperationException("Patch currently not supported with jackson impl");
+    private static String patchGson(Object unpatchedObject, Reader json) throws IOException {
+        final ObjectMapper mapper = defaultObjectMapper();
+        JsonNode unpatchedObjectJson = mapper.valueToTree(unpatchedObject);
+        JsonNode patchElement = mapper.readTree(json);
+        final JacksonMergePatch patch = JacksonMergePatch.fromJson(patchElement);
+        final JsonNode patchedObjectJson = patch.apply(unpatchedObjectJson);
+        return patchedObjectJson.toString();
     }
+
 
     private static Object deserializeResultWithJackson(String unparsedResult, Class resultType, Class container) throws IOException {
         if (resultType.equals(void.class))

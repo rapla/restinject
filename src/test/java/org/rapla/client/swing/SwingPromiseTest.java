@@ -20,7 +20,6 @@ import org.rapla.server.ServletTestContainer;
 
 import junit.framework.TestCase;
 
-@Ignore
 @RunWith(JUnit4.class) public class SwingPromiseTest extends AbstractPromiseTest
 {
 

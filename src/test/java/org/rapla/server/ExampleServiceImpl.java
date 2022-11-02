@@ -7,6 +7,8 @@ import org.rapla.scheduler.Promise;
 import org.rapla.scheduler.ResolvedPromise;
 
 import javax.inject.Inject;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
@@ -109,24 +111,20 @@ public class ExampleServiceImpl implements ExampleService
     }
 
     @Produces(MediaType.APPLICATION_JSON)
-    @Override public String collections(@QueryParam("param") Collection<String> test, @QueryParam("complex") Collection<Parameter> complex)
+    @Override public String collections(@QueryParam("param") Collection<String> test)
     {
-        return "Made" + test.toString()+","+complex.toString();
+        return "Made" + test.toString();
     }
 
-    @Override public String list(@QueryParam("param") List<String> test, @QueryParam("complex") List<Parameter> complex)
+    @Override public String list(@QueryParam("param") List<String> test)
     {
-        return "Made" + test.toString()+","+complex.toString();
+        return "Made" + test.toString();
     }
-    @Override public String set(@QueryParam("param") Set<String> test, @QueryParam("complex") Set<Parameter> complex)
+    @Override public String set(@QueryParam("param") Set<String> test)
     {
-        return "Made" + test.toString()+","+complex.toString();
+        return "Made" + test.toString();
     }
 
-    @Override public String arrays( int[] integer,Double[] test, String[] stringArray, Parameter[] complex)
-    {
-        return "Made" + Arrays.toString(integer) +"," + Arrays.toString(test)+","+Arrays.toString(stringArray) + "," +Arrays.toString(complex);
-    }
 
 //    @Override
 //    public String charArray(Character[] charArray1,char[] charArray2)
@@ -139,16 +137,23 @@ public class ExampleServiceImpl implements ExampleService
             return "Made"  + Arrays.toString( charArray2);
         }
 
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("listWithBody")
     @Override
-    public String list(List<String> test, List<Parameter> complex, List<Parameter> postBody)
+    public String listWithBody(@QueryParam("param") String test, List<Parameter> postBody)
     {
-        return "Made" + test.toString()+","+complex.toString() + ","+postBody.toString();
+        return "Made" +postBody.toString();
     }
-    
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("setWithBody")
     @Override
-    public String set(Set<String> test, Set<Parameter> complex, Set<Parameter> postBody)
+    public String setWithBody(Set<Parameter> postBody)
     {
-        return "Made" + test.toString()+","+complex.toString() + ","+postBody.toString();
+        return "Made" +postBody.toString();
     }
 
     @Override public String longcall()
