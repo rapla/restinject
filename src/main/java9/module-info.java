@@ -8,7 +8,6 @@ module org.rapla.restinject {
     exports org.rapla.rest.client;
     exports org.rapla.rest.client.swing;
     exports org.rapla.rest.gson;
-    exports org.rapla.rest.jackson;
     exports org.rapla.rest.server.jsonpatch;
     exports org.rapla.rest.server.provider.filter;
     exports org.rapla.rest.server.provider.json;
@@ -23,8 +22,6 @@ module org.rapla.restinject {
     requires java.logging;
     requires org.slf4j;
     requires com.google.gson;
-    requires com.fasterxml.jackson.databind;
-    requires com.fasterxml.jackson.annotation;
     requires resteasy.jaxrs;
     requires java.validation;
 }
