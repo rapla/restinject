@@ -98,25 +98,15 @@ public class HTTPConnector implements JsonRemoteConnector
             InputStream inputStream = null;
             try
             {
+                String encoding = conn.getContentEncoding();
+
                 if (responseCode != 200 && responseCode != 204)
                 {
-                    inputStream = conn.getErrorStream();
+                    inputStream = getZipStream(conn.getErrorStream(), encoding);
                 }
                 else
                 {
-                    String encoding = conn.getContentEncoding();
-                    if (encoding != null && encoding.equalsIgnoreCase("gzip"))
-                    {
-                        inputStream = new GZIPInputStream(conn.getInputStream());
-                    }
-                    else if (encoding != null && encoding.equalsIgnoreCase("deflate"))
-                    {
-                        inputStream = new InflaterInputStream(conn.getInputStream(), new Inflater(true));
-                    }
-                    else
-                    {
-                        inputStream = conn.getInputStream();
-                    }
+                    inputStream = getZipStream( conn.getInputStream(), encoding );
                 }
                 if ( inputStream != null)
                 {
@@ -136,6 +126,24 @@ public class HTTPConnector implements JsonRemoteConnector
             }
         }
         return new CallResult(resultString, responseCode);
+    }
+
+    protected InputStream getZipStream(InputStream originalStream, String encoding) throws IOException {
+        InputStream inputStream = null;
+
+        if (encoding != null && encoding.equalsIgnoreCase("gzip"))
+        {
+            inputStream = new GZIPInputStream(originalStream);
+        }
+        else if (encoding != null && encoding.equalsIgnoreCase("deflate"))
+        {
+            inputStream = new InflaterInputStream(originalStream, new Inflater(true));
+        }
+        else
+        {
+            inputStream = originalStream;
+        }
+        return  inputStream;
     }
 
     private String readResultToString(InputStream input) throws IOException

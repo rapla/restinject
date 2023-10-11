@@ -152,6 +152,10 @@ public class JavaClientServerConnector
         }
         catch (Exception e)
         {
+            final int responseCode = resultMessage.getResponseCode();
+            if ( responseCode == 401) {
+                return new AuthenticationException("Can't parse result of authentication error");
+            }
             // unexpected exception occured, so throw RemoteConnectException
             return new RemoteConnectException(e.getMessage());
         }
